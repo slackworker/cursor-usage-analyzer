@@ -15,8 +15,10 @@ from cursor_usage.calculator import (
     apply_limits,
     infer_limits_from_baseline,
     pool_cost,
+    pool_cost_with_free,
+    pool_free_cost,
 )
-from cursor_usage.pricing import BILLABLE_KIND
+from cursor_usage.pricing import BILLABLE_KIND, FREE_KIND
 
 
 def _print_report(report: UsageReport) -> None:
@@ -49,7 +51,10 @@ def _print_report(report: UsageReport) -> None:
     print()
 
     print(f"合计 Token: {report.total_tokens:,}")
-    print(f"推算总费用: ${report.total_cost:.2f}")
+    print(f"推算费用（不含 {FREE_KIND} 额度）: ${report.total_cost:.2f}")
+    if report.free_rows:
+        print(f"{FREE_KIND} 额度消耗（推算）:       ${report.free_cost:.2f}  ({report.free_rows} 行)")
+        print(f"合计（含 {FREE_KIND} 额度）:         ${report.total_cost_with_free:.2f}")
 
 
 def _print_limits(result) -> None:
@@ -57,6 +62,10 @@ def _print_limits(result) -> None:
     report = result.report
     ac_used = pool_cost(report, "auto_composer")
     api_used = pool_cost(report, "api")
+    ac_free = pool_free_cost(report, "auto_composer")
+    api_free = pool_free_cost(report, "api")
+    ac_with_free = pool_cost_with_free(report, "auto_composer")
+    api_with_free = pool_cost_with_free(report, "api")
 
     print()
     print("套餐额度与使用率:")
@@ -64,9 +73,22 @@ def _print_limits(result) -> None:
     print(f"  API 额度:           ${limits.api:.2f}")
     print(f"  合计额度:           ${limits.total:.2f}")
     print()
-    print(f"  Auto+Composer 已用: ${ac_used:.2f}  ({result.auto_composer_pct:.1f}%)")
-    print(f"  API 已用:           ${api_used:.2f}  ({result.api_pct:.1f}%)")
-    print(f"  合计已用:           ${report.total_cost:.2f}  ({result.total_pct:.1f}%)")
+    print(f"  Auto+Composer 已用（不含 {FREE_KIND}）: ${ac_used:.2f}  ({result.auto_composer_pct:.1f}%)")
+    print(f"  API 已用（不含 {FREE_KIND}）:           ${api_used:.2f}  ({result.api_pct:.1f}%)")
+    print(f"  合计已用（不含 {FREE_KIND}）:           ${report.total_cost:.2f}  ({result.total_pct:.1f}%)")
+    if report.free_rows:
+        ac_pct_free = (ac_with_free / limits.auto_composer * 100) if limits.auto_composer else 0.0
+        api_pct_free = (api_with_free / limits.api * 100) if limits.api else 0.0
+        total_pct_free = (
+            report.total_cost_with_free / limits.total * 100
+        ) if limits.total else 0.0
+        print()
+        print(f"  Auto+Composer 已用（含 {FREE_KIND}）:   ${ac_with_free:.2f}  ({ac_pct_free:.1f}%)")
+        print(f"  API 已用（含 {FREE_KIND}）:             ${api_with_free:.2f}  ({api_pct_free:.1f}%)")
+        print(
+            f"  合计已用（含 {FREE_KIND}）:             "
+            f"${report.total_cost_with_free:.2f}  ({total_pct_free:.1f}%)"
+        )
 
 
 def _to_json(report: UsageReport, limits_result=None) -> dict:
@@ -80,6 +102,9 @@ def _to_json(report: UsageReport, limits_result=None) -> dict:
         "unknown_models": report.unknown_models,
         "total_tokens": report.total_tokens,
         "total_cost": round(report.total_cost, 4),
+        "free_rows": report.free_rows,
+        "free_cost": round(report.free_cost, 4),
+        "total_cost_with_free": round(report.total_cost_with_free, 4),
         "by_model": {
             k: {
                 "pool": v.pool,
@@ -94,6 +119,8 @@ def _to_json(report: UsageReport, limits_result=None) -> dict:
                 "rows": v.rows,
                 "tokens": v.tokens,
                 "cost": round(v.cost, 4),
+                "free_cost": round(v.free_cost, 4),
+                "cost_with_free": round(v.cost + v.free_cost, 4),
             }
             for k, v in report.by_pool.items()
         },

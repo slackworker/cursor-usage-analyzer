@@ -20,10 +20,13 @@ class ModelPricing:
     pool: str
 
 
-# Only bill rows with this Kind value.
+# Included rows count against the paid plan allowance.
 BILLABLE_KIND = "Included"
 
-SKIP_KINDS = frozenset({"Free", "Errored, No Charge", "Aborted, Not Charged"})
+# Free rows consume the promotional/free allowance (still has token cost).
+FREE_KIND = "Free"
+
+SKIP_KINDS = frozenset({FREE_KIND, "Errored, No Charge", "Aborted, Not Charged"})
 
 AUTO_COMPOSER_MODELS = frozenset({"auto", "composer-2.5-fast"})
 API_MODELS = frozenset(

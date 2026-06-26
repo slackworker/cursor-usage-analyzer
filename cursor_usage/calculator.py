@@ -12,6 +12,7 @@ from cursor_usage.pricing import (
     BILLABLE_KIND,
     BUGBOT_AUTO_MULTIPLIER,
     CLAUDE_THINKING_OUTPUT_RATIO,
+    FREE_KIND,
     PRICING,
     ModelPricing,
 )
@@ -40,6 +41,7 @@ class ModelSummary:
 class PoolSummary:
     pool: str
     cost: float = 0.0
+    free_cost: float = 0.0
     rows: int = 0
     tokens: int = 0
     models: dict[str, ModelSummary] = field(default_factory=dict)
@@ -56,9 +58,15 @@ class UsageReport:
     unknown_models: dict[str, int]
     total_tokens: int
     total_cost: float
+    free_rows: int
+    free_cost: float
     by_model: dict[str, ModelSummary]
     by_pool: dict[str, PoolSummary]
     row_costs: list[RowCost]
+
+    @property
+    def total_cost_with_free(self) -> float:
+        return self.total_cost + self.free_cost
 
 
 @dataclass
@@ -129,8 +137,10 @@ def analyze_csv(path: str | Path) -> UsageReport:
     row_costs: list[RowCost] = []
 
     billable_rows = 0
+    free_rows = 0
     total_tokens = 0
     total_cost = 0.0
+    free_cost = 0.0
     dates: list[str] = []
 
     for row in rows:
@@ -141,7 +151,22 @@ def analyze_csv(path: str | Path) -> UsageReport:
             dates.append(date)
 
         tokens = _parse_int(row.get("Total Tokens"))
-        billable = kind == BILLABLE_KIND and model in PRICING
+
+        if kind == FREE_KIND and model in PRICING:
+            icw = _parse_int(row.get("Input (w/ Cache Write)"))
+            icwo = _parse_int(row.get("Input (w/o Cache Write)"))
+            cr = _parse_int(row.get("Cache Read"))
+            out = _parse_int(row.get("Output Tokens"))
+            cost = _row_cost(model, icw, icwo, cr, out)
+            pool = PRICING[model].pool
+            free_rows += 1
+            free_cost += cost
+            if pool not in by_pool:
+                by_pool[pool] = PoolSummary(pool=pool)
+            by_pool[pool].free_cost += cost
+            skipped_rows[kind] += 1
+            row_costs.append(RowCost(date, model, kind, cost, tokens, False))
+            continue
 
         if kind != BILLABLE_KIND:
             skipped_rows[kind or "(empty)"] += 1
@@ -189,6 +214,8 @@ def analyze_csv(path: str | Path) -> UsageReport:
         unknown_models=dict(unknown_models),
         total_tokens=total_tokens,
         total_cost=total_cost,
+        free_rows=free_rows,
+        free_cost=free_cost,
         by_model=by_model,
         by_pool=by_pool,
         row_costs=row_costs,
@@ -197,6 +224,15 @@ def analyze_csv(path: str | Path) -> UsageReport:
 
 def pool_cost(report: UsageReport, pool: str) -> float:
     return report.by_pool.get(pool, PoolSummary(pool=pool)).cost
+
+
+def pool_free_cost(report: UsageReport, pool: str) -> float:
+    return report.by_pool.get(pool, PoolSummary(pool=pool)).free_cost
+
+
+def pool_cost_with_free(report: UsageReport, pool: str) -> float:
+    summary = report.by_pool.get(pool, PoolSummary(pool=pool))
+    return summary.cost + summary.free_cost
 
 
 def infer_limits_from_baseline(
