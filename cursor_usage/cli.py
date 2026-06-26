@@ -18,8 +18,39 @@ from cursor_usage.calculator import (
     pool_cost_with_free,
     pool_free_cost,
 )
-from cursor_usage.pricing import BILLABLE_KIND, FREE_KIND
+from cursor_usage.pricing import BILLABLE_KIND, CLAUDE_THINKING_MODELS, FREE_KIND
+from cursor_usage.pricing_sources import MODEL_SOURCES, RULE_SOURCES, PricingConfidence
 from cursor_usage.reconcile import DISCOUNT_NOTE, reconcile_csv
+
+
+def _print_pricing_caveats(report: UsageReport) -> None:
+    """Warn when the report uses rates or rules not from official docs."""
+    used_models = set(report.by_model) | {
+        r.model for r in report.row_costs if r.model and not r.billable and r.cost > 0
+    }
+    caveats: list[str] = []
+    for model in sorted(used_models):
+        src = MODEL_SOURCES.get(model)
+        if src and src.confidence in (
+            PricingConfidence.CSV_INFERRED,
+            PricingConfidence.UNCONFIRMED,
+        ):
+            caveats.append(f"  {model}: [{src.confidence.value}] {src.doc_ref} — {src.note}")
+
+    if "agent_review" in used_models:
+        for key in ("BUGBOT_AUTO_MULTIPLIER", "BUGBOT_FREE_CACHE_READ_ONLY"):
+            src = RULE_SOURCES[key]
+            if src.confidence != PricingConfidence.OFFICIAL_DOC:
+                caveats.append(f"  {key}: [{src.confidence.value}] {src.note}")
+
+    if used_models & CLAUDE_THINKING_MODELS:
+        src = RULE_SOURCES["CLAUDE_THINKING_OUTPUT_RATIO"]
+        caveats.append(f"  CLAUDE_THINKING_OUTPUT_RATIO: [{src.confidence.value}] {src.note}")
+
+    if caveats:
+        print("费率置信度提示（非官方文档项，详见 docs/spec.md §3.1 / pricing_sources.py）:")
+        print("\n".join(caveats))
+        print()
 
 
 def _print_report(report: UsageReport) -> None:
@@ -296,6 +327,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     _print_report(report)
+    _print_pricing_caveats(report)
     if limits_result is not None:
         if args.baseline is not None:
             print()

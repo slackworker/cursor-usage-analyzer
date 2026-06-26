@@ -19,14 +19,17 @@ EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 JANUARY_CSV = EXAMPLES / "January - US$1.61.csv"
 FEBRUARY_CSV = EXAMPLES / "February - US$46.57.csv"
 MARCH_CSV = EXAMPLES / "March - US$69.94.csv"
+APRIL_CSV = EXAMPLES / "April - US$137.09.csv"
 
 # Official dashboard Total spend (filename amounts).
 JANUARY_OFFICIAL_TOTAL = 1.61
 FEBRUARY_OFFICIAL_TOTAL = 46.57
 MARCH_OFFICIAL_TOTAL = 69.94
+APRIL_OFFICIAL_TOTAL = 137.09
 # Max relative gap vs official after adding Feb-discovered models (Jun 2026 calibration).
 FEBRUARY_TOTAL_TOLERANCE_PCT = 0.01
 MARCH_TOTAL_TOLERANCE_PCT = 0.005
+APRIL_TOTAL_TOLERANCE_PCT = 0.015
 
 
 class TestKindNormalization(unittest.TestCase):
@@ -129,6 +132,37 @@ class TestMarchGolden(unittest.TestCase):
         self.assertAlmostEqual(report.by_model["gpt-5.2"].cost, 6.20, delta=0.05)
         self.assertAlmostEqual(report.by_model["composer-2-fast"].cost, 0.33, delta=0.02)
         self.assertEqual(report.by_model["gpt-5.4-medium"].rows, 93)
+
+
+class TestAprilGolden(unittest.TestCase):
+    def test_all_models_recognized(self) -> None:
+        report = analyze_csv(APRIL_CSV)
+        self.assertEqual(report.unknown_models, {})
+        self.assertEqual(report.billable_rows, 1256)
+        self.assertEqual(report.free_rows, 0)
+
+    def test_total_within_official_tolerance(self) -> None:
+        report = analyze_csv(APRIL_CSV)
+        gap = report.total_cost - APRIL_OFFICIAL_TOTAL
+        self.assertGreater(gap, -0.05)
+        self.assertLess(
+            abs(gap) / APRIL_OFFICIAL_TOTAL,
+            APRIL_TOTAL_TOLERANCE_PCT,
+        )
+        self.assertAlmostEqual(report.total_cost, 138.49, delta=0.05)
+
+    def test_by_model_breakdown(self) -> None:
+        report = analyze_csv(APRIL_CSV)
+        self.assertAlmostEqual(report.by_model["auto"].cost, 87.58, delta=0.05)
+        self.assertAlmostEqual(report.by_model["gpt-5.4-medium"].cost, 43.49, delta=0.05)
+        self.assertAlmostEqual(report.by_model["gpt-5.5-medium"].cost, 4.95, delta=0.02)
+        self.assertAlmostEqual(report.by_model["composer-2-fast"].cost, 0.62, delta=0.02)
+        self.assertAlmostEqual(report.by_model["composer-2"].cost, 0.73, delta=0.02)
+        self.assertAlmostEqual(
+            report.by_model["claude-opus-4-7-thinking-high"].cost, 1.12, delta=0.02
+        )
+        self.assertEqual(report.by_model["gpt-5.5-medium"].rows, 10)
+        self.assertEqual(report.by_model["composer-2"].rows, 5)
 
 
 if __name__ == "__main__":

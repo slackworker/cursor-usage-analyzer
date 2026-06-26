@@ -2,7 +2,7 @@
 
 根据 Cursor 导出的用量 CSV，推算 token 费用，并可结合基准账单推测套餐池使用率。
 
-定价规则基于 [Cursor Models & Pricing](https://cursor.com/docs/models-and-pricing)，并经 2026 年 1–2 月实际账单校准。
+定价规则以 [Cursor Models & Pricing](https://cursor.com/docs/models-and-pricing) 为准；月度 CSV 用于验证总量。非官方文档项见 [`cursor_usage/pricing_sources.py`](cursor_usage/pricing_sources.py) 与 [`docs/spec.md`](docs/spec.md) §3.1。
 
 Dashboard **Total spend** = Included + On-demand + Free（当前样例中 On-demand 均为 0）。详见 [`docs/spec.md`](docs/spec.md)。
 
@@ -73,11 +73,14 @@ cursor-usage "examples/February - US\$46.57.csv" --json
 |------|-------|------------|--------|-----|
 | auto | $1.25/M | $0.25/M | $6/M | Auto+Composer |
 | composer-1 | $1.25/M | $0.125/M | $10/M | Auto+Composer |
+| composer-2 / composer-2-fast | $0.5/M | $0.2/M | $2.5/M | Auto+Composer |
 | composer-2.5-fast | $3/M | $0.5/M | $15/M | Auto+Composer |
 | gpt-5.2-codex / gpt-5.3-codex | $1.75/M | $0.175/M | $14/M | API |
+| gpt-5.4-medium | $2.5/M | $0.25/M | $15/M | API |
+| gpt-5.5-medium | $5/M | $0.5/M | $30/M | API |
 | gpt-5.3-codex-high | 同上 | 同上 | 同上 | API |
 | claude-4.5/4.6 sonnet thinking | $3/$3.75 CW | $0.3/M | $15/M* | API |
-| claude-4.6-opus-high-thinking | $5/$6.25 CW | $0.5/M | $25/M* | API |
+| claude-4.6-opus / claude-opus-4-7 thinking-high | $5/$6.25 CW | $0.5/M | $25/M* | API |
 | agent_review (Bugbot) | Auto 池 x 0.849 | | | API |
 
 \* Claude thinking：约 31% 的 output tokens 按 input 价计，其余按 output 价计。
@@ -90,7 +93,7 @@ cursor-usage-calculator/
 │   ├── pricing.py
 │   ├── calculator.py
 │   └── cli.py
-├── examples/          # 月度 golden CSV（January、February，后续追加）
+├── examples/          # 月度 golden CSV（January–April，后续追加）
 ├── docs/spec.md
 ├── tools/
 ├── pyproject.toml

@@ -1,8 +1,9 @@
 """Cursor model pricing rules (per million tokens, USD).
 
-Sources:
-- https://cursor.com/docs/models-and-pricing
-- Calibrated against January–March 2026 CSV exports.
+Primary source: https://cursor.com/docs/models-and-pricing
+Provenance / confidence: cursor_usage.pricing_sources
+
+Monthly CSV samples validate totals but must not override documented rates.
 """
 
 from __future__ import annotations
@@ -71,7 +72,7 @@ def parse_official_row_cost(value: str | None) -> float | None:
         return None
 
 AUTO_COMPOSER_MODELS = frozenset(
-    {"auto", "composer-1", "composer-2-fast", "composer-2.5-fast"}
+    {"auto", "composer-1", "composer-2", "composer-2-fast", "composer-2.5-fast"}
 )
 API_MODELS = frozenset(
     {
@@ -80,9 +81,11 @@ API_MODELS = frozenset(
         "gpt-5.3-codex",
         "gpt-5.3-codex-high",
         "gpt-5.4-medium",
+        "gpt-5.5-medium",
         "claude-4.5-sonnet-thinking",
         "claude-4.6-sonnet-medium-thinking",
         "claude-4.6-opus-high-thinking",
+        "claude-opus-4-7-thinking-high",
         "agent_review",
     }
 )
@@ -93,17 +96,17 @@ CLAUDE_THINKING_MODELS = frozenset(
         "claude-4.5-sonnet-thinking",
         "claude-4.6-sonnet-medium-thinking",
         "claude-4.6-opus-high-thinking",
+        "claude-opus-4-7-thinking-high",
     }
 )
 
-# Claude thinking: share of output tokens billed at input rate.
+# Claude thinking: share of output tokens billed at input rate (see RULE_SOURCES).
 CLAUDE_THINKING_OUTPUT_RATIO = 0.31
 
-# Bugbot agent_review (Included): Auto pool rates with this multiplier.
+# Bugbot agent_review (Included): Auto pool rates with this multiplier (see RULE_SOURCES).
 BUGBOT_AUTO_MULTIPLIER = 0.849
 
-# Bugbot agent_review (Free): January 2026 sample bills cache_read only at Auto pool rate.
-# If reconcile still shows a gap, official discount may be the cause — not a different rule.
+# Bugbot agent_review (Free): cache_read only at Auto pool rate (see RULE_SOURCES).
 BUGBOT_FREE_CACHE_READ_ONLY = True
 
 PRICING: Mapping[str, ModelPricing] = {
@@ -119,6 +122,13 @@ PRICING: Mapping[str, ModelPricing] = {
         cache_write=1.25,
         cache_read=0.125,
         output=10.0,
+        pool="auto_composer",
+    ),
+    "composer-2": ModelPricing(
+        input=0.5,
+        cache_write=0.5,
+        cache_read=0.2,
+        output=2.5,
         pool="auto_composer",
     ),
     "composer-2-fast": ModelPricing(
@@ -170,6 +180,13 @@ PRICING: Mapping[str, ModelPricing] = {
         output=15.0,
         pool="api",
     ),
+    "gpt-5.5-medium": ModelPricing(
+        input=5.0,
+        cache_write=5.0,
+        cache_read=0.5,
+        output=30.0,
+        pool="api",
+    ),
     "claude-4.5-sonnet-thinking": ModelPricing(
         input=3.0,
         cache_write=3.75,
@@ -185,6 +202,13 @@ PRICING: Mapping[str, ModelPricing] = {
         pool="api",
     ),
     "claude-4.6-opus-high-thinking": ModelPricing(
+        input=5.0,
+        cache_write=6.25,
+        cache_read=0.5,
+        output=25.0,
+        pool="api",
+    ),
+    "claude-opus-4-7-thinking-high": ModelPricing(
         input=5.0,
         cache_write=6.25,
         cache_read=0.5,
