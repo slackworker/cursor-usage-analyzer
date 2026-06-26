@@ -71,10 +71,11 @@ cursor-usage "examples/February - US\$46.57.csv" --json
 
 | 模型 | Input | Cache Read | Output | 池 |
 |------|-------|------------|--------|-----|
-| auto | $1.25/M | $0.25/M | $6/M | Auto+Composer |
-| composer-1 | $1.25/M | $0.125/M | $10/M | Auto+Composer |
-| composer-2 / composer-2-fast | $0.5/M | $0.2/M | $2.5/M | Auto+Composer |
-| composer-2.5-fast | $3/M | $0.5/M | $15/M | Auto+Composer |
+| auto | $1.25/M | $0.25/M | $6/M | Auto+Composer（Auto pricing 表） |
+| composer-1 | $1.25/M | $0.125/M | $10/M | Auto+Composer（API Model pricing 表） |
+| composer-2 | $0.5/M | $0.2/M | $2.5/M | Auto+Composer（API Model pricing 表） |
+| composer-2-fast | $1/M | $0.4/M | $5/M | Auto+Composer（2× Composer 2） |
+| composer-2.5-fast | $3/M | $0.5/M | $15/M | Auto+Composer（[Composer pricing 表](https://cursor.com/docs/models-and-pricing#composer-pricing) → Composer 2.5 **Fast**） |
 | gpt-5.2-codex / gpt-5.3-codex | $1.75/M | $0.175/M | $14/M | API |
 | gpt-5.4-medium | $2.5/M | $0.25/M | $15/M | API |
 | gpt-5.5-medium | $5/M | $0.5/M | $30/M | API |

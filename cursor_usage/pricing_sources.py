@@ -2,6 +2,9 @@
 
 Official rates: https://cursor.com/docs/models-and-pricing
 
+Two doc tables: (1) Auto + Composer pool — Auto pricing + Composer pricing
+(#composer-pricing); (2) API pool — Model pricing. composer-2.5-fast is in (1).
+
 When the doc shows "-" for cache write, we bill cache write at the input rate
 (same convention as GPT-5.2, Composer 1, etc. in this codebase).
 """
@@ -55,12 +58,12 @@ MODEL_SOURCES: dict[str, PricingSource] = {
     "composer-2-fast": PricingSource(
         PricingConfidence.SLUG_MAPPED,
         "Composer 2",
-        'CSV slug "composer-2-fast" → Composer 2 doc row ($0.5 / $0.2 / $2.5)',
+        'CSV slug "composer-2-fast" → 2× Composer 2 doc row ($1 / $0.4 / $5); Fast 变体惯例',
     ),
     "composer-2.5-fast": PricingSource(
-        PricingConfidence.SLUG_MAPPED,
-        "Composer 2.5 (Fast)",
-        'CSV slug "composer-2.5-fast" → Auto+Composer pool table row ($3 / $0.5 / $15)',
+        PricingConfidence.OFFICIAL_DOC,
+        "Composer pricing → Composer 2.5 (Fast)",
+        'CSV slug "composer-2.5-fast" → #composer-pricing table ($3 / $0.5 / $15); not API-table Composer 2.5',
     ),
     "gpt-5.2": PricingSource(
         PricingConfidence.OFFICIAL_DOC,

@@ -3,6 +3,13 @@
 Primary source: https://cursor.com/docs/models-and-pricing
 Provenance / confidence: cursor_usage.pricing_sources
 
+Official doc has two pricing tables — do not conflate them:
+- Auto + Composer pool → Auto pricing + Composer pricing (#composer-pricing)
+- API pool → Model pricing (GPT, Claude, Composer 1/2/2.5 base rows, etc.)
+
+CSV slug composer-2.5-fast maps to Composer 2.5 (Fast) in the Composer pricing
+table ($3 / $0.5 / $15), NOT the Composer 2.5 row in the API model table.
+
 Monthly CSV samples validate totals but must not override documented rates.
 """
 
@@ -116,12 +123,13 @@ PRICING: Mapping[str, ModelPricing] = {
         pool="auto_composer",
     ),
     "composer-2-fast": ModelPricing(
-        input=0.5,
-        cache_write=0.5,
-        cache_read=0.2,
-        output=2.5,
+        input=1.0,
+        cache_write=1.0,
+        cache_read=0.4,
+        output=5.0,
         pool="auto_composer",
     ),
+    # Composer pricing table → Composer 2.5 (Fast); not the API-table Composer 2.5 row.
     "composer-2.5-fast": ModelPricing(
         input=3.0,
         cache_write=3.0,

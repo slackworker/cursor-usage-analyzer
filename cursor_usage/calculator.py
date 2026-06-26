@@ -17,6 +17,7 @@ from cursor_usage.pricing import (
     is_billable_kind,
     is_free_kind,
     normalize_kind,
+    parse_official_row_cost,
 )
 
 
@@ -96,6 +97,23 @@ def _parse_int(value: str | None) -> int:
     return int(value)
 
 
+def _resolve_row_cost(
+    row_cost_value: str | None,
+    model: str,
+    icw: int,
+    icwo: int,
+    cr: int,
+    out: int,
+    *,
+    kind: str = BILLABLE_KIND,
+) -> float:
+    """Use per-row USD in Cost when present; otherwise token formula."""
+    annotated = parse_official_row_cost(row_cost_value)
+    if annotated is not None:
+        return annotated
+    return _row_cost(model, icw, icwo, cr, out, kind=kind)
+
+
 def _row_cost(
     model: str,
     icw: int,
@@ -159,7 +177,9 @@ def analyze_csv(path: str | Path) -> UsageReport:
         out = _parse_int(row.get("Output Tokens"))
 
         if is_free_kind(kind) and model in PRICING:
-            cost = _row_cost(model, icw, icwo, cr, out, kind=kind)
+            cost = _resolve_row_cost(
+                row.get("Cost"), model, icw, icwo, cr, out, kind=kind
+            )
             pool = PRICING[model].pool
             free_rows += 1
             free_cost += cost
@@ -180,7 +200,9 @@ def analyze_csv(path: str | Path) -> UsageReport:
             row_costs.append(RowCost(date, model, kind, 0.0, tokens, False))
             continue
 
-        cost = _row_cost(model, icw, icwo, cr, out, kind=kind)
+        cost = _resolve_row_cost(
+            row.get("Cost"), model, icw, icwo, cr, out, kind=kind
+        )
 
         pool = PRICING[model].pool
         billable_rows += 1

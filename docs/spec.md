@@ -2,7 +2,7 @@
 
 本文档记录经冒烟测试与官方数据对比后**已确认**的结论，供 Web 化各模块实现时引用。未确认项标注为「待决」。
 
-**最后更新**：2026-06-26（Total spend 模型 + January–April 校准）
+**最后更新**：2026-06-26（Total spend 模型 + January–May 校准说明）
 
 ---
 
@@ -30,8 +30,9 @@
 | [`February - US$46.57.csv`](../examples/February%20-%20US$46.57.csv) | $46.57 | 全 `Included`，格式 A |
 | [`March - US$69.94.csv`](../examples/March%20-%20US$69.94.csv) | $69.94 | 混有 `Included` + `free`，格式 A/B |
 | [`April - US$137.09.csv`](../examples/April%20-%20US$137.09.csv) | $137.09 | 全 `Included`，格式 A |
+| [`May - US$92.01.csv`](../examples/May%20-%20US$92.01.csv) | $92.01 | 含活动价、空档与混合格式；见 §8 |
 
-后续将追加 May 等月度样例（命名约定：`{Month} - US${total}.csv`）。
+后续将追加更多月度样例（命名约定：`{Month} - US${total}.csv`）。
 
 ### 列名（首行表头）
 
@@ -70,6 +71,8 @@ Total spend = Included + On-demand + Free
 
 格式 B 可用于 golden 逐行对账：`cursor-usage file.csv --reconcile`（见 [`reconcile.py`](../cursor_usage/reconcile.py)）。
 
+**Cost 列有美元金额时**：合计与按模型汇总**优先采用该行标注金额**，不再对该行做 token 公式推算（见 [`calculator.py`](../cursor_usage/calculator.py) 的 `_resolve_row_cost()`）。`--reconcile` 仍会用 token 公式与标注价比对，用于发现折扣或活动价。
+
 ### 计费过滤规则
 
 - `Kind = Included` → `total_cost`
@@ -77,9 +80,16 @@ Total spend = Included + On-demand + Free
 - 跳过：`Errored, No Charge`、`Aborted, Not Charged`（计入 `skipped_rows`）
 - 模型必须在 [`cursor_usage/pricing.py`](../cursor_usage/pricing.py) 的 `PRICING` 中，否则记入 `unknown_models`
 
-### 官方折扣（待决）
+### 官方折扣与活动价
 
-官方可能对部分用量打折；CSV 中**未必有独立折扣列**，仅体现为 `Cost` 低于 token 公式推算。对账时若 `官方 < 推算`，可能是折扣、不同计费规则或逐行四舍五入，**不能单凭一行断定**（`reconcile` 模块会标注 `possible_discount`）。
+官方可能对部分用量打折或做短期活动（如 2026 年 5 月初 **GPT-5.5 半价**）；CSV 中**未必有独立折扣列**，可能仅体现为 Dashboard Total 低于按文档费率的 token 推算。
+
+| 原则 | 说明 |
+|------|------|
+| 推算费率 | **始终以 [官方文档](https://cursor.com/docs/models-and-pricing) 费率为准**，不为拟合 Dashboard Total 而改价 |
+| 高于官方 | 活动期间推算 **高于** 官方 Total 属**正常**；样例文件须在 § 校准节注明差异原因 |
+| Cost 有金额 | 以 CSV 标注价计入合计；`--reconcile` 可与 token 公式对比标注 `possible_discount` |
+| 不能单凭一行断定 | 官方低于 token 推算时，可能是折扣、活动价或逐行四舍五入 |
 
 ---
 
@@ -89,11 +99,15 @@ Total spend = Included + On-demand + Free
 
 置信度与出处见 [`cursor_usage/pricing_sources.py`](../cursor_usage/pricing_sources.py) 与下方 §3.1。
 
+官方文档有**两张费率表**，勿混用：[Auto + Composer 池](https://cursor.com/docs/models-and-pricing#composer-pricing)（含 Auto pricing、**Composer pricing**）与 [API 池 Model pricing](https://cursor.com/docs/models-and-pricing)。
+
 | 模型 | 池 | 备注 |
 |------|-----|------|
-| auto | auto_composer | 官方 Auto 池（$1.25 / $0.25 / $6） |
-| composer-1, composer-2, composer-2.5-fast | auto_composer | 见官方 Composer / API 表 |
-| composer-2-fast | auto_composer | CSV slug → 官方 **Composer 2** 行 |
+| auto | auto_composer | Auto pricing 表（$1.25 / $0.25 / $6） |
+| composer-1 | auto_composer | API Model pricing 表 → Composer 1 |
+| composer-2 | auto_composer | API Model pricing 表 → Composer 2（$0.5 / $0.2 / $2.5） |
+| composer-2-fast | auto_composer | CSV slug → **2× Composer 2**（$1 / $0.4 / $5）；API 表无独立 Fast 行 |
+| composer-2.5-fast | auto_composer | **Composer pricing 表** → **Composer 2.5 (Fast)**（$3 / $0.5 / $15）；非 API 表 Composer 2.5 行 |
 | gpt-5.2, gpt-5.2-codex, gpt-5.3-codex, gpt-5.3-codex-high | api | 官方 GPT-5.2 / 5.3 Codex |
 | gpt-5.4-medium | api | CSV slug → 官方 **GPT-5.4**（$2.5 / $0.25 / $15） |
 | gpt-5.5-medium | api | CSV slug → 官方 **GPT-5.5**（$5 / $0.5 / $30） |
@@ -106,7 +120,8 @@ Total spend = Included + On-demand + Free
 
 | 项 | 置信度 | 说明 |
 |----|--------|------|
-| `composer-2.5-fast` 费率 $3 / $0.5 / $15 | **slug_mapped** | CSV slug → 官方 **Composer 2.5 (Fast)**（Auto+Composer 池表） |
+| `composer-2-fast` 费率 2× Composer 2 | **slug_mapped** | API Model pricing 无独立行；CSV slug + Fast 变体惯例（同 GPT-5 Fast = 2× GPT-5） |
+| `composer-2.5-fast` 费率 | **official_doc** | Composer **pricing** 表（`#composer-pricing`）→ Composer 2.5 **(Fast)**（$3 / $0.5 / $15）；勿与 API 表 Composer 2.5（$0.5 / $0.2 / $2.5）混淆 |
 | `agent_review` 计费 | **csv_inferred** | 同 Auto 池四列公式；无官方 Bugbot per-token 行 |
 | `AGENT_REVIEW_DISCOUNT_RATIO` | **unconfirmed** | 默认 1.0；若样本显示折扣可调整（January 1 行官方低于推算） |
 | CSV slug 映射（如 `gpt-5.4-medium` → GPT-5.4、`claude-4.6-sonnet-medium-thinking` → Claude 4.6 Sonnet） | **slug_mapped** | 费率来自文档对应行，slug 为 thinking effort / 档位变体 |
@@ -179,10 +194,10 @@ cursor-usage "examples/February - US\$46.57.csv"
 | 日期范围 | 2026-03-01 ~ 2026-03-31 |
 | 总行数 / Included / Free | 662 / 618 / 31 |
 | 跳过行 | Errored, No Charge=13 |
-| 推算 `total_cost` | **$67.40** |
+| 推算 `total_cost` | **$67.74** |
 | 推算 `free_cost` | **$3.05** |
-| 推算 `total_cost_with_free` | **$70.45** |
-| 与官方差额 | **$0.51**（约 **0.7%**，推算略高；含 agent_review 纯 Auto 假设） |
+| 推算 `total_cost_with_free` | **$70.79** |
+| 与官方差额 | **$0.85**（约 **1.2%**，推算略高） |
 
 ### 新增模型（March 首次出现）
 
@@ -190,7 +205,7 @@ cursor-usage "examples/February - US\$46.57.csv"
 |------|------------------|----------|-----|----------|
 | gpt-5.4-medium | 93 | $17.77 | api | 官方 GPT-5.4（$2.5 / $0.25 / $15） |
 | gpt-5.2 | 34 | $6.20 | api | 官方 GPT-5.2 |
-| composer-2-fast | 6 | $0.33 | auto_composer | 官方 Composer 2（$0.5 / $0.2 / $2.5） |
+| composer-2-fast | 6 | $0.67 | auto_composer | 2× Composer 2（$1 / $0.4 / $5） |
 
 ### 按模型（推算 Included 费用，节选）
 
@@ -201,11 +216,11 @@ cursor-usage "examples/February - US\$46.57.csv"
 | gpt-5.2 | 34 | $6.20 | api |
 | gpt-5.3-codex | 15 | $2.19 | api |
 | agent_review | 2 | $2.37 | api |
-| composer-2-fast | 6 | $0.33 | auto_composer |
+| composer-2-fast | 6 | $0.67 | auto_composer |
 
 ```bash
 cursor-usage "examples/March - US\$69.94.csv"
-# 推算 total_cost_with_free: $70.45，无 unknown_models
+# 推算 total_cost_with_free: $70.79，无 unknown_models
 ```
 
 ---
@@ -219,8 +234,8 @@ cursor-usage "examples/March - US\$69.94.csv"
 | 日期范围 | 2026-04-01 ~ 2026-04-30 |
 | 总行数 / Included | 1266 / 1256 |
 | 跳过行 | Errored, No Charge=6、Aborted, Not Charged=4 |
-| 推算 `total_cost` | **$138.64** |
-| 与官方差额 | **$1.55**（约 **1.1%**，推算略高） |
+| 推算 `total_cost` | **$139.26** |
+| 与官方差额 | **$2.17**（约 **1.6%**，推算略高） |
 
 ### 新增模型（April 首次出现）
 
@@ -239,31 +254,55 @@ cursor-usage "examples/March - US\$69.94.csv"
 | auto | 1049 | $87.58 | auto_composer |
 | gpt-5.4-medium | 176 | $43.49 | api |
 | gpt-5.5-medium | 10 | $4.95 | api |
-| composer-2-fast | 15 | $0.62 | auto_composer |
+| composer-2-fast | 15 | $1.24 | auto_composer |
 | composer-2 | 5 | $0.73 | auto_composer |
 | claude-opus-4-7-thinking-high | 1 | $1.28 | api |
 
 ```bash
 cursor-usage "examples/April - US\$137.09.csv"
-# 推算 total_cost: $138.64，无 unknown_models
+# 推算 total_cost: $139.26，无 unknown_models
 ```
 
 ---
 
-## 8. 回归 Golden Values
+## 8. May 校准（`examples/May - US$92.01.csv`）
+
+官方 **Total spend $92.01**。当月结构特殊：5/1–5/4 集中使用后 **23 天空档**（5/6–5/26 无 Included），5/28 起恢复；含大量 `Free` 行，Cost 列混用格式 A（`Included` / `Free`）与格式 B（美元金额）。
+
+### 与官方 Total 的差异（已确认原因）
+
+本工具按**文档全价**推算，**不**模拟官方短期活动，故推算可**高于** Dashboard Total。
+
+| 因素 | 说明 |
+|------|------|
+| **GPT-5.5 半价活动** | 5/1、5/3 官方按半价计费；我们仍用 GPT-5.5 文档全价（$5 / $0.5 / $30）。Seg1（$38.03）中 GPT 部分约多算 **$6.21** |
+| **auto** | 文档费率与官方逐日一致；5/4–5/5 官方按模型日汇总时 **含 Free 行** |
+| **composer-2-fast** | 按 **2× Composer 2** 费率（$1 / $0.4 / $5）；5/3–5/4 与官方日合计对齐 |
+| **Cost 有美元金额的行** | 计入合计时**以标注价为准**（5/4–5/5 部分 Free 行）；无标注价的行仍用 token 公式 |
+
+Seg1 官方日合计（用户核对）：5/1 $7.08、5/2 $17.36、5/3 $8.57、5/4 $3.95、5/5 $1.07 → **$38.03**。
+
+```bash
+cursor-usage "examples/May - US\$92.01.csv"
+# 推算 total_cost（文档全价）高于 Seg1 官方属预期；见上表
+```
+
+---
+
+## 9. 回归 Golden Values
 
 | 样例 | 对账字段 | 官方 Total | 推算值 | 差额 |
 |------|----------|-----------|--------|------|
 | January | `total_cost_with_free` | $1.61 | $1.73 | $0.12 |
 | February | `total_cost` | $46.57 | $46.49 | $0.08 |
-| March | `total_cost_with_free` | $69.94 | $70.45 | $0.51 |
-| April | `total_cost` | $137.09 | $138.64 | $1.55 |
+| March | `total_cost_with_free` | $69.94 | $70.79 | $0.85 |
+| April | `total_cost` | $137.09 | $139.26 | $2.17 |
 
 January 另经 `--reconcile` 验证：auto 6/6 行在 ±$0.01 容差内；agent_review 1 行官方低于推算（`possible_discount`）。
 
 ---
 
-## 9. M0 冒烟结论
+## 10. M0 冒烟结论
 
 | 检查项 | 结果 |
 |--------|------|
@@ -272,9 +311,9 @@ January 另经 `--reconcile` 验证：auto 6/6 行在 ±$0.01 容差内；agent_
 | January Total vs $1.61 | 通过（$1.73，差 $0.12；agent_review 可能折扣） |
 | January `--reconcile` | auto 6/6 行通过；agent_review 1 行 `possible_discount` |
 | February Total vs $46.57 | 通过（$46.49，差 0.2%） |
-| March Total vs $69.94 | 通过（$70.45，差 0.7%） |
+| March Total vs $69.94 | 通过（$70.79，差 1.2%） |
 | March 模型覆盖 | 通过（无 unknown_models） |
-| April Total vs $137.09 | 通过（$138.64，差 1.1%，文档费率） |
+| April Total vs $137.09 | 通过（$139.26，差 1.6%，文档费率） |
 | April 模型覆盖 | 通过（无 unknown_models） |
 | Kind 大小写 | 通过（`free` / `Free` / `Included`） |
 | JSON 输出 | 通过（`--json` 结构完整） |
@@ -284,7 +323,7 @@ January 另经 `--reconcile` 验证：auto 6/6 行在 ±$0.01 容差内；agent_
 
 ---
 
-## 10. Web 阶段待决
+## 11. Web 阶段待决
 
 | 项 | 状态 |
 |----|------|
@@ -296,11 +335,11 @@ January 另经 `--reconcile` 验证：auto 6/6 行在 ±$0.01 容差内；agent_
 
 ---
 
-## 11. 模块路线图
+## 12. 模块路线图
 
 ```
-M0 冒烟 + spec（January–April）  ← 当前
-     → 追加 May 样例与 golden
+M0 冒烟 + spec（January–April，May 已追加样例与 §8 差异说明）  ← 当前
+     → May golden（容忍活动价导致的总量偏高）
 M1  daily 聚合 + 统一 JSON schema
 M2  FastAPI POST/GET
 M3  临时存储 + TTL
