@@ -19,6 +19,7 @@ from cursor_usage.calculator import (
     pool_free_cost,
 )
 from cursor_usage.pricing import BILLABLE_KIND, FREE_KIND
+from cursor_usage.reconcile import DISCOUNT_NOTE, reconcile_csv
 
 
 def _print_report(report: UsageReport) -> None:
@@ -55,6 +56,67 @@ def _print_report(report: UsageReport) -> None:
     if report.free_rows:
         print(f"{FREE_KIND} 额度消耗（推算）:       ${report.free_cost:.2f}  ({report.free_rows} 行)")
         print(f"合计（含 {FREE_KIND} 额度）:         ${report.total_cost_with_free:.2f}")
+
+
+def _print_reconcile(path: Path) -> int:
+    result = reconcile_csv(path)
+    if not result.has_official_costs:
+        print("官方对账: Cost 列无美元金额（仅为 Included/Free 状态），跳过逐行比对。")
+        return 0
+
+    print()
+    print("官方对账（Cost 列为美元金额的行）:")
+    print(f"  可比行数: {result.official_rows}")
+    print(
+        f"  官方合计: ${result.official_total:.2f}  "
+        f"推算合计(逐行四舍五入): ${result.calculated_total_rounded:.2f}  "
+        f"差额: ${result.calculated_total_rounded - result.official_total:+.2f}"
+    )
+    mismatches = result.mismatch_rows
+    if mismatches:
+        print(f"  超差行数: {len(mismatches)}（容差 ±$0.01/行）")
+        for row in mismatches:
+            print(
+                f"    {row.date} {row.model} ({row.kind}): "
+                f"官方 ${row.official_cost:.2f}  推算 ${row.calculated_cost_rounded:.2f}  "
+                f"Δ {row.delta:+.2f}"
+            )
+            if row.note:
+                print(f"      → {row.note}")
+    else:
+        print("  逐行比对: 全部在容差内")
+
+    discounts = result.possible_discount_rows
+    if discounts and not mismatches:
+        print(f"  注: {DISCOUNT_NOTE}")
+    return 1 if mismatches else 0
+
+
+def _reconcile_to_json(path: Path) -> dict:
+    result = reconcile_csv(path)
+    return {
+        "has_official_costs": result.has_official_costs,
+        "official_rows": result.official_rows,
+        "official_total": round(result.official_total, 4),
+        "calculated_total_rounded": round(result.calculated_total_rounded, 4),
+        "delta": round(result.calculated_total_rounded - result.official_total, 4),
+        "mismatch_count": len(result.mismatch_rows),
+        "rows": [
+            {
+                "date": r.date,
+                "model": r.model,
+                "kind": r.kind,
+                "official_cost": r.official_cost,
+                "calculated_cost": round(r.calculated_cost, 4),
+                "calculated_cost_rounded": r.calculated_cost_rounded,
+                "delta": round(r.delta, 4),
+                "within_tolerance": r.within_tolerance,
+                "possible_discount": r.possible_discount,
+                "note": r.note,
+            }
+            for r in result.rows
+        ],
+    }
 
 
 def _print_limits(result) -> None:
@@ -179,6 +241,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="以 JSON 格式输出结果",
     )
+    parser.add_argument(
+        "--reconcile",
+        action="store_true",
+        help="与 Cost 列美元金额逐行对账（若有）；超差时 exit 1",
+    )
     return parser
 
 
@@ -220,7 +287,12 @@ def main(argv: list[str] | None = None) -> int:
         limits_result = apply_limits(report, limits)
 
     if args.json:
-        print(json.dumps(_to_json(report, limits_result), ensure_ascii=False, indent=2))
+        payload = _to_json(report, limits_result)
+        if args.reconcile:
+            payload["reconcile"] = _reconcile_to_json(args.csv)
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        if args.reconcile and payload.get("reconcile", {}).get("mismatch_count", 0) > 0:
+            return 1
         return 0
 
     _print_report(report)
@@ -233,7 +305,10 @@ def main(argv: list[str] | None = None) -> int:
             )
         _print_limits(limits_result)
 
-    return 0
+    exit_code = 0
+    if args.reconcile:
+        exit_code = _print_reconcile(args.csv)
+    return exit_code
 
 
 if __name__ == "__main__":

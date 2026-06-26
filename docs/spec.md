@@ -2,7 +2,7 @@
 
 本文档记录经冒烟测试与官方数据对比后**已确认**的结论，供 Web 化各模块实现时引用。未确认项标注为「待决」。
 
-**最后更新**：2026-06-26（M0 冒烟）
+**最后更新**：2026-06-26（February 校准 + 新模型定价）
 
 ---
 
@@ -22,7 +22,7 @@
 
 来源：Cursor Dashboard → Export usage events CSV。
 
-**样例文件**：[`examples/User1.csv`](../examples/User1.csv)、[`examples/User2.csv`](../examples/User2.csv)
+**样例文件**：[`examples/User1.csv`](../examples/User1.csv)、[`examples/User2.csv`](../examples/User2.csv)、[`examples/January - US$1.61.csv`](../examples/January%20-%20US$1.61.csv)、[`examples/February - US$46.57.csv`](../examples/February%20-%20US$46.57.csv)
 
 ### 列名（首行表头）
 
@@ -32,11 +32,26 @@ Input (w/ Cache Write), Input (w/o Cache Write), Cache Read,
 Output Tokens, Total Tokens, Cost
 ```
 
+### Kind 与 Cost 列（两种导出格式）
+
+| 格式 | 样例 | `Kind` | `Cost` 列含义 |
+|------|------|--------|---------------|
+| A | User1 / User2 / February | `Included` / `Free`（首字母大写） | 计费**状态**（`Included`、`Free`、`-`） |
+| B | January | `free`（小写亦支持） | 逐行**美元金额**（如 `0.21`） |
+
+- `Kind` 匹配**大小写不敏感**（`normalize_kind()`）
+- 格式 B 可用于 golden 对账：`cursor-usage file.csv --reconcile`（见 [`reconcile.py`](../cursor_usage/reconcile.py)）
+
 ### 计费过滤规则
 
-- 仅统计 `Kind = Included` 的行（常量 `BILLABLE_KIND`）
-- 跳过：`Free`、`Errored, No Charge`、`Aborted, Not Charged`（计入 `skipped_rows`，不计费）
+- 仅统计 `Kind = Included` 的行（常量 `BILLABLE_KIND`）→ `total_cost`（套餐付费额度）
+- `Kind = Free`：计入 `free_cost`（免费额度消耗推算），汇总为 `total_cost_with_free`
+- 跳过：`Errored, No Charge`、`Aborted, Not Charged`（计入 `skipped_rows`）
 - 模型必须在 [`cursor_usage/pricing.py`](../cursor_usage/pricing.py) 的 `PRICING` 中，否则记入 `unknown_models`
+
+### 官方折扣（待决）
+
+官方可能对部分用量打折；CSV 中**未必有独立折扣列**，仅体现为 `Cost` 低于 token 公式推算。对账时若 `官方 < 推算`，可能是折扣、不同计费规则或逐行四舍五入，**不能单凭一行断定**（`reconcile` 模块会标注 `possible_discount`）。
 
 ---
 
@@ -46,13 +61,62 @@ Output Tokens, Total Tokens, Cost
 
 | 模型 | 池 | 备注 |
 |------|-----|------|
-| auto, composer-2.5-fast | auto_composer | 标准按百万 token 计价 |
-| gpt-5.3-codex, gpt-5.3-codex-high, claude-4.6-sonnet-medium-thinking | api | Claude：约 31% output 按 input 价 |
-| agent_review | api | Bugbot：Auto 池费率 × 0.849 |
+| auto, composer-1, composer-2.5-fast | auto_composer | 标准按百万 token 计价 |
+| gpt-5.2-codex, gpt-5.3-codex, gpt-5.3-codex-high | api | 同费率（$1.75 / $0.175 / $14 per M） |
+| claude-4.5-sonnet-thinking, claude-4.6-sonnet-medium-thinking | api | Claude：约 31% output 按 input 价 |
+| claude-4.6-opus-high-thinking | api | Opus 费率（$5 / $6.25 CW / $0.5 / $25）；thinking 规则同上 |
+| agent_review | api | `Included`：Auto 池 × 0.849；`Free`：仅 Cache Read @ Auto 池费率（January 校准，待更多样本） |
 
 ---
 
-## 4. 基准校准（User1）
+## 4. January 校准（`examples/January - US$1.61.csv`）
+
+官方合计 **$1.61**（Cost 列求和 $1.60，差 $0.01 为四舍五入）。
+
+| 模型 | 结论 |
+|------|------|
+| **auto**（6 行） | 文档费率完全对齐，逐行 ±$0.01 |
+| **agent_review**（1 行） | `Free` 行仅计 Cache Read；若用 Included 规则会高估 +$0.08 |
+
+```bash
+cursor-usage "examples/January - US\$1.61.csv" --reconcile
+# 8 行全部在 ±$0.01 容差内
+```
+
+---
+
+## 5. February 校准（`examples/February - US$46.57.csv`）
+
+官方合计 **$46.57**（Dashboard 月度 on-demand / Included 用量）。Cost 列为 `Included` 状态（格式 A），无法逐行对账，仅能做**总量校准**。
+
+| 指标 | 值 |
+|------|-----|
+| 日期范围 | 2026-02-03 ~ 2026-02-28 |
+| 总行数 / 计费行 | 455 / 455 |
+| 推算总费用 | **$46.32** |
+| 与官方差额 | **$0.25**（约 **0.5%**，官方略高） |
+
+### 新发现模型（此前未覆盖，占差额主体）
+
+| 模型 | 行数 | 推算费用 | 池 | 费率来源 |
+|------|------|----------|-----|----------|
+| gpt-5.2-codex | 58 | $7.74 | API | 同 gpt-5.3-codex |
+| claude-4.5-sonnet-thinking | 8 | $1.75 | API | 同 Sonnet thinking |
+| claude-4.6-opus-high-thinking | 1 | $0.87 | API | Opus $5/$25 + thinking 规则 |
+| composer-1 | 1 | $0.05 | Auto+Composer | $1.25 / $0.125 / $10 |
+
+未覆盖时仅统计已知模型合计 **$35.91**，差额 **$10.66**（22.9%）——主要来自上述 68 行 `Included` 被跳过。
+
+```bash
+cursor-usage "examples/February - US\$46.57.csv"
+# 推算费用: $46.32，无 unknown_models
+```
+
+**附注**：[`examples/February - US$48.18.csv`](../examples/February%20-%20US$48.18.csv) 为同月数据末尾追加 January 8 行 `free`（$1.61），合计 $46.57 + $1.61 ≈ $48.18。
+
+---
+
+## 6. 基准校准（User1）
 
 ### 官方参考（Cursor 控制台）
 
@@ -90,7 +154,7 @@ api_limit           = 44.39 / 0.99 = $44.84
 
 ---
 
-## 5. 回归 Golden Values
+## 7. 回归 Golden Values
 
 ### User1 按模型费用（USD）
 
@@ -136,7 +200,7 @@ User2 官方对比数据：待用户补充后可追加本表。
 
 ---
 
-## 6. M0 冒烟结论
+## 8. M0 冒烟结论
 
 | 检查项 | 结果 |
 |--------|------|
@@ -146,12 +210,15 @@ User2 官方对比数据：待用户补充后可追加本表。
 | baseline → 额度反推 | 通过（$144.52 / $44.84） |
 | User2 全链路使用率 | 通过（CLI 可输出双池 %） |
 | JSON 输出 | 通过（`--json` 结构完整） |
+| January golden + `--reconcile` | 通过（8/8 行） |
+| February golden（$46.57 总量） | 通过（推算 $46.32，差 0.5%） |
+| Kind 大小写 | 通过（`free` / `Free`） |
 
 **M0 状态：通过**（含已知定价偏差），可进入 M1。
 
 ---
 
-## 7. Web 阶段待决
+## 9. Web 阶段待决
 
 | 项 | 状态 |
 |----|------|
@@ -162,7 +229,7 @@ User2 官方对比数据：待用户补充后可追加本表。
 
 ---
 
-## 8. 模块路线图
+## 10. 模块路线图
 
 ```
 M0 冒烟 + spec  ← 当前

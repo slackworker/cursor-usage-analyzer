@@ -69,10 +69,12 @@ cursor-usage User2.csv --baseline User1.csv --auto-composer-usage 0.95 --api-usa
 | 模型 | Input | Cache Read | Output | 池 |
 |------|-------|------------|--------|-----|
 | auto | $1.25/M | $0.25/M | $6/M | Auto+Composer |
+| composer-1 | $1.25/M | $0.125/M | $10/M | Auto+Composer |
 | composer-2.5-fast | $3/M | $0.5/M | $15/M | Auto+Composer |
-| gpt-5.3-codex | $1.75/M | $0.175/M | $14/M | API |
+| gpt-5.2-codex / gpt-5.3-codex | $1.75/M | $0.175/M | $14/M | API |
 | gpt-5.3-codex-high | 同上 | 同上 | 同上 | API |
-| claude-4.6-sonnet-medium-thinking | $3/$3.75 CW | $0.3/M | $15/M* | API |
+| claude-4.5/4.6 sonnet thinking | $3/$3.75 CW | $0.3/M | $15/M* | API |
+| claude-4.6-opus-high-thinking | $5/$6.25 CW | $0.5/M | $25/M* | API |
 | agent_review (Bugbot) | Auto 池 x 0.849 | | | API |
 
 \* Claude thinking：约 31% 的 output tokens 按 input 价计，其余按 output 价计。

@@ -11,10 +11,15 @@ from typing import Iterable
 from cursor_usage.pricing import (
     BILLABLE_KIND,
     BUGBOT_AUTO_MULTIPLIER,
+    BUGBOT_FREE_CACHE_READ_ONLY,
+    CLAUDE_THINKING_MODELS,
     CLAUDE_THINKING_OUTPUT_RATIO,
     FREE_KIND,
     PRICING,
     ModelPricing,
+    is_billable_kind,
+    is_free_kind,
+    normalize_kind,
 )
 
 
@@ -94,8 +99,18 @@ def _parse_int(value: str | None) -> int:
     return int(value)
 
 
-def _row_cost(model: str, icw: int, icwo: int, cr: int, out: int) -> float:
-    if model == "claude-4.6-sonnet-medium-thinking":
+def _row_cost(
+    model: str,
+    icw: int,
+    icwo: int,
+    cr: int,
+    out: int,
+    *,
+    kind: str = BILLABLE_KIND,
+) -> float:
+    kind = normalize_kind(kind)
+
+    if model in CLAUDE_THINKING_MODELS:
         p = PRICING[model]
         think = int(out * CLAUDE_THINKING_OUTPUT_RATIO)
         regular = out - think
@@ -109,6 +124,8 @@ def _row_cost(model: str, icw: int, icwo: int, cr: int, out: int) -> float:
 
     if model == "agent_review":
         p = PRICING["auto"]
+        if kind == FREE_KIND and BUGBOT_FREE_CACHE_READ_ONLY:
+            return cr / 1e6 * p.cache_read
         base = (
             icw / 1e6 * p.cache_write
             + icwo / 1e6 * p.input
@@ -128,7 +145,8 @@ def _row_cost(model: str, icw: int, icwo: int, cr: int, out: int) -> float:
 
 def analyze_csv(path: str | Path) -> UsageReport:
     path = Path(path)
-    rows = list(csv.DictReader(path.open(newline="", encoding="utf-8")))
+    with path.open(newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
 
     skipped_rows: dict[str, int] = defaultdict(int)
     unknown_models: dict[str, int] = defaultdict(int)
@@ -145,19 +163,20 @@ def analyze_csv(path: str | Path) -> UsageReport:
 
     for row in rows:
         model = row.get("Model", "")
-        kind = row.get("Kind", "")
+        raw_kind = row.get("Kind", "")
+        kind = normalize_kind(raw_kind)
         date = (row.get("Date") or "")[:10]
         if date:
             dates.append(date)
 
         tokens = _parse_int(row.get("Total Tokens"))
+        icw = _parse_int(row.get("Input (w/ Cache Write)"))
+        icwo = _parse_int(row.get("Input (w/o Cache Write)"))
+        cr = _parse_int(row.get("Cache Read"))
+        out = _parse_int(row.get("Output Tokens"))
 
-        if kind == FREE_KIND and model in PRICING:
-            icw = _parse_int(row.get("Input (w/ Cache Write)"))
-            icwo = _parse_int(row.get("Input (w/o Cache Write)"))
-            cr = _parse_int(row.get("Cache Read"))
-            out = _parse_int(row.get("Output Tokens"))
-            cost = _row_cost(model, icw, icwo, cr, out)
+        if is_free_kind(kind) and model in PRICING:
+            cost = _row_cost(model, icw, icwo, cr, out, kind=kind)
             pool = PRICING[model].pool
             free_rows += 1
             free_cost += cost
@@ -168,7 +187,7 @@ def analyze_csv(path: str | Path) -> UsageReport:
             row_costs.append(RowCost(date, model, kind, cost, tokens, False))
             continue
 
-        if kind != BILLABLE_KIND:
+        if not is_billable_kind(kind):
             skipped_rows[kind or "(empty)"] += 1
             row_costs.append(RowCost(date, model, kind, 0.0, tokens, False))
             continue
@@ -178,11 +197,7 @@ def analyze_csv(path: str | Path) -> UsageReport:
             row_costs.append(RowCost(date, model, kind, 0.0, tokens, False))
             continue
 
-        icw = _parse_int(row.get("Input (w/ Cache Write)"))
-        icwo = _parse_int(row.get("Input (w/o Cache Write)"))
-        cr = _parse_int(row.get("Cache Read"))
-        out = _parse_int(row.get("Output Tokens"))
-        cost = _row_cost(model, icw, icwo, cr, out)
+        cost = _row_cost(model, icw, icwo, cr, out, kind=kind)
 
         pool = PRICING[model].pool
         billable_rows += 1
