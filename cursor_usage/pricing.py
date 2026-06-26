@@ -2,7 +2,7 @@
 
 Sources:
 - https://cursor.com/docs/models-and-pricing
-- Calibrated against January/February 2026 CSV exports.
+- Calibrated against January–March 2026 CSV exports.
 """
 
 from __future__ import annotations
@@ -70,12 +70,16 @@ def parse_official_row_cost(value: str | None) -> float | None:
     except ValueError:
         return None
 
-AUTO_COMPOSER_MODELS = frozenset({"auto", "composer-1", "composer-2.5-fast"})
+AUTO_COMPOSER_MODELS = frozenset(
+    {"auto", "composer-1", "composer-2-fast", "composer-2.5-fast"}
+)
 API_MODELS = frozenset(
     {
+        "gpt-5.2",
         "gpt-5.2-codex",
         "gpt-5.3-codex",
         "gpt-5.3-codex-high",
+        "gpt-5.4-medium",
         "claude-4.5-sonnet-thinking",
         "claude-4.6-sonnet-medium-thinking",
         "claude-4.6-opus-high-thinking",
@@ -117,12 +121,26 @@ PRICING: Mapping[str, ModelPricing] = {
         output=10.0,
         pool="auto_composer",
     ),
+    "composer-2-fast": ModelPricing(
+        input=0.5,
+        cache_write=0.5,
+        cache_read=0.2,
+        output=2.5,
+        pool="auto_composer",
+    ),
     "composer-2.5-fast": ModelPricing(
         input=3.0,
         cache_write=3.0,
         cache_read=0.5,
         output=15.0,
         pool="auto_composer",
+    ),
+    "gpt-5.2": ModelPricing(
+        input=1.75,
+        cache_write=1.75,
+        cache_read=0.175,
+        output=14.0,
+        pool="api",
     ),
     "gpt-5.2-codex": ModelPricing(
         input=1.75,
@@ -143,6 +161,13 @@ PRICING: Mapping[str, ModelPricing] = {
         cache_write=1.75,
         cache_read=0.175,
         output=14.0,
+        pool="api",
+    ),
+    "gpt-5.4-medium": ModelPricing(
+        input=2.5,
+        cache_write=2.5,
+        cache_read=0.25,
+        output=15.0,
         pool="api",
     ),
     "claude-4.5-sonnet-thinking": ModelPricing(
