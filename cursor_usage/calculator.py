@@ -9,11 +9,8 @@ from pathlib import Path
 from typing import Iterable
 
 from cursor_usage.pricing import (
+    AGENT_REVIEW_DISCOUNT_RATIO,
     BILLABLE_KIND,
-    BUGBOT_AUTO_MULTIPLIER,
-    BUGBOT_FREE_CACHE_READ_ONLY,
-    CLAUDE_THINKING_MODELS,
-    CLAUDE_THINKING_OUTPUT_RATIO,
     FREE_KIND,
     PRICING,
     ModelPricing,
@@ -110,29 +107,15 @@ def _row_cost(
 ) -> float:
     kind = normalize_kind(kind)
 
-    if model in CLAUDE_THINKING_MODELS:
-        p = PRICING[model]
-        think = int(out * CLAUDE_THINKING_OUTPUT_RATIO)
-        regular = out - think
-        return (
-            icw / 1e6 * p.cache_write
-            + icwo / 1e6 * p.input
-            + cr / 1e6 * p.cache_read
-            + think / 1e6 * p.input
-            + regular / 1e6 * p.output
-        )
-
     if model == "agent_review":
         p = PRICING["auto"]
-        if kind == FREE_KIND and BUGBOT_FREE_CACHE_READ_ONLY:
-            return cr / 1e6 * p.cache_read
         base = (
             icw / 1e6 * p.cache_write
             + icwo / 1e6 * p.input
             + cr / 1e6 * p.cache_read
             + out / 1e6 * p.output
         )
-        return base * BUGBOT_AUTO_MULTIPLIER
+        return base * AGENT_REVIEW_DISCOUNT_RATIO
 
     pricing: ModelPricing = PRICING[model]
     return (

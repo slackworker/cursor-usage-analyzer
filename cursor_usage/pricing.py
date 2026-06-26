@@ -90,24 +90,8 @@ API_MODELS = frozenset(
     }
 )
 
-# Claude thinking variants: share of output billed at input rate (see calculator).
-CLAUDE_THINKING_MODELS = frozenset(
-    {
-        "claude-4.5-sonnet-thinking",
-        "claude-4.6-sonnet-medium-thinking",
-        "claude-4.6-opus-high-thinking",
-        "claude-opus-4-7-thinking-high",
-    }
-)
-
-# Claude thinking: share of output tokens billed at input rate (see RULE_SOURCES).
-CLAUDE_THINKING_OUTPUT_RATIO = 0.31
-
-# Bugbot agent_review (Included): Auto pool rates with this multiplier (see RULE_SOURCES).
-BUGBOT_AUTO_MULTIPLIER = 0.849
-
-# Bugbot agent_review (Free): cache_read only at Auto pool rate (see RULE_SOURCES).
-BUGBOT_FREE_CACHE_READ_ONLY = True
+# Bugbot agent_review: same token formula as Auto pool, optional discount (see RULE_SOURCES).
+AGENT_REVIEW_DISCOUNT_RATIO = 1.0
 
 PRICING: Mapping[str, ModelPricing] = {
     "auto": ModelPricing(

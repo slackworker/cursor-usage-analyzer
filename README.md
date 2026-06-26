@@ -79,11 +79,9 @@ cursor-usage "examples/February - US\$46.57.csv" --json
 | gpt-5.4-medium | $2.5/M | $0.25/M | $15/M | API |
 | gpt-5.5-medium | $5/M | $0.5/M | $30/M | API |
 | gpt-5.3-codex-high | 同上 | 同上 | 同上 | API |
-| claude-4.5/4.6 sonnet thinking | $3/$3.75 CW | $0.3/M | $15/M* | API |
-| claude-4.6-opus / claude-opus-4-7 thinking-high | $5/$6.25 CW | $0.5/M | $25/M* | API |
-| agent_review (Bugbot) | Auto 池 x 0.849 | | | API |
-
-\* Claude thinking：约 31% 的 output tokens 按 input 价计，其余按 output 价计。
+| claude-4.5/4.6 sonnet thinking | $3/$3.75 CW | $0.3/M | $15/M | API |
+| claude-4.6-opus / claude-opus-4-7 thinking-high | $5/$6.25 CW | $0.5/M | $25/M | API |
+| agent_review (Bugbot) | 同 Auto 池四列计费；可选 `AGENT_REVIEW_DISCOUNT_RATIO` | | | API |
 
 ## 项目结构
 

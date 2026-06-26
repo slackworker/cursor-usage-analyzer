@@ -97,8 +97,8 @@ Total spend = Included + On-demand + Free
 | gpt-5.2, gpt-5.2-codex, gpt-5.3-codex, gpt-5.3-codex-high | api | 官方 GPT-5.2 / 5.3 Codex |
 | gpt-5.4-medium | api | CSV slug → 官方 **GPT-5.4**（$2.5 / $0.25 / $15） |
 | gpt-5.5-medium | api | CSV slug → 官方 **GPT-5.5**（$5 / $0.5 / $30） |
-| claude-*-thinking, claude-opus-4-7-thinking-high | api | 官方 Claude 行 + thinking 拆分规则（见 §3.1） |
-| agent_review | api | Bugbot 特殊规则（见 §3.1，**非文档 per-token 表**） |
+| claude-*-thinking, claude-opus-4-7-thinking-high | api | CSV slug → 官方 Claude 行（thinking effort 变体，费率同基座模型） |
+| agent_review | api | 同 Auto 池四列计费；可选 `AGENT_REVIEW_DISCOUNT_RATIO`（默认 1.0） |
 
 ### 3.1 费率置信度（非官方文档项须警惕）
 
@@ -106,12 +106,10 @@ Total spend = Included + On-demand + Free
 
 | 项 | 置信度 | 说明 |
 |----|--------|------|
-| `composer-2.5-fast` 费率 $3 / $0.5 / $15 | **csv_inferred** | 文档仅列 Composer 2.5 **标准**档（$0.5 / $0.2 / $2.5），无独立 Fast 行 |
-| `CLAUDE_THINKING_OUTPUT_RATIO` = 0.31 | **csv_inferred** | 文档无 thinking output 拆分说明；由 Jan–Feb 样本反推 |
-| `BUGBOT_AUTO_MULTIPLIER` = 0.849 | **csv_inferred** | Bugbot 无 per-token 定价行；Included 行 = Auto 池 × 0.849 |
-| `BUGBOT_FREE_CACHE_READ_ONLY` | **csv_reconciled** | Free 行仅计 Cache Read；January `--reconcile` 验证 1 行 |
-| `agent_review` 基费率 | **csv_inferred** | 借用 Auto 池费率 + 上述乘数，非 models 表直接条目 |
-| CSV slug 映射（如 `gpt-5.4-medium` → GPT-5.4） | **slug_mapped** | 费率来自文档对应行，slug 名称与文档显示名不同 |
+| `composer-2.5-fast` 费率 $3 / $0.5 / $15 | **slug_mapped** | CSV slug → 官方 **Composer 2.5 (Fast)**（Auto+Composer 池表） |
+| `agent_review` 计费 | **csv_inferred** | 同 Auto 池四列公式；无官方 Bugbot per-token 行 |
+| `AGENT_REVIEW_DISCOUNT_RATIO` | **unconfirmed** | 默认 1.0；若样本显示折扣可调整（January 1 行官方低于推算） |
+| CSV slug 映射（如 `gpt-5.4-medium` → GPT-5.4、`claude-4.6-sonnet-medium-thinking` → Claude 4.6 Sonnet） | **slug_mapped** | 费率来自文档对应行，slug 为 thinking effort / 档位变体 |
 
 **slug_mapped** 项费率本身来自官方表，仅模型 ID 映射需留意；**csv_inferred** 项在 CLI 输出中会附加「费率置信度提示」。
 
@@ -126,18 +124,18 @@ Total spend = Included + On-demand + Free
 | 指标 | 值 |
 |------|-----|
 | 行数 / Free 行 | 8 / 8 |
-| 推算 `free_cost` | **$1.59** |
-| 推算 `total_cost_with_free` | **$1.59** |
-| 与官方差额 | **$0.02**（约 1.2%） |
+| 推算 `free_cost` | **$1.73** |
+| 推算 `total_cost_with_free` | **$1.73** |
+| 与官方差额 | **$0.12**（约 7.5%，推算略高） |
 
 | 模型 | 结论 |
 |------|------|
 | **auto**（6 行） | 文档费率完全对齐，逐行 ±$0.01 |
-| **agent_review**（1 行） | `Free` 行仅计 Cache Read；若用 Included 规则会高估 +$0.08 |
+| **agent_review**（1 行） | 同 Auto 四列计费；官方 $0.21 < 推算 $0.35，`--reconcile` 标注 `possible_discount` |
 
 ```bash
 cursor-usage "examples/January - US\$1.61.csv" --reconcile
-# 8 行全部在 ±$0.01 容差内
+# 7/8 行在 ±$0.01 容差内；agent_review 1 行官方低于推算（可能折扣）
 ```
 
 ---
@@ -150,8 +148,8 @@ cursor-usage "examples/January - US\$1.61.csv" --reconcile
 |------|-----|
 | 日期范围 | 2026-02-03 ~ 2026-02-28 |
 | 总行数 / Included 行 | 455 / 455 |
-| 推算 `total_cost` | **$46.32** |
-| 与官方差额 | **$0.25**（约 **0.5%**，官方略高） |
+| 推算 `total_cost` | **$46.49** |
+| 与官方差额 | **$0.08**（约 **0.2%**，官方略高） |
 
 ### 按模型（推算 Included 费用）
 
@@ -160,14 +158,14 @@ cursor-usage "examples/January - US\$1.61.csv" --reconcile
 | auto | 290 | $24.75 | auto_composer |
 | gpt-5.3-codex | 89 | $9.42 | api |
 | gpt-5.2-codex | 58 | $7.74 | api |
-| claude-4.5-sonnet-thinking | 8 | $1.75 | api |
-| claude-4.6-sonnet-medium-thinking | 8 | $1.74 | api |
-| claude-4.6-opus-high-thinking | 1 | $0.87 | api |
+| claude-4.5-sonnet-thinking | 8 | $1.81 | api |
+| claude-4.6-sonnet-medium-thinking | 8 | $1.81 | api |
+| claude-4.6-opus-high-thinking | 1 | $0.91 | api |
 | composer-1 | 1 | $0.05 | auto_composer |
 
 ```bash
 cursor-usage "examples/February - US\$46.57.csv"
-# 推算费用: $46.32，无 unknown_models
+# 推算费用: $46.49，无 unknown_models
 ```
 
 ---
@@ -181,10 +179,10 @@ cursor-usage "examples/February - US\$46.57.csv"
 | 日期范围 | 2026-03-01 ~ 2026-03-31 |
 | 总行数 / Included / Free | 662 / 618 / 31 |
 | 跳过行 | Errored, No Charge=13 |
-| 推算 `total_cost` | **$67.05** |
+| 推算 `total_cost` | **$67.40** |
 | 推算 `free_cost` | **$3.05** |
-| 推算 `total_cost_with_free` | **$70.09** |
-| 与官方差额 | **$0.15**（约 **0.2%**，推算略高） |
+| 推算 `total_cost_with_free` | **$70.45** |
+| 与官方差额 | **$0.51**（约 **0.7%**，推算略高；含 agent_review 纯 Auto 假设） |
 
 ### 新增模型（March 首次出现）
 
@@ -202,12 +200,12 @@ cursor-usage "examples/February - US\$46.57.csv"
 | gpt-5.4-medium | 93 | $17.77 | api |
 | gpt-5.2 | 34 | $6.20 | api |
 | gpt-5.3-codex | 15 | $2.19 | api |
-| agent_review | 2 | $2.01 | api |
+| agent_review | 2 | $2.37 | api |
 | composer-2-fast | 6 | $0.33 | auto_composer |
 
 ```bash
 cursor-usage "examples/March - US\$69.94.csv"
-# 推算 total_cost_with_free: $70.09，无 unknown_models
+# 推算 total_cost_with_free: $70.45，无 unknown_models
 ```
 
 ---
@@ -221,8 +219,8 @@ cursor-usage "examples/March - US\$69.94.csv"
 | 日期范围 | 2026-04-01 ~ 2026-04-30 |
 | 总行数 / Included | 1266 / 1256 |
 | 跳过行 | Errored, No Charge=6、Aborted, Not Charged=4 |
-| 推算 `total_cost` | **$138.49** |
-| 与官方差额 | **$1.40**（约 **1.0%**，推算略高） |
+| 推算 `total_cost` | **$138.64** |
+| 与官方差额 | **$1.55**（约 **1.1%**，推算略高） |
 
 ### 新增模型（April 首次出现）
 
@@ -230,9 +228,9 @@ cursor-usage "examples/March - US\$69.94.csv"
 |------|------------------|----------|-----|----------|
 | gpt-5.5-medium | 10 | $4.95 | api | 官方 **GPT-5.5**（$5 / $0.5 / $30） |
 | composer-2 | 5 | $0.73 | auto_composer | 官方 **Composer 2**（$0.5 / $0.2 / $2.5） |
-| claude-opus-4-7-thinking-high | 1 | $1.12 | api | 官方 **Claude 4.7 Opus** + thinking 拆分（§3.1） |
+| claude-opus-4-7-thinking-high | 1 | $1.28 | api | 官方 **Claude 4.7 Opus**（thinking effort 变体） |
 
-> 此前曾将 `gpt-5.5-medium` 误按 GPT-5.4 费率拟合（$2.48），已改回官方文档。差额 $1.40 可能来自折扣、thinking 拆分或逐行四舍五入，**不以拟合掩盖**。
+> 此前曾将 `gpt-5.5-medium` 误按 GPT-5.4 费率拟合（$2.48），已改回官方文档。差额 $1.55 可能来自折扣或逐行四舍五入，**不以拟合掩盖**。
 
 ### 按模型（推算 Included 费用，节选）
 
@@ -243,11 +241,11 @@ cursor-usage "examples/March - US\$69.94.csv"
 | gpt-5.5-medium | 10 | $4.95 | api |
 | composer-2-fast | 15 | $0.62 | auto_composer |
 | composer-2 | 5 | $0.73 | auto_composer |
-| claude-opus-4-7-thinking-high | 1 | $1.12 | api |
+| claude-opus-4-7-thinking-high | 1 | $1.28 | api |
 
 ```bash
 cursor-usage "examples/April - US\$137.09.csv"
-# 推算 total_cost: $138.49，无 unknown_models
+# 推算 total_cost: $138.64，无 unknown_models
 ```
 
 ---
@@ -256,12 +254,12 @@ cursor-usage "examples/April - US\$137.09.csv"
 
 | 样例 | 对账字段 | 官方 Total | 推算值 | 差额 |
 |------|----------|-----------|--------|------|
-| January | `total_cost_with_free` | $1.61 | $1.59 | $0.02 |
-| February | `total_cost` | $46.57 | $46.32 | $0.25 |
-| March | `total_cost_with_free` | $69.94 | $70.09 | $0.15 |
-| April | `total_cost` | $137.09 | $138.49 | $1.40 |
+| January | `total_cost_with_free` | $1.61 | $1.73 | $0.12 |
+| February | `total_cost` | $46.57 | $46.49 | $0.08 |
+| March | `total_cost_with_free` | $69.94 | $70.45 | $0.51 |
+| April | `total_cost` | $137.09 | $138.64 | $1.55 |
 
-January 另经 `--reconcile` 验证 8/8 行在 ±$0.01 容差内。
+January 另经 `--reconcile` 验证：auto 6/6 行在 ±$0.01 容差内；agent_review 1 行官方低于推算（`possible_discount`）。
 
 ---
 
@@ -271,12 +269,12 @@ January 另经 `--reconcile` 验证 8/8 行在 ±$0.01 容差内。
 |--------|------|
 | CSV 解析 | 通过 |
 | 模型覆盖（February） | 通过（无 unknown_models） |
-| January Total vs $1.61 | 通过（$1.59，差 $0.02） |
-| January `--reconcile` | 通过（8/8 行） |
-| February Total vs $46.57 | 通过（$46.32，差 0.5%） |
-| March Total vs $69.94 | 通过（$70.09，差 0.2%） |
+| January Total vs $1.61 | 通过（$1.73，差 $0.12；agent_review 可能折扣） |
+| January `--reconcile` | auto 6/6 行通过；agent_review 1 行 `possible_discount` |
+| February Total vs $46.57 | 通过（$46.49，差 0.2%） |
+| March Total vs $69.94 | 通过（$70.45，差 0.7%） |
 | March 模型覆盖 | 通过（无 unknown_models） |
-| April Total vs $137.09 | 通过（$138.49，差 1.0%，文档费率） |
+| April Total vs $137.09 | 通过（$138.64，差 1.1%，文档费率） |
 | April 模型覆盖 | 通过（无 unknown_models） |
 | Kind 大小写 | 通过（`free` / `Free` / `Included`） |
 | JSON 输出 | 通过（`--json` 结构完整） |

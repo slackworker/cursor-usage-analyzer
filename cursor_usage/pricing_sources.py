@@ -58,10 +58,9 @@ MODEL_SOURCES: dict[str, PricingSource] = {
         'CSV slug "composer-2-fast" → Composer 2 doc row ($0.5 / $0.2 / $2.5)',
     ),
     "composer-2.5-fast": PricingSource(
-        PricingConfidence.CSV_INFERRED,
-        "(no separate doc row)",
-        "Doc lists Composer 2.5 standard only ($0.5 / $0.2 / $2.5); "
-        "$3 / $0.5 / $15 fast-tier rates not in models table — needs confirmation",
+        PricingConfidence.SLUG_MAPPED,
+        "Composer 2.5 (Fast)",
+        'CSV slug "composer-2.5-fast" → Auto+Composer pool table row ($3 / $0.5 / $15)',
     ),
     "gpt-5.2": PricingSource(
         PricingConfidence.OFFICIAL_DOC,
@@ -93,17 +92,17 @@ MODEL_SOURCES: dict[str, PricingSource] = {
     "claude-4.5-sonnet-thinking": PricingSource(
         PricingConfidence.SLUG_MAPPED,
         "Claude 4.5 Sonnet",
-        'CSV slug; thinking output split uses CLAUDE_THINKING_OUTPUT_RATIO (csv_inferred)',
+        'CSV slug "claude-4.5-sonnet-thinking" → Claude 4.5 Sonnet doc row (thinking effort variant)',
     ),
     "claude-4.6-sonnet-medium-thinking": PricingSource(
         PricingConfidence.SLUG_MAPPED,
         "Claude 4.6 Sonnet",
-        'CSV slug "claude-4.6-sonnet-medium-thinking"; thinking split csv_inferred',
+        'CSV slug "claude-4.6-sonnet-medium-thinking" → Claude 4.6 Sonnet doc row ($3 / $3.75 / $0.3 / $15)',
     ),
     "claude-4.6-opus-high-thinking": PricingSource(
         PricingConfidence.SLUG_MAPPED,
         "Claude 4.6 Opus",
-        'CSV slug; thinking split csv_inferred',
+        'CSV slug "claude-4.6-opus-high-thinking" → Claude 4.6 Opus doc row (thinking effort variant)',
     ),
     "claude-opus-4-7-thinking-high": PricingSource(
         PricingConfidence.SLUG_MAPPED,
@@ -113,26 +112,16 @@ MODEL_SOURCES: dict[str, PricingSource] = {
     "agent_review": PricingSource(
         PricingConfidence.CSV_INFERRED,
         "(Bugbot; no per-token row in models table)",
-        "Uses Auto pool rates × BUGBOT_AUTO_MULTIPLIER (Included) or cache-read-only (Free)",
+        "Same 4-column formula as Auto pool; optional AGENT_REVIEW_DISCOUNT_RATIO (default 1.0)",
     ),
 }
 
 # Billing rules that are not plain per-model token rates.
 RULE_SOURCES: dict[str, PricingSource] = {
-    "CLAUDE_THINKING_OUTPUT_RATIO": PricingSource(
-        PricingConfidence.CSV_INFERRED,
+    "AGENT_REVIEW_DISCOUNT_RATIO": PricingSource(
+        PricingConfidence.UNCONFIRMED,
         "(not in models table)",
-        "~31% of output tokens billed at input rate; fitted from Jan–Feb 2026 samples",
-    ),
-    "BUGBOT_AUTO_MULTIPLIER": PricingSource(
-        PricingConfidence.CSV_INFERRED,
-        "(not in models table)",
-        "Included agent_review = Auto pool × 0.849; fitted from January reconcile",
-    ),
-    "BUGBOT_FREE_CACHE_READ_ONLY": PricingSource(
-        PricingConfidence.CSV_RECONCILED,
-        "(not in models table)",
-        "Free agent_review bills cache_read only; verified January --reconcile (1 row)",
+        "Multiplier on Auto-pool token cost for agent_review; default 1.0 — set if samples show a discount",
     ),
 }
 

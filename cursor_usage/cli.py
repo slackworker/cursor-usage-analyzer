@@ -18,7 +18,7 @@ from cursor_usage.calculator import (
     pool_cost_with_free,
     pool_free_cost,
 )
-from cursor_usage.pricing import BILLABLE_KIND, CLAUDE_THINKING_MODELS, FREE_KIND
+from cursor_usage.pricing import AGENT_REVIEW_DISCOUNT_RATIO, BILLABLE_KIND, FREE_KIND
 from cursor_usage.pricing_sources import MODEL_SOURCES, RULE_SOURCES, PricingConfidence
 from cursor_usage.reconcile import DISCOUNT_NOTE, reconcile_csv
 
@@ -38,14 +38,20 @@ def _print_pricing_caveats(report: UsageReport) -> None:
             caveats.append(f"  {model}: [{src.confidence.value}] {src.doc_ref} — {src.note}")
 
     if "agent_review" in used_models:
-        for key in ("BUGBOT_AUTO_MULTIPLIER", "BUGBOT_FREE_CACHE_READ_ONLY"):
-            src = RULE_SOURCES[key]
-            if src.confidence != PricingConfidence.OFFICIAL_DOC:
-                caveats.append(f"  {key}: [{src.confidence.value}] {src.note}")
-
-    if used_models & CLAUDE_THINKING_MODELS:
-        src = RULE_SOURCES["CLAUDE_THINKING_OUTPUT_RATIO"]
-        caveats.append(f"  CLAUDE_THINKING_OUTPUT_RATIO: [{src.confidence.value}] {src.note}")
+        agent_src = MODEL_SOURCES["agent_review"]
+        if agent_src.confidence in (
+            PricingConfidence.CSV_INFERRED,
+            PricingConfidence.UNCONFIRMED,
+        ):
+            caveats.append(
+                f"  agent_review: [{agent_src.confidence.value}] {agent_src.note}"
+            )
+        if AGENT_REVIEW_DISCOUNT_RATIO != 1.0:
+            src = RULE_SOURCES["AGENT_REVIEW_DISCOUNT_RATIO"]
+            caveats.append(
+                f"  AGENT_REVIEW_DISCOUNT_RATIO={AGENT_REVIEW_DISCOUNT_RATIO}: "
+                f"[{src.confidence.value}] {src.note}"
+            )
 
     if caveats:
         print("费率置信度提示（非官方文档项，详见 docs/spec.md §3.1 / pricing_sources.py）:")
