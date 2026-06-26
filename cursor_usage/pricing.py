@@ -2,7 +2,7 @@
 
 Sources:
 - https://cursor.com/docs/models-and-pricing
-- Calibrated against User1/User2 CSV exports (Jun 2026).
+- Calibrated against January/February 2026 CSV exports.
 """
 
 from __future__ import annotations
@@ -95,7 +95,7 @@ CLAUDE_THINKING_MODELS = frozenset(
 # Claude thinking: share of output tokens billed at input rate.
 CLAUDE_THINKING_OUTPUT_RATIO = 0.31
 
-# Bugbot agent_review (Included): Auto pool rates with this multiplier (User1 calibrated).
+# Bugbot agent_review (Included): Auto pool rates with this multiplier.
 BUGBOT_AUTO_MULTIPLIER = 0.849
 
 # Bugbot agent_review (Free): January 2026 sample bills cache_read only at Auto pool rate.

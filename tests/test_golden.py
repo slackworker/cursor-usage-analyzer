@@ -19,7 +19,8 @@ EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 JANUARY_CSV = EXAMPLES / "January - US$1.61.csv"
 FEBRUARY_CSV = EXAMPLES / "February - US$46.57.csv"
 
-# Official dashboard total for February (Included rows only).
+# Official dashboard Total spend (filename amounts).
+JANUARY_OFFICIAL_TOTAL = 1.61
 FEBRUARY_OFFICIAL_TOTAL = 46.57
 # Max relative gap vs official after adding Feb-discovered models (Jun 2026 calibration).
 FEBRUARY_TOTAL_TOLERANCE_PCT = 0.01
@@ -42,6 +43,14 @@ class TestJanuaryGolden(unittest.TestCase):
         self.assertEqual(report.billable_rows, 0)
         self.assertEqual(report.free_rows, 8)
         self.assertAlmostEqual(report.free_cost, 1.5868, places=2)
+
+    def test_total_aligns_with_official(self) -> None:
+        report = analyze_csv(JANUARY_CSV)
+        self.assertAlmostEqual(
+            report.total_cost_with_free,
+            JANUARY_OFFICIAL_TOTAL,
+            delta=0.03,
+        )
 
     def test_reconcile_all_rows_within_tolerance(self) -> None:
         result = reconcile_csv(JANUARY_CSV)
@@ -90,13 +99,6 @@ class TestFebruaryGolden(unittest.TestCase):
         self.assertAlmostEqual(report.by_model["gpt-5.3-codex"].cost, 9.42, delta=0.05)
         self.assertEqual(report.by_model["gpt-5.2-codex"].rows, 58)
         self.assertEqual(report.by_model["claude-4.5-sonnet-thinking"].rows, 8)
-
-
-class TestUser1Regression(unittest.TestCase):
-    def test_billable_row_count_unchanged(self) -> None:
-        report = analyze_csv(EXAMPLES / "User1.csv")
-        self.assertEqual(report.billable_rows, 1003)
-        self.assertEqual(report.free_rows, 29)
 
 
 if __name__ == "__main__":

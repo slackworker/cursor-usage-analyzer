@@ -2,12 +2,15 @@
 
 根据 Cursor 导出的用量 CSV，推算 token 费用，并可结合基准账单推测套餐池使用率。
 
-定价规则基于 [Cursor Models & Pricing](https://cursor.com/docs/models-and-pricing)，并经 2026-06 实际账单校准。
+定价规则基于 [Cursor Models & Pricing](https://cursor.com/docs/models-and-pricing)，并经 2026 年 1–2 月实际账单校准。
+
+Dashboard **Total spend** = Included + On-demand + Free（当前样例中 On-demand 均为 0）。详见 [`docs/spec.md`](docs/spec.md)。
 
 ## 功能
 
 - 解析 Cursor 用量 CSV
-- 仅统计 `Kind = Included` 的计费行
+- 按 `Kind` 拆分：`Included` → `total_cost`，`Free` → `free_cost`，合计 → `total_cost_with_free`（对账官方 Total）
+- 跳过 `Errored, No Charge`、`Aborted, Not Charged`
 - 按模型、用量池（Auto+Composer / API）汇总费用
 - 可选：根据基准 CSV + 池使用率推测套餐额度，并计算目标 CSV 的使用百分比
 
@@ -34,34 +37,34 @@ pip install -e .
 ### 基础费用推算
 
 ```bash
-cursor-usage /path/to/usage.csv
+cursor-usage "examples/February - US\$46.57.csv"
 ```
 
 或:
 
 ```bash
-python -m cursor_usage.cli /path/to/usage.csv
+python -m cursor_usage.cli "examples/January - US\$1.61.csv"
+```
+
+### 与官方逐行对账（Cost 列为美元金额时）
+
+```bash
+cursor-usage "examples/January - US\$1.61.csv" --reconcile
 ```
 
 ### 推测套餐额度并计算使用率
 
 ```bash
-cursor-usage User2.csv \
-  --baseline User1.csv \
+cursor-usage target.csv \
+  --baseline "examples/February - US\$46.57.csv" \
   --auto-composer-usage 0.95 \
   --api-usage 0.99
-```
-
-### 直接指定套餐额度
-
-```bash
-cursor-usage User2.csv --auto-composer-limit 144.52 --api-limit 44.84
 ```
 
 ### JSON 输出
 
 ```bash
-cursor-usage User2.csv --baseline User1.csv --auto-composer-usage 0.95 --api-usage 0.99 --json
+cursor-usage "examples/February - US\$46.57.csv" --json
 ```
 
 ## 计费规则摘要
@@ -87,6 +90,8 @@ cursor-usage-calculator/
 │   ├── pricing.py
 │   ├── calculator.py
 │   └── cli.py
+├── examples/          # 月度 golden CSV（January、February，后续追加）
+├── docs/spec.md
 ├── tools/
 ├── pyproject.toml
 └── README.md
