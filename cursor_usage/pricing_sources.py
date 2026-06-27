@@ -56,9 +56,9 @@ MODEL_SOURCES: dict[str, PricingSource] = {
         "Composer 2",
     ),
     "composer-2-fast": PricingSource(
-        PricingConfidence.SLUG_MAPPED,
-        "Composer 2",
-        'CSV slug "composer-2-fast" → 2× Composer 2 doc row ($1 / $0.4 / $5); Fast 变体惯例',
+        PricingConfidence.CSV_RECONCILED,
+        "Composer 2 (2×)",
+        'CSV slug → 2× Composer 2 ($1 / $0.4 / $5); dashboard 按模型日合计 7 日验证，见 spec §3.1',
     ),
     "composer-2.5-fast": PricingSource(
         PricingConfidence.OFFICIAL_DOC,

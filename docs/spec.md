@@ -120,13 +120,32 @@ Total spend = Included + On-demand + Free
 
 | 项 | 置信度 | 说明 |
 |----|--------|------|
-| `composer-2-fast` 费率 2× Composer 2 | **slug_mapped** | API Model pricing 无独立行；CSV slug + Fast 变体惯例（同 GPT-5 Fast = 2× GPT-5） |
+| `composer-2-fast` 费率 2× Composer 2 | **csv_reconciled** | slug 映射自 Composer 2；Dashboard 按模型日合计 7 日验证（见下） |
 | `composer-2.5-fast` 费率 | **official_doc** | Composer **pricing** 表（`#composer-pricing`）→ Composer 2.5 **(Fast)**（$3 / $0.5 / $15）；勿与 API 表 Composer 2.5（$0.5 / $0.2 / $2.5）混淆 |
 | `agent_review` 计费 | **csv_inferred** | 基数似 Auto 池四列公式；无官方 Bugbot per-token 行（见下） |
 | `AGENT_REVIEW_DISCOUNT_RATIO` | **unconfirmed** | 默认 **1.0（全价）**；样本显示存在折扣但无稳定系数，**暂不改** |
 | CSV slug 映射（如 `gpt-5.4-medium` → GPT-5.4、`claude-4.6-sonnet-medium-thinking` → Claude 4.6 Sonnet） | **slug_mapped** | 费率来自文档对应行，slug 为 thinking effort / 档位变体 |
 
 **slug_mapped** 项费率本身来自官方表，仅模型 ID 映射需留意；**csv_inferred** 项在 CLI 输出中会附加「费率置信度提示」。
+
+#### composer-2-fast 按模型日合计验证（2026-06-27）
+
+Dashboard 按模型日合计（非 CSV Cost 列）与 token 公式（2× Composer 2：$1 / $0.4 / $5）对比；样本来自 March–May CSV 全部 26 行 Included。
+
+| 日期 | 官方 | 公式推算 | 偏差 |
+|------|------|----------|------|
+| 2026-03-28 | $0.22 | $0.24 | +9.9% |
+| 2026-03-30 | $0.36 | $0.42 | +17.9% |
+| 2026-04-01 | $0.46 | $0.52 | +14.0% |
+| 2026-04-02 | $0.61 | $0.61 | **-0.4%** |
+| 2026-04-18 | $0.09 | $0.11 | +20.7% |
+| 2026-05-03 | $0.33 | $0.31 | -6.4% |
+| 2026-05-04 | $0.07 | $0.05 | -23.4% |
+| **合计** | **$2.14** | **$2.27** | **+6.0%** |
+
+**已确认**：四分量 token 公式正确；**2× Composer 2** 为正确档位（1× 合计仅 ~$1.13，可排除）。4/02 八行几乎完全吻合，为强验证点。  
+**仍存噪声**：逐日偏差无统一折扣系数（0.83–1.31×），更像 Dashboard 日合计舍入；全样本 +6% 在容差内。  
+**当前策略**：维持 `PRICING` 不变（$1 / $0.4 / $5）；不为拟合而加全局折扣。
 
 #### agent_review（Bugbot）逐行验证（2026-06-27）
 
