@@ -328,6 +328,12 @@ def infer_limits_from_baseline(
     auto_composer_usage: float,
     api_usage: float,
 ) -> PoolLimits:
+    """Infer per-pool limits from a baseline CSV and Dashboard usage ratios.
+
+    Uses only Included pool.cost (not free_cost). Baseline CSV should be analyzed
+    with official free_pricing_mode so totals match Dashboard spend.
+    Whether Free rows consume pool allowance is unknown (see docs/spec.md §3.3).
+    """
     if not 0 < auto_composer_usage <= 1:
         raise ValueError("auto_composer_usage must be between 0 and 1")
     if not 0 < api_usage <= 1:

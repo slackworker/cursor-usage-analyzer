@@ -80,7 +80,7 @@ MODEL_SOURCES: dict[str, PricingSource] = {
     "gpt-5.3-codex-high": PricingSource(
         PricingConfidence.SLUG_MAPPED,
         "GPT-5.3 Codex",
-        'CSV slug "gpt-5.3-codex-high" → GPT-5.3 Codex doc row (high effort variant)',
+        'CSV slug "gpt-5.3-codex-high" → GPT-5.3 Codex doc row; thinking effort does not change rate',
     ),
     "gpt-5.4-medium": PricingSource(
         PricingConfidence.SLUG_MAPPED,

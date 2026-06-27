@@ -2,7 +2,7 @@
 
 本文档记录经冒烟测试与官方数据对比后**已确认**的结论，供 Web 化各模块实现时引用。未确认项标注为「待决」。
 
-**最后更新**：2026-06-27（Max Mode 计费规则；February 历史偏差说明）
+**最后更新**：2026-06-27（thinking effort 费率；Errored+Cost=Free；池额度推断 §3.3）
 
 ---
 
@@ -83,6 +83,8 @@ Total spend = Included + On-demand + Free
 - 跳过：`Errored, No Charge`、`Aborted, Not Charged`（计入 `skipped_rows`）
 - 模型必须在 [`cursor_usage/pricing.py`](../cursor_usage/pricing.py) 的 `PRICING` 中，否则记入 `unknown_models`
 
+**Errored + Cost=Free（已确认）**：`Kind=Errored, No Charge` 时 `Cost` 列可能出现 `Free`、`-` 或空（June 样例 13 行）。这与 `Kind=Free` **无关**，仅为 Dashboard 导出中的展示残留，**不代表**免费额度消耗。此类行**彻底排除**：不计入 `total_cost`、`free_cost`、`total_tokens` 及按模型/池汇总；仅在 `skipped_rows` 中计数供审计。`Cost` 列值对跳过逻辑无影响（一律按 `Kind` 判定）。
+
 CLI `--free-pricing-mode`：
 - `official`（默认）：对齐官方展示口径（status-only Free 记 0）
 - `strict`：统一 token 口径（status-only Free 也计入）
@@ -133,8 +135,13 @@ CLI `--free-pricing-mode`：
 | `agent_review` 计费 | **csv_inferred** | 基数似 Auto 池四列公式；无官方 Bugbot per-token 行（见下） |
 | `AGENT_REVIEW_DISCOUNT_RATIO` | **unconfirmed** | 默认 **1.0（全价）**；样本显示存在折扣但无稳定系数，**暂不改** |
 | CSV slug 映射（如 `gpt-5.4-medium` → GPT-5.4、`claude-4.6-sonnet-medium-thinking` → Claude 4.6 Sonnet） | **slug_mapped** | 费率来自文档对应行，slug 为 thinking effort / 档位变体 |
+| `gpt-5.3-codex-high` → GPT-5.3 Codex | **slug_mapped** | June 仅 8 行 Included；**未**单独做日级验证；见下 |
 
 **slug_mapped** 项费率本身来自官方表，仅模型 ID 映射需留意；**csv_inferred** 项在 CLI 输出中会附加「费率置信度提示」。
+
+#### thinking effort 与费率（已确认）
+
+CSV slug 中的 `-high`、`-medium-thinking` 等后缀表示 **thinking effort / 档位变体**，**不影响计费费率**（费率同基座模型文档行）；仅影响出 token 的时间与数量。`gpt-5.3-codex-high` 与 `gpt-5.3-codex` 同价（**slug_mapped** → GPT-5.3 Codex）；June 样例 8 行、未做日级验证，置信度与同类 thinking 变体一致。
 
 #### composer-2-fast 按模型日合计验证（2026-06-27）
 
@@ -210,6 +217,23 @@ CSV **`Max Mode`** 列（`Yes` / `No`）与 UI 中 Max Mode 开关对应。不�
 | **2026-02-10** | gpt-5.3-codex 9 行，**全部 `Max Mode=Yes`** | 见 §5「历史偏差」——官方日合计与当前 ×2 文档口径不一致 |
 
 **原则**：工具按**当前文档费率 + Max Mode 规则**向前推算；历史 Dashboard Total 若低于文档口径（旧加价、活动等），在样例 § 中**说明原因**，不为拟合而改 `PRICING`。
+
+### 3.3 池额度推断（`infer_limits_from_baseline`）
+
+CLI `--baseline` + `--auto-composer-usage` / `--api-usage` 从基准 CSV 反推各池总额度：
+
+```
+池额度 = 基准 CSV 该池 Included 费用 / Dashboard 使用率
+```
+
+| 项 | 结论 |
+|----|------|
+| 计费口径 | **固定 official**（对齐 Dashboard Total spend）；即使用户对目标 CSV 传 `--free-pricing-mode strict`，基准分析仍用 official |
+| 分子 | 仅 `pool.cost`（`Kind=Included`）；**不含** `free_cost` |
+| Free 是否占池额度 | **未知**（待样本）；当前推断假设 Free 不消耗 Included 池额度 |
+| 验证状态 | **待更新**——本月用量结束后将补充新基准数据做全链路 golden；现有 February 等样例的推断参数暂保留并标记待验证 |
+
+实现：[`cursor_usage/calculator.py`](../cursor_usage/calculator.py) 中 `infer_limits_from_baseline()`；CLI 基准文件解析见 [`cli.py`](../cursor_usage/cli.py)。
 
 ---
 
@@ -434,7 +458,7 @@ January 另经 `--reconcile` 验证：auto 6/6 行在 ±$0.01 容差内；agent_
 | April 模型覆盖 | 通过（无 unknown_models） |
 | Kind 大小写 | 通过（`free` / `Free` / `Included`） |
 | JSON 输出 | 通过（`--json` 结构完整） |
-| baseline / 池使用率 CLI | 保留（待后续月度样例补充全链路 golden） |
+| baseline / 池使用率 CLI | 已实现；推断参数 **待更新**（§3.3，待本月用量结束后补充 golden） |
 
 **M0 状态：通过**（January–April 与官方几乎对齐），可进入 M1。
 

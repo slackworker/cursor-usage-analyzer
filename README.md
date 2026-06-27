@@ -70,6 +70,8 @@ cursor-usage target.csv \
   --api-usage 0.99
 ```
 
+基准 CSV 推断额度时固定使用 **official** 计费口径（仅 Included 池费用；Free 是否占池额度见 `docs/spec.md` §3.3）。
+
 ### JSON 输出
 
 ```bash

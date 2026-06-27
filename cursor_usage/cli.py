@@ -345,7 +345,8 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("基准模式需同时提供 --baseline、--auto-composer-usage、--api-usage")
         if not args.baseline.exists():
             parser.error(f"基准文件不存在: {args.baseline}")
-        baseline = analyze_csv(args.baseline, free_pricing_mode=args.free_pricing_mode)
+        # Pool limit inference aligns with Dashboard spend (official Free rules).
+        baseline = analyze_csv(args.baseline, free_pricing_mode="official")
         limits = infer_limits_from_baseline(
             baseline,
             auto_composer_usage=args.auto_composer_usage,
