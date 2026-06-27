@@ -6,7 +6,7 @@
 
 Dashboard **Total spend** = Included + On-demand + Free（当前样例中 On-demand 均为 0）。详见 [`docs/spec.md`](docs/spec.md)。
 
-推算值按文档全价；未建模的限时折扣或活动价可能使 Dashboard 低于推算值，差异幅度不固定（样例月度多在 1–2% 内，活动期间可显著更大）。
+推算值按文档全价；未建模的限时折扣或活动价可能使 Dashboard 低于推算值，差异幅度不固定（样例月度多在 1–2% 内，活动期间可显著更大）。账单周期样例（5/27–6/26）Total 偏差约 2.4%、**原因未明**，详见 [`docs/spec.md`](docs/spec.md) §8.4。
 
 ## 功能
 
@@ -103,7 +103,7 @@ cursor-usage-calculator/
 │   ├── pricing.py
 │   ├── calculator.py
 │   └── cli.py
-├── examples/          # 月度 golden CSV（January–June，后续追加）
+├── examples/          # Golden CSV（January–June + 账单周期样例）
 ├── docs/spec.md
 ├── tools/
 ├── pyproject.toml
