@@ -2,7 +2,7 @@
 
 本文档记录经冒烟测试与官方数据对比后**已确认**的结论，供 Web 化各模块实现时引用。未确认项标注为「待决」。
 
-**最后更新**：2026-06-27（agent_review 三样本逐行验证说明；仍保持全价 + 可能折扣）
+**最后更新**：2026-06-27（确认 status-only Free 不计费；补充 May/June 校准）
 
 ---
 
@@ -73,10 +73,12 @@ Total spend = Included + On-demand + Free
 
 **Cost 列有美元金额时**：合计与按模型汇总**优先采用该行标注金额**，不再对该行做 token 公式推算（见 [`calculator.py`](../cursor_usage/calculator.py) 的 `_resolve_row_cost()`）。`--reconcile` 仍会用 token 公式与标注价比对，用于发现折扣或活动价。
 
+**Free 行特例（已确认）**：`Kind=Free` 且 `Cost` 仅为状态值（`Free`/`free`/`-`）时，该行按 **$0.00** 处理，不做 token 推算；只有 `Cost` 为美元金额时才计入 `free_cost`。
+
 ### 计费过滤规则
 
 - `Kind = Included` → `total_cost`
-- `Kind = Free` → `free_cost`；与 Included 合计为 `total_cost_with_free`
+- `Kind = Free`：`Cost` 有美元金额 → 计入 `free_cost`；`Cost` 为状态值（无金额）→ 按 $0 处理
 - 跳过：`Errored, No Charge`、`Aborted, Not Charged`（计入 `skipped_rows`）
 - 模型必须在 [`cursor_usage/pricing.py`](../cursor_usage/pricing.py) 的 `PRICING` 中，否则记入 `unknown_models`
 
@@ -300,38 +302,45 @@ cursor-usage "examples/April - US\$137.09.csv"
 
 ---
 
-## 8. May 校准（`examples/May - US$92.01.csv`）
+## 8. May/June 校准（`examples/May - US$92.01.csv`、`examples/June - US$137.62.csv`）
 
-官方 **Total spend $92.01**。当月结构特殊：5/1–5/4 集中使用后 **23 天空档**（5/6–5/26 无 Included），5/28 起恢复；含大量 `Free` 行，Cost 列混用格式 A（`Included` / `Free`）与格式 B（美元金额）。
+### 8.1 May（官方 Total：$92.01）
 
-### 与官方 Total 的差异（说明用，不改计算公式）
+May 结构特殊：5/1–5/4 集中使用后出现 **23 天空档**（5/6–5/26 无 Included），5/28 起恢复；并出现大量 `Free` 状态行（`Cost=Free`、无美元）。
 
-本工具**始终按 [官方文档](https://cursor.com/docs/models-and-pricing) 全价**做 token 推算，**不**写入活动价或折扣系数。Dashboard Total 低于推算值时，属预期现象，见下表。
+**已确认规则**（由 5/27 官方 auto 日值 $0.00 直接验证）：
 
-| 因素 | 说明 |
+- `Kind=Free` 且 `Cost` 无美元金额（仅状态值）→ **不计入** Dashboard spend
+- `Kind=Free` 且 `Cost` 为美元金额 → 计入 `free_cost`
+
+按该规则更新后：
+
+| 指标 | 数值 |
 |------|------|
-| **GPT-5.5 按日活动价** | 官方日合计显示：**5/1、5/3** 的 `gpt-5.5-medium` 约为文档半价；**5/2 为全价**（当日 $17.36 几乎全来自 GPT-5.5）。我们仍用 GPT-5.5 文档全价（$5 / $0.5 / $30），故 5/1、5/3 推算偏高 |
-| **auto / composer-2-fast** | 文档费率与官方日合计基本一致（5/4–5/5 等日） |
-| **Cost 有美元金额的行** | 合计**以标注价为准**（5/4–5/5 部分 Free 行）；无标注价仍用 token 公式 |
-| **5/27 等 Free 行** | `Cost=Free` 无逐行美元，是否全部计入官方 Total 待确认；对全月差额影响较小 |
+| `total_cost`（Included） | $89.40 |
+| `free_cost`（仅美元金额 Free） | $2.05 |
+| `total_cost_with_free` | **$91.45** |
+| 与官方差额 | **-$0.56**（约 0.6%） |
 
-Seg1（5/1–5/5）官方日合计（用户核对）：
+> 仍保留「文档全价」原则：不把按日活动价硬编码进 `PRICING`。
 
-| 日期 | 官方 | 我们（文档全价） | 备注 |
-|------|------|------------------|------|
-| 5/1 | $7.08 | $11.50 | 官方约 GPT-5.5 半价 |
-| 5/2 | $17.36 | $17.35 | **全价**，与推算一致 |
-| 5/3 | $8.57 | $10.34 | 官方约 GPT-5.5 半价 |
-| 5/4 | $3.95 | $3.91 | 基本一致 |
-| 5/5 | $1.07 | $1.08 | 基本一致 |
-| **合计** | **$38.03** | **$44.19** | 差额主要来自 5/1、5/3 活动价 |
+### 8.2 June（官方 Total：$137.62）
 
-全月：官方 **$92.01**；我们 `total_cost_with_free` **$98.46**（文档全价）。若**仅**假设 5/1、5/3 的 GPT-5.5 半价、其余不变，反推全月约 **$92.23**，与官方差 **$0.22**——说明差额主要来自按日活动价，**不是**基础 token 公式错误。**本工具不模拟该活动，PRICING 不变。**
+June 出现 24 行 `Free`，全部为 `Cost=Free` 状态、无美元。按新规则它们都按 $0 处理。
 
-```bash
-cursor-usage "examples/May - US\$92.01.csv"
-# 推算高于官方 Total 属预期（活动价按日生效）；计算公式仍为文档全价
-```
+| 指标 | 数值 |
+|------|------|
+| `total_cost`（Included） | **$139.81** |
+| `free_cost` | **$0.00** |
+| `total_cost_with_free` | **$139.81** |
+| 与官方差额 | **+$2.19**（约 1.6%） |
+
+该差额量级与 April（+1.6%）一致，可归入文档全价 + 逐行舍入/活动价差异。
+
+### 8.3 边界日说明（5/31 ↔ 6/1）
+
+May/June 两份导出在 `2026-05-31T16:25:18Z` 到 `2026-06-01T04:11:25Z` 之间有约 12 小时空档。  
+因此 5/31 与 6/1 的日级对账不稳定，建议在 spec/报告中标记为「导出不完整，仅供参考」；6/2–6/6 的日级对账可作为稳定验证窗口。
 
 ---
 
@@ -343,6 +352,8 @@ cursor-usage "examples/May - US\$92.01.csv"
 | February | `total_cost` | $46.57 | $46.49 | $0.08 |
 | March | `total_cost_with_free` | $69.94 | $70.79 | $0.85 |
 | April | `total_cost` | $137.09 | $139.26 | $2.17 |
+| May | `total_cost_with_free` | $92.01 | $91.45 | -$0.56 |
+| June | `total_cost` | $137.62 | $139.81 | +$2.19 |
 
 January 另经 `--reconcile` 验证：auto 6/6 行在 ±$0.01 容差内；agent_review 1 行官方低于推算（`possible_discount`）。
 
@@ -384,8 +395,8 @@ January 另经 `--reconcile` 验证：auto 6/6 行在 ±$0.01 容差内；agent_
 ## 12. 模块路线图
 
 ```
-M0 冒烟 + spec（January–April，May 已追加样例与 §8 差异说明）  ← 当前
-     → May golden（容忍活动价导致的总量偏高）
+M0 冒烟 + spec（January–June，已落地 Free 状态行不计费规则）  ← 当前
+     → 持续补充边界日样本（5/31–6/1 类空档）
 M1  daily 聚合 + 统一 JSON schema
 M2  FastAPI POST/GET
 M3  临时存储 + TTL

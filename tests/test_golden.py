@@ -20,16 +20,22 @@ JANUARY_CSV = EXAMPLES / "January - US$1.61.csv"
 FEBRUARY_CSV = EXAMPLES / "February - US$46.57.csv"
 MARCH_CSV = EXAMPLES / "March - US$69.94.csv"
 APRIL_CSV = EXAMPLES / "April - US$137.09.csv"
+MAY_CSV = EXAMPLES / "May - US$92.01.csv"
+JUNE_CSV = EXAMPLES / "June - US$137.62.csv"
 
 # Official dashboard Total spend (filename amounts).
 JANUARY_OFFICIAL_TOTAL = 1.61
 FEBRUARY_OFFICIAL_TOTAL = 46.57
 MARCH_OFFICIAL_TOTAL = 69.94
 APRIL_OFFICIAL_TOTAL = 137.09
+MAY_OFFICIAL_TOTAL = 92.01
+JUNE_OFFICIAL_TOTAL = 137.62
 # Max relative gap vs official after adding Feb-discovered models (Jun 2026 calibration).
 FEBRUARY_TOTAL_TOLERANCE_PCT = 0.01
 MARCH_TOTAL_TOLERANCE_PCT = 0.012
 APRIL_TOTAL_TOLERANCE_PCT = 0.016
+MAY_TOTAL_TOLERANCE_PCT = 0.007
+JUNE_TOTAL_TOLERANCE_PCT = 0.016
 
 
 class TestKindNormalization(unittest.TestCase):
@@ -168,6 +174,32 @@ class TestAprilGolden(unittest.TestCase):
         )
         self.assertEqual(report.by_model["gpt-5.5-medium"].rows, 10)
         self.assertEqual(report.by_model["composer-2"].rows, 5)
+
+
+class TestMayJuneGolden(unittest.TestCase):
+    def test_may_status_only_free_rows_do_not_count(self) -> None:
+        report = analyze_csv(MAY_CSV)
+        self.assertEqual(report.billable_rows, 638)
+        self.assertEqual(report.free_rows, 106)
+        self.assertAlmostEqual(report.total_cost, 89.40, delta=0.05)
+        # 仅统计 Cost 列有美元金额的 Free 行。
+        self.assertAlmostEqual(report.free_cost, 2.05, delta=0.02)
+        self.assertAlmostEqual(report.total_cost_with_free, 91.45, delta=0.05)
+        self.assertLess(
+            abs(report.total_cost_with_free - MAY_OFFICIAL_TOTAL) / MAY_OFFICIAL_TOTAL,
+            MAY_TOTAL_TOLERANCE_PCT,
+        )
+
+    def test_june_status_only_free_rows_are_zero_cost(self) -> None:
+        report = analyze_csv(JUNE_CSV)
+        self.assertEqual(report.free_rows, 24)
+        self.assertAlmostEqual(report.total_cost, 139.81, delta=0.05)
+        self.assertEqual(report.free_cost, 0.0)
+        self.assertAlmostEqual(report.total_cost_with_free, 139.81, delta=0.05)
+        self.assertLess(
+            abs(report.total_cost - JUNE_OFFICIAL_TOTAL) / JUNE_OFFICIAL_TOTAL,
+            JUNE_TOTAL_TOLERANCE_PCT,
+        )
 
 
 if __name__ == "__main__":

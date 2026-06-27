@@ -114,6 +114,17 @@ def _resolve_row_cost(
     return _row_cost(model, icw, icwo, cr, out, kind=kind)
 
 
+def _resolve_free_row_cost(
+    row_cost_value: str | None,
+) -> float:
+    """Free rows only count when Cost has explicit USD amount."""
+    annotated = parse_official_row_cost(row_cost_value)
+    if annotated is not None:
+        return annotated
+    # Cost is status-only ("Free"/"free"/"-") -> do not count in dashboard spend.
+    return 0.0
+
+
 def _row_cost(
     model: str,
     icw: int,
@@ -177,9 +188,7 @@ def analyze_csv(path: str | Path) -> UsageReport:
         out = _parse_int(row.get("Output Tokens"))
 
         if is_free_kind(kind) and model in PRICING:
-            cost = _resolve_row_cost(
-                row.get("Cost"), model, icw, icwo, cr, out, kind=kind
-            )
+            cost = _resolve_free_row_cost(row.get("Cost"))
             pool = PRICING[model].pool
             free_rows += 1
             free_cost += cost

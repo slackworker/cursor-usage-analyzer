@@ -9,7 +9,7 @@ Dashboard **Total spend** = Included + On-demand + Free（当前样例中 On-dem
 ## 功能
 
 - 解析 Cursor 用量 CSV
-- 按 `Kind` 拆分：`Included` → `total_cost`，`Free` → `free_cost`，合计 → `total_cost_with_free`（对账官方 Total）
+- 按 `Kind` 拆分：`Included` → `total_cost`，`Free` 仅在 `Cost` 为美元时计入 `free_cost`（`Cost=Free` 状态行按 $0），合计 → `total_cost_with_free`
 - 跳过 `Errored, No Charge`、`Aborted, Not Charged`
 - 按模型、用量池（Auto+Composer / API）汇总费用
 - 可选：根据基准 CSV + 池使用率推测套餐额度，并计算目标 CSV 的使用百分比
@@ -92,7 +92,7 @@ cursor-usage-calculator/
 │   ├── pricing.py
 │   ├── calculator.py
 │   └── cli.py
-├── examples/          # 月度 golden CSV（January–April，后续追加）
+├── examples/          # 月度 golden CSV（January–June，后续追加）
 ├── docs/spec.md
 ├── tools/
 ├── pyproject.toml

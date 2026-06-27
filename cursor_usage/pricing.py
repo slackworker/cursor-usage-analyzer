@@ -31,7 +31,8 @@ class ModelPricing:
 # Included rows count against the paid plan allowance.
 BILLABLE_KIND = "Included"
 
-# Free rows consume the promotional/free allowance (still has token cost).
+# Free rows represent free allowance usage.
+# Only rows with explicit USD in Cost are counted into free_cost.
 FREE_KIND = "Free"
 
 ERRORED_KIND = "Errored, No Charge"
