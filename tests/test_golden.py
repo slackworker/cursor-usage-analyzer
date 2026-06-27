@@ -41,7 +41,7 @@ MARCH_TOTAL_TOLERANCE_PCT = 0.012
 APRIL_TOTAL_TOLERANCE_PCT = 0.016
 MAY_TOTAL_TOLERANCE_PCT = 0.007
 JUNE_TOTAL_TOLERANCE_PCT = 0.016
-# Billing cycle: ~2.4% gap vs official Total; cause unknown (docs/spec.md §8.4).
+# Billing cycle: ~2.4% gap vs official Total; cause unknown (docs/spec.md §6).
 CYCLE_TOTAL_TOLERANCE_PCT = 0.025
 
 # Dashboard 按模型日合计（composer-2.5-fast，June CSV）。
@@ -53,7 +53,7 @@ COMPOSER_25_FAST_DAILY_OFFICIAL = {
 }
 COMPOSER_25_FAST_DAILY_TOLERANCE = 0.15
 
-# Dashboard auto 日合计（5/30–6/1 日级异常见 spec §8.3；以下为可对齐日）。
+# Dashboard auto 日合计（5/30–6/1 日级异常见 docs/spec.md §6；以下为可对齐日）。
 CYCLE_AUTO_DAILY_OFFICIAL = {
     "2026-05-28": 5.10,
     "2026-05-29": 13.69,
@@ -343,7 +343,7 @@ class TestMayJuneGolden(unittest.TestCase):
 
 
 class TestBillingCycleGolden(unittest.TestCase):
-    """账单周期样例回归（docs/spec.md §8.3–8.4）。
+    """账单周期样例回归（docs/spec.md §6）。
 
     目的：
     - 解析与模型覆盖（不因 Total 偏差未明而省略）

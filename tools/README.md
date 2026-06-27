@@ -1,5 +1,5 @@
-"""Development calibration scripts from the initial billing investigation.
+# 开发校准脚本
 
-These scripts reference hard-coded paths and official benchmark values.
-Use the main CLI (`cursor-usage`) for day-to-day analysis.
-"""
+早期计费调查用的辅助脚本，含硬编码路径与基准值。
+
+日常分析请使用主 CLI：`cursor-usage`。

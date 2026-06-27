@@ -69,7 +69,7 @@ def is_skip_kind(kind: str) -> bool:
     return normalize_kind(kind) in SKIP_KINDS
 
 
-# Max Mode billing (see docs/spec.md §3.2).
+# Max Mode billing (see docs/spec.md §2.4).
 LONG_CONTEXT_INPUT_THRESHOLD = 272_000
 
 CODEX_MAX_MODE_FAST_MODELS = frozenset({"gpt-5.3-codex", "gpt-5.3-codex-high"})

@@ -1,22 +1,12 @@
 # Cursor Usage Calculator
 
-根据 Cursor 导出的用量 CSV，推算 token 费用，并可结合基准账单推测套餐池使用率。
+根据 Cursor 导出的用量 CSV，推算 token 费用与套餐池使用率。
 
-定价规则以 [Cursor Models & Pricing](https://cursor.com/docs/models-and-pricing) 为准；月度 CSV 用于验证总量。非官方文档项见 [`cursor_usage/pricing_sources.py`](cursor_usage/pricing_sources.py) 与 [`docs/spec.md`](docs/spec.md) §3.1。
+## 能做什么
 
-Dashboard **Total spend** = Included + On-demand + Free（当前样例中 On-demand 均为 0）。详见 [`docs/spec.md`](docs/spec.md)。
-
-推算值按文档全价；未建模的限时折扣或活动价可能使 Dashboard 低于推算值，差异幅度不固定（样例月度多在 1–2% 内，活动期间可显著更大）。账单周期样例（5/27–6/26）Total 偏差约 2.4%、**原因未明**，详见 [`docs/spec.md`](docs/spec.md) §8.4。
-
-## 功能
-
-- 解析 Cursor 用量 CSV
-- 按 `Kind` 拆分：**strict**（默认）`Total = Included + Free`；**official** 对齐 Dashboard：`Total = Included + On-demand`，Cost 有金额的 Free 并入 Included
-- 跳过 `Errored, No Charge`、`Aborted, Not Charged`
-- 按模型、用量池（Auto+Composer / API）汇总费用
-- **套餐池使用率双向推算**（official 计费口径）：
-  - **正向**：CSV + 池额度 → 使用率（默认额度 **$145 / $45**）
-  - **反推**：CSV + Dashboard 使用率 → 池额度（`--baseline` 可省略，默认与主 CSV 相同）
+1. **计费模型** — 以 [Cursor 官方定价](https://cursor.com/docs/models-and-pricing) 为基础，用 `examples/` 样例 CSV 校准与验证（详见 [`docs/spec.md`](docs/spec.md)）。
+2. **费用推算** — 用户提供 CSV，输出 **strict**（自然口径）与 **official**（对齐 Dashboard）两种合计。
+3. **池使用率** — 按 Auto+Composer / API 两池推算使用百分比；可指定额度（正向）或从 Dashboard 使用率反推额度（反推）。
 
 ## 安装
 
@@ -27,102 +17,59 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-Windows（WSL 挂载路径）:
-
-```powershell
-cd V:\home\slackworker\projects\cursor-usage-calculator
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -e .
-```
-
 ## 用法
 
-### 基础费用推算
+### 费用推算
 
 ```bash
-cursor-usage "examples/February - US\$46.57.csv"
-```
-
-计费模式切换：
-
-```bash
-cursor-usage "examples/May - US\$92.01.csv"                        # strict（默认）
+cursor-usage "examples/February - US\$46.57.csv"              # strict（默认）
 cursor-usage "examples/May - US\$92.01.csv" --billing-mode official  # 对齐 Dashboard Total
 ```
 
-`--free-pricing-mode` 为兼容别名。
+对齐 Dashboard **Total spend** 时用 `official`；要看 Included + Free 全量时用 `strict`（默认）。两种口径说明见 [`docs/spec.md`](docs/spec.md#4-两种计费口径)。
 
-或:
+### 池使用率
 
-```bash
-python -m cursor_usage.cli "examples/January - US\$1.61.csv"
-```
-
-### 与官方逐行对账（Cost 列为美元金额时）
-
-```bash
-cursor-usage "examples/January - US\$1.61.csv" --reconcile
-```
-
-### 套餐池使用率（双向推算，official 口径）
-
-**正向**：给定池额度，从 CSV 推算使用率（默认 $145 / $45）：
+默认按 **$145 / $45** 池额度、**official** 口径计算（每次运行均输出）：
 
 ```bash
 cursor-usage "examples/June - US\$137.62.csv"
 cursor-usage target.csv --auto-composer-limit 150 --api-limit 50
 ```
 
-**反推**：给定 CSV 与 Dashboard 使用率，反推池额度（基准 CSV 默认同主文件）：
+从 Dashboard 使用率反推额度（基准 CSV 默认同主文件）：
 
 ```bash
 cursor-usage "examples/May 27 - Jun 27 US\$191.60 100% + 100%.csv" \
   --auto-composer-usage 1.0 --api-usage 1.0
-
-cursor-usage target.csv \
-  --baseline "examples/February - US\$46.57.csv" \
-  --auto-composer-usage 0.95 --api-usage 0.99
 ```
 
-池使用率计算固定 **official** 计费模式（对齐 Dashboard Included）；上方费用汇总仍可用 `--billing-mode` 切换。
-
-### JSON 输出
+### 其他
 
 ```bash
-cursor-usage "examples/February - US\$46.57.csv" --json
+cursor-usage file.csv --json                              # JSON 输出
+cursor-usage "examples/January - US\$1.61.csv" --reconcile  # Cost 列为美元时逐行对账
+python -m unittest discover -s tests -v                   # 回归测试
 ```
 
-## 计费规则摘要
+## 文档
 
-| 模型 | Input | Cache Read | Output | 池 |
-|------|-------|------------|--------|-----|
-| auto | $1.25/M | $0.25/M | $6/M | Auto+Composer（Auto pricing 表） |
-| composer-1 | $1.25/M | $0.125/M | $10/M | Auto+Composer（API Model pricing 表） |
-| composer-2 | $0.5/M | $0.2/M | $2.5/M | Auto+Composer（API Model pricing 表） |
-| composer-2-fast | $1/M | $0.4/M | $5/M | Auto+Composer（2× Composer 2） |
-| composer-2.5-fast | $3/M | $0.5/M | $15/M | Auto+Composer（[Composer pricing 表](https://cursor.com/docs/models-and-pricing#composer-pricing) → Composer 2.5 **Fast**） |
-| gpt-5.2-codex / gpt-5.3-codex | $1.75/M | $0.175/M | $14/M | API |
-| gpt-5.4-medium | $2.5/M | $0.25/M | $15/M | API |
-| gpt-5.5-medium | $5/M | $0.5/M | $30/M | API |
-| gpt-5.3-codex-high | 同上 | 同上 | 同上 | API |
-| claude-4.5/4.6 sonnet thinking | $3/$3.75 CW | $0.3/M | $15/M | API |
-| claude-4.6-opus / claude-opus-4-7 thinking-high | $5/$6.25 CW | $0.5/M | $25/M | API |
-| agent_review (Bugbot) | 同 Auto 池四列计费；可选 `AGENT_REVIEW_DISCOUNT_RATIO` | | | API |
+| 文件 | 内容 |
+|------|------|
+| [`docs/spec.md`](docs/spec.md) | 计费模型、CSV 格式、两种口径、池使用率、样例验证 |
+| [`cursor_usage/pricing.py`](cursor_usage/pricing.py) | 模型费率（代码即源） |
+| [`cursor_usage/pricing_sources.py`](cursor_usage/pricing_sources.py) | 非官方项置信度 |
+| [`examples/`](examples/) | Golden 样例 CSV |
 
 ## 项目结构
 
 ```
 cursor-usage-calculator/
-├── cursor_usage/
-│   ├── pricing.py
-│   ├── calculator.py
-│   └── cli.py
-├── examples/          # Golden CSV（January–June + 账单周期样例）
+├── cursor_usage/       # pricing, calculator, cli, reconcile
+├── examples/           # Golden CSV
+├── tests/
 ├── docs/spec.md
-├── tools/
-├── pyproject.toml
-└── README.md
+└── tools/              # 早期校准脚本（日常请用 cursor-usage）
 ```
 
 ## 许可

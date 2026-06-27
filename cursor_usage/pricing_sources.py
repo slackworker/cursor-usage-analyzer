@@ -58,12 +58,12 @@ MODEL_SOURCES: dict[str, PricingSource] = {
     "composer-2-fast": PricingSource(
         PricingConfidence.CSV_RECONCILED,
         "Composer 2 (2×)",
-        'CSV slug → 2× Composer 2 ($1 / $0.4 / $5); dashboard 按模型日合计 7 日验证，见 spec §3.1',
+        'CSV slug → 2× Composer 2 ($1 / $0.4 / $5); dashboard 按模型日合计验证，见 docs/spec.md',
     ),
     "composer-2.5-fast": PricingSource(
         PricingConfidence.CSV_RECONCILED,
         "Composer pricing → Composer 2.5 (Fast)",
-        'CSV slug → #composer-pricing ($3 / $0.5 / $15); June 22–25 dashboard 按模型日合计验证，4 日合计偏差 +0.4%，见 spec §3.1',
+        'CSV slug → #composer-pricing ($3 / $0.5 / $15); June dashboard 按模型日合计验证，见 docs/spec.md',
     ),
     "gpt-5.2": PricingSource(
         PricingConfidence.OFFICIAL_DOC,
@@ -129,12 +129,12 @@ RULE_SOURCES: dict[str, PricingSource] = {
     "MAX_MODE_CODEX_FAST": PricingSource(
         PricingConfidence.OFFICIAL_DOC,
         "GPT-5.3 Codex / Max Mode",
-        "Max Mode=Yes on gpt-5.3-codex* → Fast priority, all token types ×2; see spec §3.2",
+        "Max Mode=Yes on gpt-5.3-codex* → Fast priority, all token types ×2; see docs/spec.md §2.4",
     ),
     "MAX_MODE_GPT_LONG_CONTEXT": PricingSource(
         PricingConfidence.OFFICIAL_DOC,
         "GPT-5.4 / GPT-5.5",
-        "Max Mode=Yes and input (icw+icwo+cr) > 272k → input side ×2, output ×1.5; see spec §3.2",
+        "Max Mode=Yes and input (icw+icwo+cr) > 272k → input side ×2, output ×1.5; see docs/spec.md §2.4",
     ),
 }
 

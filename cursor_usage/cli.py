@@ -62,7 +62,7 @@ def _print_pricing_caveats(report: UsageReport) -> None:
             )
 
     if caveats:
-        print("费率置信度提示（非官方文档项，详见 docs/spec.md §3.1 / pricing_sources.py）:")
+        print("费率置信度提示（非官方文档项，详见 docs/spec.md / pricing_sources.py）:")
         print("\n".join(caveats))
         print()
 
