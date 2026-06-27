@@ -13,3 +13,4 @@ venv/
 Thumbs.db
 *.csv
 !examples/*.csv
+*:Zone.Identifier
