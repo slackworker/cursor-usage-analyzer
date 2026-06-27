@@ -2,7 +2,7 @@
 
 本文档记录经冒烟测试与官方数据对比后**已确认**的结论，供 Web 化各模块实现时引用。未确认项标注为「待决」。
 
-**最后更新**：2026-06-27（May §8：GPT-5.5 活动价按日说明，不改 PRICING）
+**最后更新**：2026-06-27（agent_review 三样本逐行验证说明；仍保持全价 + 可能折扣）
 
 ---
 
@@ -122,11 +122,25 @@ Total spend = Included + On-demand + Free
 |----|--------|------|
 | `composer-2-fast` 费率 2× Composer 2 | **slug_mapped** | API Model pricing 无独立行；CSV slug + Fast 变体惯例（同 GPT-5 Fast = 2× GPT-5） |
 | `composer-2.5-fast` 费率 | **official_doc** | Composer **pricing** 表（`#composer-pricing`）→ Composer 2.5 **(Fast)**（$3 / $0.5 / $15）；勿与 API 表 Composer 2.5（$0.5 / $0.2 / $2.5）混淆 |
-| `agent_review` 计费 | **csv_inferred** | 同 Auto 池四列公式；无官方 Bugbot per-token 行 |
-| `AGENT_REVIEW_DISCOUNT_RATIO` | **unconfirmed** | 默认 1.0；若样本显示折扣可调整（January 1 行官方低于推算） |
+| `agent_review` 计费 | **csv_inferred** | 基数似 Auto 池四列公式；无官方 Bugbot per-token 行（见下） |
+| `AGENT_REVIEW_DISCOUNT_RATIO` | **unconfirmed** | 默认 **1.0（全价）**；样本显示存在折扣但无稳定系数，**暂不改** |
 | CSV slug 映射（如 `gpt-5.4-medium` → GPT-5.4、`claude-4.6-sonnet-medium-thinking` → Claude 4.6 Sonnet） | **slug_mapped** | 费率来自文档对应行，slug 为 thinking effort / 档位变体 |
 
 **slug_mapped** 项费率本身来自官方表，仅模型 ID 映射需留意；**csv_inferred** 项在 CLI 输出中会附加「费率置信度提示」。
+
+#### agent_review（Bugbot）逐行验证（2026-06-27）
+
+Dashboard 按模型日合计（非 CSV Cost 列）与 token 公式（Auto 四列 ×1.0）对比：
+
+| 日期 | Kind | 官方 | 公式全价 | 官方/公式 |
+|------|------|------|----------|-----------|
+| 2026-01-27 | Free | $0.21 | $0.35 | ~61% |
+| 2026-03-10 | Included | $0.81 | $1.54 | ~53% |
+| 2026-03-31 | Included | $0.49 | $0.83 | ~59% |
+
+**已确认**：官方价稳定低于全价推算，Auto 四列作**基数**合理。  
+**仍不明确**：折算比例在 53%–61% 间波动，无法用单一固定乘数精确拟合三行；Free / Included 与用量均不能单独解释差异。  
+**当前策略**：合计与报告仍按**文档全价**（`AGENT_REVIEW_DISCOUNT_RATIO = 1.0`）；Cost 有美元时以标注价为准；`--reconcile` 对低于推算的行标注 `possible_discount`。**待更多样本后再考虑校正系数**，不为拟合而改 `PRICING`。
 
 完整注册表：[`pricing_sources.py`](../cursor_usage/pricing_sources.py) 中的 `MODEL_SOURCES` / `RULE_SOURCES`。
 
@@ -215,8 +229,10 @@ cursor-usage "examples/February - US\$46.57.csv"
 | gpt-5.4-medium | 93 | $17.77 | api |
 | gpt-5.2 | 34 | $6.20 | api |
 | gpt-5.3-codex | 15 | $2.19 | api |
-| agent_review | 2 | $2.37 | api |
+| agent_review | 2 | $2.37（全价） | api |
 | composer-2-fast | 6 | $0.67 | auto_composer |
+
+**agent_review**：Dashboard 日合计 $0.81 + $0.49 = **$1.30**（见 §3.1）；工具仍报全价 $2.37，差额计入 `possible_discount` 类不确定性。
 
 ```bash
 cursor-usage "examples/March - US\$69.94.csv"

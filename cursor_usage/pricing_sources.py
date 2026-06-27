@@ -115,7 +115,7 @@ MODEL_SOURCES: dict[str, PricingSource] = {
     "agent_review": PricingSource(
         PricingConfidence.CSV_INFERRED,
         "(Bugbot; no per-token row in models table)",
-        "Same 4-column formula as Auto pool; optional AGENT_REVIEW_DISCOUNT_RATIO (default 1.0)",
+        "Auto-pool 4-column base; 3 dashboard samples show ~53–61% of full price — no stable ratio yet",
     ),
 }
 
@@ -124,7 +124,7 @@ RULE_SOURCES: dict[str, PricingSource] = {
     "AGENT_REVIEW_DISCOUNT_RATIO": PricingSource(
         PricingConfidence.UNCONFIRMED,
         "(not in models table)",
-        "Multiplier on Auto-pool token cost for agent_review; default 1.0 — set if samples show a discount",
+        "Default 1.0 (full price); samples show discount but ratio varies — do not calibrate until more data",
     ),
 }
 
