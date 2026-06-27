@@ -75,19 +75,30 @@ def _print_report(report: UsageReport) -> None:
     print()
 
     print("按模型:")
-    for model, summary in sorted(report.by_model.items(), key=lambda x: -x[1].cost):
-        print(
+    for model, summary in sorted(
+        report.by_model.items(), key=lambda x: -(x[1].cost + x[1].free_cost)
+    ):
+        line = (
             f"  {model:40} ${summary.cost:8.2f}  "
             f"({summary.rows} 行, {summary.tokens:,} tokens, pool={summary.pool})"
         )
+        if summary.free_rows:
+            line += (
+                f"  |  {FREE_KIND}: ${summary.free_cost:.2f}  "
+                f"({summary.free_rows} 行, {summary.free_tokens:,} tokens)"
+            )
+        print(line)
     print()
 
     print("按用量池:")
     for pool, summary in sorted(report.by_pool.items()):
-        print(
+        line = (
             f"  {pool:20} ${summary.cost:8.2f}  "
             f"({summary.rows} 行, {summary.tokens:,} tokens)"
         )
+        if summary.free_cost:
+            line += f"  |  {FREE_KIND}: ${summary.free_cost:.2f}"
+        print(line)
     print()
 
     print(f"合计 Token: {report.total_tokens:,}")
@@ -217,6 +228,9 @@ def _to_json(report: UsageReport, limits_result=None) -> dict:
                 "rows": v.rows,
                 "tokens": v.tokens,
                 "cost": round(v.cost, 4),
+                "free_rows": v.free_rows,
+                "free_tokens": v.free_tokens,
+                "free_cost": round(v.free_cost, 4),
             }
             for k, v in report.by_model.items()
         },

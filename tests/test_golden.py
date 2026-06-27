@@ -84,8 +84,13 @@ class TestJanuaryGolden(unittest.TestCase):
         report = analyze_csv(JANUARY_CSV)
         self.assertEqual(report.billable_rows, 0)
         self.assertEqual(report.free_rows, 8)
+        self.assertEqual(report.skipped_rows, {})
         # Cost 列有美元金额时以标注价为准（合计 $1.60）
         self.assertAlmostEqual(report.free_cost, 1.60, places=2)
+        self.assertEqual(report.by_model["auto"].free_rows, 6)
+        self.assertEqual(report.by_model["agent_review"].free_rows, 2)
+        self.assertGreater(report.total_tokens, 0)
+        self.assertEqual(report.by_model["auto"].free_tokens, report.total_tokens - report.by_model["agent_review"].free_tokens)
 
     def test_total_aligns_with_official(self) -> None:
         report = analyze_csv(JANUARY_CSV)
@@ -211,6 +216,9 @@ class TestMarchGolden(unittest.TestCase):
         )
         self.assertAlmostEqual(report.total_cost, 67.74, delta=0.05)
         self.assertAlmostEqual(report.free_cost, 3.05, delta=0.02)
+        self.assertNotIn(FREE_KIND, report.skipped_rows)
+        self.assertEqual(report.skipped_rows.get("Errored, No Charge"), 13)
+        self.assertGreater(report.by_model["auto"].free_rows, 0)
 
     def test_by_model_breakdown(self) -> None:
         report = analyze_csv(MARCH_CSV)

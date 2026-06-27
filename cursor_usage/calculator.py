@@ -41,6 +41,9 @@ class ModelSummary:
     rows: int = 0
     tokens: int = 0
     cost: float = 0.0
+    free_rows: int = 0
+    free_tokens: int = 0
+    free_cost: float = 0.0
 
 
 @dataclass
@@ -229,10 +232,21 @@ def analyze_csv(
             pool = PRICING[model].pool
             free_rows += 1
             free_cost += cost
+            total_tokens += tokens
+
+            if model not in by_model:
+                by_model[model] = ModelSummary(model=model, pool=pool)
+            by_model[model].free_rows += 1
+            by_model[model].free_tokens += tokens
+            by_model[model].free_cost += cost
+
             if pool not in by_pool:
                 by_pool[pool] = PoolSummary(pool=pool)
             by_pool[pool].free_cost += cost
-            skipped_rows[kind] += 1
+            by_pool[pool].rows += 1
+            by_pool[pool].tokens += tokens
+            by_pool[pool].models[model] = by_model[model]
+
             row_costs.append(RowCost(date, model, kind, cost, tokens, False))
             continue
 
