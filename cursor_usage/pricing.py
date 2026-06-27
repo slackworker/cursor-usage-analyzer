@@ -68,6 +68,79 @@ def is_skip_kind(kind: str) -> bool:
     return normalize_kind(kind) in SKIP_KINDS
 
 
+# Max Mode billing (see docs/spec.md §3.2).
+LONG_CONTEXT_INPUT_THRESHOLD = 272_000
+
+CODEX_MAX_MODE_FAST_MODELS = frozenset({"gpt-5.3-codex", "gpt-5.3-codex-high"})
+GPT_LONG_CONTEXT_MODELS = frozenset({"gpt-5.4-medium", "gpt-5.5-medium"})
+
+CODEX_MAX_MODE_MULTIPLIER = 2.0
+LONG_CONTEXT_INPUT_MULTIPLIER = 2.0
+LONG_CONTEXT_OUTPUT_MULTIPLIER = 1.5
+
+
+def parse_max_mode(value: str | None) -> bool:
+    """True when CSV Max Mode column is Yes (case-insensitive)."""
+    return (value or "").strip().casefold() == "yes"
+
+
+def token_row_cost(
+    pricing: ModelPricing,
+    icw: int,
+    icwo: int,
+    cr: int,
+    out: int,
+    *,
+    input_mult: float = 1.0,
+    cache_write_mult: float | None = None,
+    cache_read_mult: float | None = None,
+    output_mult: float = 1.0,
+) -> float:
+    cwm = cache_write_mult if cache_write_mult is not None else input_mult
+    crm = cache_read_mult if cache_read_mult is not None else input_mult
+    return (
+        icw / 1e6 * pricing.cache_write * cwm
+        + icwo / 1e6 * pricing.input * input_mult
+        + cr / 1e6 * pricing.cache_read * crm
+        + out / 1e6 * pricing.output * output_mult
+    )
+
+
+def max_mode_adjusted_cost(
+    model: str,
+    pricing: ModelPricing,
+    icw: int,
+    icwo: int,
+    cr: int,
+    out: int,
+    *,
+    max_mode: bool,
+) -> float | None:
+    """Return Max Mode adjusted row cost, or None to use standard pricing."""
+    if not max_mode:
+        return None
+
+    if model in CODEX_MAX_MODE_FAST_MODELS:
+        m = CODEX_MAX_MODE_MULTIPLIER
+        return token_row_cost(pricing, icw, icwo, cr, out, input_mult=m, output_mult=m)
+
+    if model in GPT_LONG_CONTEXT_MODELS:
+        if icw + icwo + cr <= LONG_CONTEXT_INPUT_THRESHOLD:
+            return None
+        return token_row_cost(
+            pricing,
+            icw,
+            icwo,
+            cr,
+            out,
+            input_mult=LONG_CONTEXT_INPUT_MULTIPLIER,
+            cache_read_mult=LONG_CONTEXT_INPUT_MULTIPLIER,
+            output_mult=LONG_CONTEXT_OUTPUT_MULTIPLIER,
+        )
+
+    return None
+
+
 def parse_official_row_cost(value: str | None) -> float | None:
     """Parse Cost column when it holds a USD amount (not Included/Free status)."""
     if not value:

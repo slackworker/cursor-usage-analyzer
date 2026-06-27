@@ -8,13 +8,13 @@ from pathlib import Path
 import csv
 
 from cursor_usage.calculator import _parse_int, _row_cost, analyze_csv
-from cursor_usage.pricing import is_billable_kind, normalize_kind
 from cursor_usage.pricing import (
     BILLABLE_KIND,
     FREE_KIND,
     is_billable_kind,
     is_free_kind,
     normalize_kind,
+    parse_max_mode,
 )
 from cursor_usage.reconcile import ROW_TOLERANCE_USD, reconcile_csv
 
@@ -34,7 +34,6 @@ APRIL_OFFICIAL_TOTAL = 137.09
 MAY_OFFICIAL_TOTAL = 92.01
 JUNE_OFFICIAL_TOTAL = 137.62
 # Max relative gap vs official after adding Feb-discovered models (Jun 2026 calibration).
-FEBRUARY_TOTAL_TOLERANCE_PCT = 0.01
 MARCH_TOTAL_TOLERANCE_PCT = 0.012
 APRIL_TOTAL_TOLERANCE_PCT = 0.016
 MAY_TOTAL_TOLERANCE_PCT = 0.007
@@ -64,6 +63,7 @@ def _daily_model_cost(csv_path: Path, model: str, day: str) -> float:
                 _parse_int(row.get("Input (w/o Cache Write)")),
                 _parse_int(row.get("Cache Read")),
                 _parse_int(row.get("Output Tokens")),
+                max_mode=parse_max_mode(row.get("Max Mode")),
             )
     return total
 
@@ -122,6 +122,55 @@ class TestJanuaryGolden(unittest.TestCase):
         self.assertGreater(bugbot[0].calculated_cost, bugbot[0].official_cost)
 
 
+class TestMaxModePricing(unittest.TestCase):
+    def test_parse_max_mode(self) -> None:
+        self.assertTrue(parse_max_mode("Yes"))
+        self.assertFalse(parse_max_mode("No"))
+        self.assertFalse(parse_max_mode(""))
+
+    def test_codex_max_mode_doubles_all_tokens(self) -> None:
+        base = _row_cost("gpt-5.3-codex", 0, 100_000, 200_000, 1_000)
+        fast = _row_cost("gpt-5.3-codex", 0, 100_000, 200_000, 1_000, max_mode=True)
+        self.assertAlmostEqual(fast, base * 2, places=6)
+
+    def test_gpt55_long_context_only_when_max_mode_and_over_threshold(self) -> None:
+        icw, icwo, cr, out = 0, 100_000, 100_000, 1_000
+        base = _row_cost("gpt-5.5-medium", icw, icwo, cr, out)
+        self.assertAlmostEqual(
+            _row_cost("gpt-5.5-medium", icw, icwo, cr, out, max_mode=True),
+            base,
+        )
+        icw, icwo, cr, out = 0, 50_000, 250_000, 1_000
+        base = _row_cost("gpt-5.5-medium", icw, icwo, cr, out)
+        self.assertAlmostEqual(
+            _row_cost("gpt-5.5-medium", icw, icwo, cr, out, max_mode=False),
+            base,
+        )
+        long_ctx = _row_cost("gpt-5.5-medium", icw, icwo, cr, out, max_mode=True)
+        self.assertGreater(long_ctx, base)
+
+    def test_may_2_gpt55_matches_official_without_cliff(self) -> None:
+        """Max Mode=No rows stay at standard rate even when input > 272k."""
+        total = 0.0
+        with MAY_CSV.open(newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                if row.get("Model") != "gpt-5.5-medium":
+                    continue
+                if (row.get("Date") or "")[:10] != "2026-05-02":
+                    continue
+                if not is_billable_kind(normalize_kind(row.get("Kind", ""))):
+                    continue
+                total += _row_cost(
+                    "gpt-5.5-medium",
+                    _parse_int(row.get("Input (w/ Cache Write)")),
+                    _parse_int(row.get("Input (w/o Cache Write)")),
+                    _parse_int(row.get("Cache Read")),
+                    _parse_int(row.get("Output Tokens")),
+                    max_mode=parse_max_mode(row.get("Max Mode")),
+                )
+        self.assertAlmostEqual(total, 15.67, delta=0.01)
+
+
 class TestFebruaryGolden(unittest.TestCase):
     def test_all_models_recognized(self) -> None:
         report = analyze_csv(FEBRUARY_CSV)
@@ -129,21 +178,18 @@ class TestFebruaryGolden(unittest.TestCase):
         self.assertEqual(report.billable_rows, 455)
         self.assertEqual(report.total_rows, 455)
 
-    def test_total_within_official_tolerance(self) -> None:
+    def test_total_reflects_codex_max_mode_2x(self) -> None:
         report = analyze_csv(FEBRUARY_CSV)
+        # 9 行 Max Mode=Yes（gpt-5.3-codex）按文档 ×2；当月官方 Total 仍按旧口径。
+        self.assertAlmostEqual(report.total_cost, 48.04, delta=0.05)
         gap = FEBRUARY_OFFICIAL_TOTAL - report.total_cost
-        self.assertGreater(gap, 0.0)
-        self.assertLess(
-            gap / FEBRUARY_OFFICIAL_TOTAL,
-            FEBRUARY_TOTAL_TOLERANCE_PCT,
-        )
-        self.assertAlmostEqual(report.total_cost, 46.49, delta=0.05)
+        self.assertLess(gap, 0.0)
 
     def test_by_model_breakdown(self) -> None:
         report = analyze_csv(FEBRUARY_CSV)
         self.assertAlmostEqual(report.by_model["auto"].cost, 24.75, delta=0.05)
         self.assertAlmostEqual(report.by_model["gpt-5.2-codex"].cost, 7.74, delta=0.05)
-        self.assertAlmostEqual(report.by_model["gpt-5.3-codex"].cost, 9.42, delta=0.05)
+        self.assertAlmostEqual(report.by_model["gpt-5.3-codex"].cost, 10.97, delta=0.05)
         self.assertEqual(report.by_model["gpt-5.2-codex"].rows, 58)
         self.assertEqual(report.by_model["claude-4.5-sonnet-thinking"].rows, 8)
 

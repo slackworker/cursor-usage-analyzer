@@ -16,8 +16,11 @@ from cursor_usage.pricing import (
     ModelPricing,
     is_billable_kind,
     is_free_kind,
+    max_mode_adjusted_cost,
     normalize_kind,
+    parse_max_mode,
     parse_official_row_cost,
+    token_row_cost,
 )
 
 
@@ -107,12 +110,13 @@ def _resolve_row_cost(
     out: int,
     *,
     kind: str = BILLABLE_KIND,
+    max_mode: bool = False,
 ) -> float:
     """Use per-row USD in Cost when present; otherwise token formula."""
     annotated = parse_official_row_cost(row_cost_value)
     if annotated is not None:
         return annotated
-    return _row_cost(model, icw, icwo, cr, out, kind=kind)
+    return _row_cost(model, icw, icwo, cr, out, kind=kind, max_mode=max_mode)
 
 
 def _resolve_free_row_cost(
@@ -135,9 +139,12 @@ def _resolve_free_row_cost_strict(
     out: int,
     *,
     kind: str = FREE_KIND,
+    max_mode: bool = False,
 ) -> float:
     """Strict mode: free rows always use USD-or-token estimate."""
-    return _resolve_row_cost(row_cost_value, model, icw, icwo, cr, out, kind=kind)
+    return _resolve_row_cost(
+        row_cost_value, model, icw, icwo, cr, out, kind=kind, max_mode=max_mode
+    )
 
 
 def _row_cost(
@@ -148,26 +155,22 @@ def _row_cost(
     out: int,
     *,
     kind: str = BILLABLE_KIND,
+    max_mode: bool = False,
 ) -> float:
     kind = normalize_kind(kind)
 
     if model == "agent_review":
         p = PRICING["auto"]
-        base = (
-            icw / 1e6 * p.cache_write
-            + icwo / 1e6 * p.input
-            + cr / 1e6 * p.cache_read
-            + out / 1e6 * p.output
-        )
+        base = token_row_cost(p, icw, icwo, cr, out)
         return base * AGENT_REVIEW_DISCOUNT_RATIO
 
     pricing: ModelPricing = PRICING[model]
-    return (
-        icw / 1e6 * pricing.cache_write
-        + icwo / 1e6 * pricing.input
-        + cr / 1e6 * pricing.cache_read
-        + out / 1e6 * pricing.output
+    adjusted = max_mode_adjusted_cost(
+        model, pricing, icw, icwo, cr, out, max_mode=max_mode
     )
+    if adjusted is not None:
+        return adjusted
+    return token_row_cost(pricing, icw, icwo, cr, out)
 
 
 def analyze_csv(
@@ -207,11 +210,19 @@ def analyze_csv(
         icwo = _parse_int(row.get("Input (w/o Cache Write)"))
         cr = _parse_int(row.get("Cache Read"))
         out = _parse_int(row.get("Output Tokens"))
+        max_mode = parse_max_mode(row.get("Max Mode"))
 
         if is_free_kind(kind) and model in PRICING:
             if free_pricing_mode == "strict":
                 cost = _resolve_free_row_cost_strict(
-                    row.get("Cost"), model, icw, icwo, cr, out, kind=kind
+                    row.get("Cost"),
+                    model,
+                    icw,
+                    icwo,
+                    cr,
+                    out,
+                    kind=kind,
+                    max_mode=max_mode,
                 )
             else:
                 cost = _resolve_free_row_cost(row.get("Cost"))
@@ -236,7 +247,14 @@ def analyze_csv(
             continue
 
         cost = _resolve_row_cost(
-            row.get("Cost"), model, icw, icwo, cr, out, kind=kind
+            row.get("Cost"),
+            model,
+            icw,
+            icwo,
+            cr,
+            out,
+            kind=kind,
+            max_mode=max_mode,
         )
 
         pool = PRICING[model].pool

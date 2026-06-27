@@ -126,6 +126,16 @@ RULE_SOURCES: dict[str, PricingSource] = {
         "(not in models table)",
         "Default 1.0 (full price); samples show discount but ratio varies — do not calibrate until more data",
     ),
+    "MAX_MODE_CODEX_FAST": PricingSource(
+        PricingConfidence.OFFICIAL_DOC,
+        "GPT-5.3 Codex / Max Mode",
+        "Max Mode=Yes on gpt-5.3-codex* → Fast priority, all token types ×2; see spec §3.2",
+    ),
+    "MAX_MODE_GPT_LONG_CONTEXT": PricingSource(
+        PricingConfidence.OFFICIAL_DOC,
+        "GPT-5.4 / GPT-5.5",
+        "Max Mode=Yes and input (icw+icwo+cr) > 272k → input side ×2, output ×1.5; see spec §3.2",
+    ),
 }
 
 

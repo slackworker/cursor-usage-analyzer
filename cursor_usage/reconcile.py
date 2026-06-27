@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from cursor_usage.calculator import _parse_int, _row_cost
-from cursor_usage.pricing import PRICING, normalize_kind, parse_official_row_cost
+from cursor_usage.pricing import PRICING, normalize_kind, parse_max_mode, parse_official_row_cost
 
 # Per-row tolerance when official Cost is a USD amount (penny rounding).
 ROW_TOLERANCE_USD = 0.01
@@ -82,7 +82,10 @@ def reconcile_csv(path: str | Path) -> ReconciliationReport:
         icwo = _parse_int(row.get("Input (w/o Cache Write)"))
         cr = _parse_int(row.get("Cache Read"))
         out = _parse_int(row.get("Output Tokens"))
-        calculated = _row_cost(model, icw, icwo, cr, out, kind=kind)
+        max_mode = parse_max_mode(row.get("Max Mode"))
+        calculated = _row_cost(
+            model, icw, icwo, cr, out, kind=kind, max_mode=max_mode
+        )
         calculated_rounded = round(calculated, 2)
         delta = calculated_rounded - official
         within = abs(delta) <= ROW_TOLERANCE_USD

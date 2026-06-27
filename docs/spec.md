@@ -2,7 +2,7 @@
 
 本文档记录经冒烟测试与官方数据对比后**已确认**的结论，供 Web 化各模块实现时引用。未确认项标注为「待决」。
 
-**最后更新**：2026-06-27（确认 status-only Free 不计费；补充 May/June 校准）
+**最后更新**：2026-06-27（Max Mode 计费规则；February 历史偏差说明）
 
 ---
 
@@ -97,7 +97,7 @@ CLI `--free-pricing-mode`：
 | 高于官方 | 活动期间推算 **高于** 官方 Total 属**正常**；样例文件须在 § 校准节注明差异原因 |
 | Cost 有金额 | 以 CSV 标注价计入合计；`--reconcile` 可与 token 公式对比标注 `possible_discount` |
 | 不能单凭一行断定 | 官方低于 token 推算时，可能是折扣、活动价或逐行四舍五入 |
-| 与 Dashboard 偏差 | 未建模的限时折扣/活动价可能使 Dashboard 低于推算值，幅度不固定；January–June 样例多在 1–2% 内，但活动期间可显著更大。工具报文档口径下的费用估算，不逐条拟合历史折扣 |
+| 与 Dashboard 偏差 | 未建模的限时折扣/活动价、**历史 Max Mode 口径变更**等可能使 Dashboard 与文档推算不一致；January–June 样例多在 1–2% 内（February 因 Max Mode 切换除外）。工具报文档口径下的费用估算，不逐条拟合历史折扣 |
 
 ---
 
@@ -187,6 +187,30 @@ Dashboard 按模型日合计（非 CSV Cost 列）与 token 公式（Auto 四列
 
 完整注册表：[`pricing_sources.py`](../cursor_usage/pricing_sources.py) 中的 `MODEL_SOURCES` / `RULE_SOURCES`。
 
+### 3.2 Max Mode 计费（已确认，向前看口径）
+
+CSV **`Max Mode`** 列（`Yes` / `No`）与 UI 中 Max Mode 开关对应。不同模型开启 Max Mode 时行为不同，**勿混用**：
+
+| 模型 | Max Mode 在 UI 上的含义 | 计费规则（`Max Mode=Yes`） |
+|------|------------------------|---------------------------|
+| **gpt-5.3-codex** / **gpt-5.3-codex-high** | 开启 **Fast**（priority processing，即 high fast） | 四列 token **全部 ×2** |
+| **gpt-5.4-medium** / **gpt-5.5-medium** | 开启**长上下文**能力（不开启 Fast） | 仅当 **input（icw + icwo + cr）> 272k** 时：Input（含 Cache Write / w/o Cache Write）与 Cache Read **×2**，Output **×1.5**；否则标准价 |
+| 其他模型 | 视模型而定 | 当前样例无 `Max Mode=Yes` 行，暂不调整 |
+
+实现：[`cursor_usage/pricing.py`](../cursor_usage/pricing.py) 中 `max_mode_adjusted_cost()`；[`calculator.py`](../cursor_usage/calculator.py) 解析 CSV `Max Mode` 列并传入 `_row_cost()`。
+
+**文档来源**：[GPT-5.5 Pricing](https://cursor.com/docs/models/gpt-5-5)（272k cliff、input/cache read 2×、output 1.5×）；Codex 5.3 Max Mode = Fast 2× 来自 UI 与产品语义确认。
+
+#### 样例验证
+
+| 日期 | 场景 | 结论 |
+|------|------|------|
+| **2026-05-02** | gpt-5.5-medium 18 行，**全部 `Max Mode=No`**（含 8 行 input > 272k） | 标准价推算 **$15.666 ≈ 官方 $15.67**；**不**套用 272k cliff（cliff 需 `Max Mode=Yes`） |
+| **2026-05-02** | auto 27 行 | 标准价 **$1.687 ≈ 官方 $1.69**；单日合计 **$17.35 ≈ 官方 $17.36** |
+| **2026-02-10** | gpt-5.3-codex 9 行，**全部 `Max Mode=Yes`** | 见 §5「历史偏差」——官方日合计与当前 ×2 文档口径不一致 |
+
+**原则**：工具按**当前文档费率 + Max Mode 规则**向前推算；历史 Dashboard Total 若低于文档口径（旧加价、活动等），在样例 § 中**说明原因**，不为拟合而改 `PRICING`。
+
 ---
 
 ## 4. January 校准（`examples/January - US$1.61.csv`）
@@ -214,21 +238,35 @@ cursor-usage "examples/January - US\$1.61.csv" --reconcile
 
 ## 5. February 校准（`examples/February - US$46.57.csv`）
 
-官方 **Total spend $46.57**。当月全部为 `Included`（On-demand = 0、Free = 0），故 Total = Included。Cost 列为 `Included` 状态（格式 A），无法逐行对账，仅做**总量校准**。
+官方 **Total spend $46.57**。当月全部为 `Included`（On-demand = 0、Free = 0），故 Total = Included。Cost 列为 `Included` 状态（格式 A），无法逐行对账，仅做**总量对照**。
 
 | 指标 | 值 |
 |------|-----|
 | 日期范围 | 2026-02-03 ~ 2026-02-28 |
 | 总行数 / Included 行 | 455 / 455 |
-| 推算 `total_cost` | **$46.49** |
-| 与官方差额 | **$0.08**（约 **0.2%**，官方略高） |
+| 推算 `total_cost`（**含 Max Mode ×2**） | **$48.04** |
+| 与官方差额 | **-$1.47**（约 **3.2%**，推算高于官方） |
 
-### 按模型（推算 Included 费用）
+### 历史偏差说明（不为拟合而改价）
+
+当月有 **9 行** `gpt-5.3-codex` 且 **`Max Mode=Yes`**（均在 2026-02-10）。按当前文档（Max Mode = Fast，全 token ×2）推算后，当月 Included 合计 **$48.04**，高于官方 **$46.57**。
+
+**2026-02-10 日级对照**（Dashboard 按模型日合计 gpt-5.3-codex **$1.87**）：
+
+| 假设 | 当日 gpt-5.3-codex 推算 |
+|------|-------------------------|
+| 标准价（忽略 Max Mode） | $1.55 |
+| **当前文档口径（Max Mode ×2）** | **$3.10** |
+| 官方 Dashboard | **$1.87**（介于两者之间，接近旧版 **1.2×** Max Mode 加价） |
+
+**结论**：February 官方 Total 很可能仍按 **2026 年 2 月尚未完全切换到 Fast 2×** 的旧计费口径出账；工具自本版起按**向前看的文档全价 + Max Mode 规则**推算，故与 2 月官方 Total 存在已知偏差。**不为拟合 2 月数据而回退倍率**；新导出 CSV 按 §3.2 规则推断。
+
+### 按模型（推算 Included 费用，含 Max Mode）
 
 | 模型 | 行数 | 推算费用 | 池 |
 |------|------|----------|-----|
 | auto | 290 | $24.75 | auto_composer |
-| gpt-5.3-codex | 89 | $9.42 | api |
+| gpt-5.3-codex | 89 | $10.97 | api |
 | gpt-5.2-codex | 58 | $7.74 | api |
 | claude-4.5-sonnet-thinking | 8 | $1.81 | api |
 | claude-4.6-sonnet-medium-thinking | 8 | $1.81 | api |
@@ -237,7 +275,7 @@ cursor-usage "examples/January - US\$1.61.csv" --reconcile
 
 ```bash
 cursor-usage "examples/February - US\$46.57.csv"
-# 推算费用: $46.49，无 unknown_models
+# 推算费用: $48.04（文档 Max Mode 口径），无 unknown_models
 ```
 
 ---
@@ -371,7 +409,7 @@ May/June 两份导出在 `2026-05-31T16:25:18Z` 到 `2026-06-01T04:11:25Z` 之�
 | 样例 | 对账字段 | 官方 Total | 推算值 | 差额 |
 |------|----------|-----------|--------|------|
 | January | `total_cost_with_free` | $1.61 | $1.73 | $0.12 |
-| February | `total_cost` | $46.57 | $46.49 | $0.08 |
+| February | `total_cost` | $46.57 | $48.04 | -$1.47 |
 | March | `total_cost_with_free` | $69.94 | $70.79 | $0.85 |
 | April | `total_cost` | $137.09 | $139.26 | $2.17 |
 | May | `total_cost_with_free` | $92.01 | $91.45 | -$0.56 |
@@ -389,7 +427,7 @@ January 另经 `--reconcile` 验证：auto 6/6 行在 ±$0.01 容差内；agent_
 | 模型覆盖（February） | 通过（无 unknown_models） |
 | January Total vs $1.61 | 通过（$1.73，差 $0.12；agent_review 可能折扣） |
 | January `--reconcile` | auto 6/6 行通过；agent_review 1 行 `possible_discount` |
-| February Total vs $46.57 | 通过（$46.49，差 0.2%） |
+| February Total vs $46.57 | 已知偏差（+$1.47）：2 月官方或仍为旧 Max Mode 口径；工具按 §3.2 向前推算 |
 | March Total vs $69.94 | 通过（$70.79，差 1.2%） |
 | March 模型覆盖 | 通过（无 unknown_models） |
 | April Total vs $137.09 | 通过（$139.26，差 1.6%，文档费率） |
