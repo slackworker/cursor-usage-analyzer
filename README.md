@@ -30,7 +30,7 @@ cursor-usage "examples/May - US\$92.01.csv" --billing-mode official  # 官方口
 
 ### 池使用率
 
-默认按 **$145 / $45** 池额度、**official** 口径计算（每次运行均输出）：
+默认按 **$145 / $45** 池额度（**$20/月 Pro** 套餐经验值）、**official** 口径计算（每次运行均输出）：
 
 ```bash
 cursor-usage "examples/June - US\$137.62.csv"

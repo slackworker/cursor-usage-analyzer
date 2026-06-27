@@ -87,8 +87,10 @@ class UsageReport:
         return self.total_cost_with_free
 
 
+# Empirical pool limits calibrated against Cursor Pro ($20/mo) Dashboard usage.
 DEFAULT_AUTO_COMPOSER_LIMIT = 145.0
 DEFAULT_API_LIMIT = 45.0
+DEFAULT_POOL_PLAN_LABEL = "Cursor Pro ($20/mo)"
 
 
 @dataclass
@@ -394,7 +396,7 @@ def resolve_pool_limits(
     auto_composer_limit: float | None = None,
     api_limit: float | None = None,
 ) -> PoolLimits:
-    """Forward mode: fixed limits with $145 / $45 defaults."""
+    """Forward mode: fixed limits with $145 / $45 defaults (Cursor Pro $20/mo)."""
     return PoolLimits(
         auto_composer=(
             auto_composer_limit

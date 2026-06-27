@@ -38,7 +38,27 @@ cost = icw×input + icwo×input + cr×cache_read + out×output
 - 完整费率表见 [`pricing.py`](../cursor_usage/pricing.py) 的 `PRICING`。
 - 非官方文档项的置信度见 [`pricing_sources.py`](../cursor_usage/pricing_sources.py)。
 
-### 2.3 模型与池（摘要）
+### 2.3 缓存命中率
+
+CSV 每行输入侧三列语义（与 §2.2 计费列一致）：
+
+| 列 | 含义 | 计入命中？ |
+|----|------|-----------|
+| Cache Read（`cr`） | 从 prompt 缓存读出 | 是 |
+| Input w/ Cache Write（`icw`） | 写入/更新缓存 | 否 |
+| Input w/o Cache Write（`icwo`） | 未走缓存读的新输入 | 否 |
+
+跨模型统一公式（全模型同一口径，不按厂商分公式）：
+
+```
+命中率 = cr / (icw + icwo + cr)
+```
+
+等价于：`cr / (未命中 + cr)`，其中 **未命中 = icw + icwo**。Output 不参与。
+
+**分列因模型而异，不宜只看 `icwo`：** Claude 系常把「写缓存」记在 `icw`（`icwo` 可接近 0）；GPT / `auto`（样例中 2026-03 起）常 `icw = 0`，写缓存可能合并进 `icwo`。跨模型比较时应把 `icw + icwo` 整体视为未命中，而非使用 `cr / (icwo + cr)`——后者在 Claude 上会因 `icwo ≈ 0` 虚高至接近 100%。
+
+### 2.4 模型与池（摘要）
 
 | 模型 | 池 | 费率来源 |
 |------|-----|----------|
@@ -47,7 +67,7 @@ cost = icw×input + icwo×input + cr×cache_read + out×output
 | gpt-*, claude-*-thinking | api | API Model pricing；slug 后缀为 thinking 变体，费率同基座 |
 | agent_review | api | 基数同 Auto 四列；官方可能有未文档化折扣 |
 
-### 2.4 Max Mode
+### 2.5 Max Mode
 
 | 模型 | `Max Mode=Yes` |
 |------|----------------|
@@ -116,7 +136,7 @@ CLI：`--billing-mode standard|official`（`--free-pricing-mode` 为别名）。
 使用率 = 该池 Included 费用 / 池总额度
 ```
 
-默认额度：**$145**（Auto+Composer）、**$45**（API）。可覆盖：
+默认额度：**$145**（Auto+Composer）、**$45**（API）。此为 **$20/月 Cursor Pro** 套餐下、与官方 Usage 页面对照得到的经验值；其他套餐或定价变更时请用 `--*-limit` 或反推覆盖。可覆盖：
 
 ```bash
 cursor-usage file.csv --auto-composer-limit 150 --api-limit 50
@@ -182,5 +202,5 @@ cursor-usage target.csv --baseline baseline.csv --auto-composer-usage 1.0 --api-
 
 - 推算按文档全价；未建模折扣/活动价时官方 Usage 页面可能低于推算（月度样例多在 1–2%，活动期间可更大）。
 - On-demand Kind 未遇；出现后需扩展。
-- 池使用率默认 $145/$45 为经验值；应用 `--*-limit` 或反推覆盖。
+- 池使用率默认 $145/$45 为 **$20/月 Pro** 套餐经验值；其他套餐请用 `--*-limit` 或反推覆盖。
 - Free 是否占用 Included 池额度未确认。

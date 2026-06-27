@@ -11,6 +11,7 @@ from pathlib import Path
 from cursor_usage.calculator import (
     DEFAULT_API_LIMIT,
     DEFAULT_AUTO_COMPOSER_LIMIT,
+    DEFAULT_POOL_PLAN_LABEL,
     PoolLimits,
     UsageReport,
     analyze_csv,
@@ -207,7 +208,7 @@ def _print_limits(result, *, limits_source: str) -> None:
     if limits_source == "default":
         print(
             f"  额度来源: 默认 ${DEFAULT_AUTO_COMPOSER_LIMIT:.0f} / "
-            f"${DEFAULT_API_LIMIT:.0f}"
+            f"${DEFAULT_API_LIMIT:.0f}（{DEFAULT_POOL_PLAN_LABEL} 经验值）"
         )
     elif limits_source == "explicit":
         print("  额度来源: 命令行指定")
@@ -328,13 +329,19 @@ def build_parser() -> argparse.ArgumentParser:
         "--auto-composer-limit",
         type=float,
         metavar="USD",
-        help=f"正向推算：Auto+Composer 池总额度（美元），默认 ${DEFAULT_AUTO_COMPOSER_LIMIT:.0f}",
+        help=(
+            f"正向推算：Auto+Composer 池总额度（美元），默认 "
+            f"${DEFAULT_AUTO_COMPOSER_LIMIT:.0f}（{DEFAULT_POOL_PLAN_LABEL} 经验值）"
+        ),
     )
     parser.add_argument(
         "--api-limit",
         type=float,
         metavar="USD",
-        help=f"正向推算：API 池总额度（美元），默认 ${DEFAULT_API_LIMIT:.0f}",
+        help=(
+            f"正向推算：API 池总额度（美元），默认 "
+            f"${DEFAULT_API_LIMIT:.0f}（{DEFAULT_POOL_PLAN_LABEL} 经验值）"
+        ),
     )
     parser.add_argument(
         "--billing-mode",
