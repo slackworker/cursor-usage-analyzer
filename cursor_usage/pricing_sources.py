@@ -61,9 +61,9 @@ MODEL_SOURCES: dict[str, PricingSource] = {
         'CSV slug → 2× Composer 2 ($1 / $0.4 / $5); dashboard 按模型日合计 7 日验证，见 spec §3.1',
     ),
     "composer-2.5-fast": PricingSource(
-        PricingConfidence.OFFICIAL_DOC,
+        PricingConfidence.CSV_RECONCILED,
         "Composer pricing → Composer 2.5 (Fast)",
-        'CSV slug "composer-2.5-fast" → #composer-pricing table ($3 / $0.5 / $15); not API-table Composer 2.5',
+        'CSV slug → #composer-pricing ($3 / $0.5 / $15); June 22–25 dashboard 按模型日合计验证，4 日合计偏差 +0.4%，见 spec §3.1',
     ),
     "gpt-5.2": PricingSource(
         PricingConfidence.OFFICIAL_DOC,

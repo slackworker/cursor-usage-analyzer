@@ -5,7 +5,10 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from cursor_usage.calculator import analyze_csv
+import csv
+
+from cursor_usage.calculator import _parse_int, _row_cost, analyze_csv
+from cursor_usage.pricing import is_billable_kind, normalize_kind
 from cursor_usage.pricing import (
     BILLABLE_KIND,
     FREE_KIND,
@@ -36,6 +39,33 @@ MARCH_TOTAL_TOLERANCE_PCT = 0.012
 APRIL_TOTAL_TOLERANCE_PCT = 0.016
 MAY_TOTAL_TOLERANCE_PCT = 0.007
 JUNE_TOTAL_TOLERANCE_PCT = 0.016
+
+# Dashboard 按模型日合计（composer-2.5-fast，June CSV）。
+COMPOSER_25_FAST_DAILY_OFFICIAL = {
+    "2026-06-22": 2.15,
+    "2026-06-23": 1.96,
+    "2026-06-24": 10.32,
+    "2026-06-25": 23.61,
+}
+COMPOSER_25_FAST_DAILY_TOLERANCE = 0.15
+
+
+def _daily_model_cost(csv_path: Path, model: str, day: str) -> float:
+    total = 0.0
+    with csv_path.open(newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            if row.get("Model") != model or (row.get("Date") or "")[:10] != day:
+                continue
+            if not is_billable_kind(normalize_kind(row.get("Kind", ""))):
+                continue
+            total += _row_cost(
+                model,
+                _parse_int(row.get("Input (w/ Cache Write)")),
+                _parse_int(row.get("Input (w/o Cache Write)")),
+                _parse_int(row.get("Cache Read")),
+                _parse_int(row.get("Output Tokens")),
+            )
+    return total
 
 
 class TestKindNormalization(unittest.TestCase):
@@ -209,6 +239,20 @@ class TestMayJuneGolden(unittest.TestCase):
         june_report = analyze_csv(JUNE_CSV, free_pricing_mode="strict")
         self.assertAlmostEqual(june_report.free_cost, 11.50, delta=0.02)
         self.assertAlmostEqual(june_report.total_cost_with_free, 151.31, delta=0.05)
+
+    def test_composer_25_fast_daily_vs_official(self) -> None:
+        official_total = sum(COMPOSER_25_FAST_DAILY_OFFICIAL.values())
+        calc_total = 0.0
+        for day, official in COMPOSER_25_FAST_DAILY_OFFICIAL.items():
+            calc = _daily_model_cost(JUNE_CSV, "composer-2.5-fast", day)
+            calc_total += calc
+            with self.subTest(day=day):
+                self.assertAlmostEqual(
+                    calc,
+                    official,
+                    delta=COMPOSER_25_FAST_DAILY_TOLERANCE,
+                )
+        self.assertAlmostEqual(calc_total, official_total, delta=0.20)
 
 
 if __name__ == "__main__":

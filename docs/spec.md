@@ -128,7 +128,7 @@ CLI `--free-pricing-mode`：
 | 项 | 置信度 | 说明 |
 |----|--------|------|
 | `composer-2-fast` 费率 2× Composer 2 | **csv_reconciled** | slug 映射自 Composer 2；Dashboard 按模型日合计 7 日验证（见下） |
-| `composer-2.5-fast` 费率 | **official_doc** | Composer **pricing** 表（`#composer-pricing`）→ Composer 2.5 **(Fast)**（$3 / $0.5 / $15）；勿与 API 表 Composer 2.5（$0.5 / $0.2 / $2.5）混淆 |
+| `composer-2.5-fast` 费率 | **csv_reconciled** | Composer **pricing** 表 → Composer 2.5 **(Fast)**（$3 / $0.5 / $15）；June 22–25 按模型日合计验证（见下） |
 | `agent_review` 计费 | **csv_inferred** | 基数似 Auto 池四列公式；无官方 Bugbot per-token 行（见下） |
 | `AGENT_REVIEW_DISCOUNT_RATIO` | **unconfirmed** | 默认 **1.0（全价）**；样本显示存在折扣但无稳定系数，**暂不改** |
 | CSV slug 映射（如 `gpt-5.4-medium` → GPT-5.4、`claude-4.6-sonnet-medium-thinking` → Claude 4.6 Sonnet） | **slug_mapped** | 费率来自文档对应行，slug 为 thinking effort / 档位变体 |
@@ -153,6 +153,22 @@ Dashboard 按模型日合计（非 CSV Cost 列）与 token 公式（2× Compose
 **已确认**：四分量 token 公式正确；**2× Composer 2** 为正确档位（1× 合计仅 ~$1.13，可排除）。4/02 八行几乎完全吻合，为强验证点。  
 **仍存噪声**：逐日偏差无统一折扣系数（0.83–1.31×），更像 Dashboard 日合计舍入；全样本 +6% 在容差内。  
 **当前策略**：维持 `PRICING` 不变（$1 / $0.4 / $5）；不为拟合而加全局折扣。
+
+#### composer-2.5-fast 按模型日合计验证（2026-06-27）
+
+Dashboard 按模型日合计与 token 公式（Composer pricing 表 → Composer 2.5 **Fast**：$3 / $0.5 / $15）对比；样本来自 [`June - US$137.62.csv`](../examples/June%20-%20US$137.62.csv) 全部 82 行 Included（当次校验聚焦 6/22–6/25 四日）。
+
+| 日期 | 行数 | 官方 | 公式推算 | 偏差 |
+|------|------|------|----------|------|
+| 2026-06-22 | 1 | $2.15 | $2.14 | -0.5% |
+| 2026-06-23 | 1 | $1.96 | $1.96 | **-0.1%** |
+| 2026-06-24 | 11 | $10.32 | $10.36 | +0.4% |
+| 2026-06-25 | 69 | $23.61 | $23.75 | +0.6% |
+| **合计** | **82** | **$38.04** | **$38.21** | **+0.4%** |
+
+**已确认**：文档费率 $3 / $0.5 / $15 正确；勿与 API 表 Composer 2.5（$0.5 / $0.2 / $2.5）混淆。6/23 几乎完全吻合，6/22 差 $0.01。  
+**仍存噪声**：6/25 行数多（69 行）时推算略高 +$0.14，与 Included 月常见的「先算后舍入 vs 官方日合计舍入」一致，非独立折扣系数。  
+**当前策略**：维持 `PRICING` 不变；按官方文档计费，不为拟合而改价。
 
 #### agent_review（Bugbot）逐行验证（2026-06-27）
 
