@@ -95,6 +95,10 @@ def _print_report(report: UsageReport) -> None:
     if report.free_rows:
         print(f"{FREE_KIND} 额度消耗（推算）:       ${report.free_cost:.2f}  ({report.free_rows} 行)")
         print(f"合计（含 {FREE_KIND} 额度）:         ${report.total_cost_with_free:.2f}")
+    print(
+        "注：按文档全价推算；未建模的限时折扣或活动价可能使 Dashboard 低于推算值，"
+        "差异幅度不固定。"
+    )
 
 
 def _print_reconcile(path: Path) -> int:

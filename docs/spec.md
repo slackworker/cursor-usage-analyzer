@@ -97,6 +97,7 @@ CLI `--free-pricing-mode`：
 | 高于官方 | 活动期间推算 **高于** 官方 Total 属**正常**；样例文件须在 § 校准节注明差异原因 |
 | Cost 有金额 | 以 CSV 标注价计入合计；`--reconcile` 可与 token 公式对比标注 `possible_discount` |
 | 不能单凭一行断定 | 官方低于 token 推算时，可能是折扣、活动价或逐行四舍五入 |
+| 与 Dashboard 偏差 | 未建模的限时折扣/活动价可能使 Dashboard 低于推算值，幅度不固定；January–June 样例多在 1–2% 内，但活动期间可显著更大。工具报文档口径下的费用估算，不逐条拟合历史折扣 |
 
 ---
 

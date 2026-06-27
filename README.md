@@ -6,6 +6,8 @@
 
 Dashboard **Total spend** = Included + On-demand + Free（当前样例中 On-demand 均为 0）。详见 [`docs/spec.md`](docs/spec.md)。
 
+推算值按文档全价；未建模的限时折扣或活动价可能使 Dashboard 低于推算值，差异幅度不固定（样例月度多在 1–2% 内，活动期间可显著更大）。
+
 ## 功能
 
 - 解析 Cursor 用量 CSV
