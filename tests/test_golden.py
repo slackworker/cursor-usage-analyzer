@@ -11,6 +11,7 @@ from cursor_usage.calculator import _parse_int, _row_cost, analyze_csv
 from cursor_usage.pricing import (
     BILLABLE_KIND,
     FREE_KIND,
+    FREE_STATUS_ONLY_SKIP,
     is_billable_kind,
     is_free_kind,
     normalize_kind,
@@ -96,22 +97,29 @@ class TestKindNormalization(unittest.TestCase):
 
 
 class TestJanuaryGolden(unittest.TestCase):
-    def test_analyze_picks_up_lowercase_free_rows(self) -> None:
+    def test_strict_mode_counts_all_free_rows(self) -> None:
         report = analyze_csv(JANUARY_CSV)
+        self.assertEqual(report.billing_mode, "strict")
         self.assertEqual(report.billable_rows, 0)
         self.assertEqual(report.free_rows, 8)
         self.assertEqual(report.skipped_rows, {})
-        # Cost 列有美元金额时以标注价为准（合计 $1.60）
         self.assertAlmostEqual(report.free_cost, 1.60, places=2)
+        self.assertAlmostEqual(report.total_spend, 1.60, places=2)
         self.assertEqual(report.by_model["auto"].free_rows, 6)
         self.assertEqual(report.by_model["agent_review"].free_rows, 2)
-        self.assertGreater(report.total_tokens, 0)
-        self.assertEqual(report.by_model["auto"].free_tokens, report.total_tokens - report.by_model["agent_review"].free_tokens)
+
+    def test_official_mode_merges_free_with_amount_into_included(self) -> None:
+        report = analyze_csv(JANUARY_CSV, billing_mode="official")
+        self.assertEqual(report.billable_rows, 8)
+        self.assertEqual(report.free_rows, 0)
+        self.assertEqual(report.free_cost, 0.0)
+        self.assertAlmostEqual(report.total_cost, 1.60, places=2)
+        self.assertAlmostEqual(report.total_spend, 1.60, places=2)
 
     def test_total_aligns_with_official(self) -> None:
-        report = analyze_csv(JANUARY_CSV)
+        report = analyze_csv(JANUARY_CSV, billing_mode="official")
         self.assertAlmostEqual(
-            report.total_cost_with_free,
+            report.total_spend,
             JANUARY_OFFICIAL_TOTAL,
             delta=0.15,
         )
@@ -217,28 +225,35 @@ class TestFebruaryGolden(unittest.TestCase):
 
 class TestMarchGolden(unittest.TestCase):
     def test_all_models_recognized(self) -> None:
-        report = analyze_csv(MARCH_CSV)
+        report = analyze_csv(MARCH_CSV, billing_mode="official")
         self.assertEqual(report.unknown_models, {})
-        self.assertEqual(report.billable_rows, 618)
-        self.assertEqual(report.free_rows, 31)
+        self.assertEqual(report.billable_rows, 649)
+        self.assertEqual(report.free_rows, 0)
 
     def test_total_within_official_tolerance(self) -> None:
-        report = analyze_csv(MARCH_CSV)
-        gap = report.total_cost_with_free - MARCH_OFFICIAL_TOTAL
+        report = analyze_csv(MARCH_CSV, billing_mode="official")
+        gap = report.total_spend - MARCH_OFFICIAL_TOTAL
         self.assertGreater(gap, -0.02)
         self.assertLess(
             abs(gap) / MARCH_OFFICIAL_TOTAL,
             MARCH_TOTAL_TOLERANCE_PCT,
         )
-        self.assertAlmostEqual(report.total_cost, 67.74, delta=0.05)
-        self.assertAlmostEqual(report.free_cost, 3.05, delta=0.02)
+        self.assertAlmostEqual(report.total_cost, 70.79, delta=0.05)
+        self.assertEqual(report.free_cost, 0.0)
         self.assertNotIn(FREE_KIND, report.skipped_rows)
         self.assertEqual(report.skipped_rows.get("Errored, No Charge"), 13)
+
+    def test_strict_mode_keeps_free_separate(self) -> None:
+        report = analyze_csv(MARCH_CSV)
+        self.assertEqual(report.billable_rows, 618)
+        self.assertEqual(report.free_rows, 31)
+        self.assertAlmostEqual(report.total_cost, 67.74, delta=0.05)
+        self.assertAlmostEqual(report.free_cost, 3.05, delta=0.02)
         self.assertGreater(report.by_model["auto"].free_rows, 0)
 
     def test_by_model_breakdown(self) -> None:
-        report = analyze_csv(MARCH_CSV)
-        self.assertAlmostEqual(report.by_model["auto"].cost, 38.54, delta=0.05)
+        report = analyze_csv(MARCH_CSV, billing_mode="official")
+        self.assertAlmostEqual(report.by_model["auto"].cost, 41.58, delta=0.05)
         self.assertAlmostEqual(report.by_model["gpt-5.4-medium"].cost, 17.77, delta=0.05)
         self.assertAlmostEqual(report.by_model["gpt-5.2"].cost, 6.20, delta=0.05)
         self.assertAlmostEqual(report.by_model["composer-2-fast"].cost, 0.67, delta=0.02)
@@ -253,7 +268,7 @@ class TestAprilGolden(unittest.TestCase):
         self.assertEqual(report.free_rows, 0)
 
     def test_total_within_official_tolerance(self) -> None:
-        report = analyze_csv(APRIL_CSV)
+        report = analyze_csv(APRIL_CSV, billing_mode="official")
         gap = report.total_cost - APRIL_OFFICIAL_TOTAL
         self.assertGreater(gap, -0.05)
         self.assertLess(
@@ -277,38 +292,40 @@ class TestAprilGolden(unittest.TestCase):
 
 
 class TestMayJuneGolden(unittest.TestCase):
-    def test_may_status_only_free_rows_do_not_count(self) -> None:
-        report = analyze_csv(MAY_CSV)
-        self.assertEqual(report.billable_rows, 638)
-        self.assertEqual(report.free_rows, 106)
-        self.assertAlmostEqual(report.total_cost, 89.40, delta=0.05)
-        # 仅统计 Cost 列有美元金额的 Free 行。
-        self.assertAlmostEqual(report.free_cost, 2.05, delta=0.02)
-        self.assertAlmostEqual(report.total_cost_with_free, 91.45, delta=0.05)
+    def test_official_mode_excludes_status_only_free_rows(self) -> None:
+        report = analyze_csv(MAY_CSV, billing_mode="official")
+        self.assertEqual(report.billable_rows, 670)
+        self.assertEqual(report.free_rows, 0)
+        self.assertEqual(report.free_cost, 0.0)
+        self.assertAlmostEqual(report.total_cost, 91.45, delta=0.05)
+        self.assertAlmostEqual(report.total_spend, 91.45, delta=0.05)
+        self.assertGreater(report.skipped_rows.get(FREE_STATUS_ONLY_SKIP, 0), 0)
         self.assertLess(
-            abs(report.total_cost_with_free - MAY_OFFICIAL_TOTAL) / MAY_OFFICIAL_TOTAL,
+            abs(report.total_spend - MAY_OFFICIAL_TOTAL) / MAY_OFFICIAL_TOTAL,
             MAY_TOTAL_TOLERANCE_PCT,
         )
 
-    def test_june_status_only_free_rows_are_zero_cost(self) -> None:
-        report = analyze_csv(JUNE_CSV)
-        self.assertEqual(report.free_rows, 24)
-        self.assertAlmostEqual(report.total_cost, 139.81, delta=0.05)
+    def test_june_official_excludes_status_only_free_rows(self) -> None:
+        report = analyze_csv(JUNE_CSV, billing_mode="official")
+        self.assertEqual(report.free_rows, 0)
         self.assertEqual(report.free_cost, 0.0)
-        self.assertAlmostEqual(report.total_cost_with_free, 139.81, delta=0.05)
+        self.assertAlmostEqual(report.total_cost, 139.81, delta=0.05)
+        self.assertAlmostEqual(report.total_spend, 139.81, delta=0.05)
+        self.assertEqual(report.skipped_rows.get(FREE_STATUS_ONLY_SKIP), 24)
         self.assertLess(
             abs(report.total_cost - JUNE_OFFICIAL_TOTAL) / JUNE_OFFICIAL_TOTAL,
             JUNE_TOTAL_TOLERANCE_PCT,
         )
 
     def test_strict_mode_counts_status_only_free_rows(self) -> None:
-        may_report = analyze_csv(MAY_CSV, free_pricing_mode="strict")
+        may_report = analyze_csv(MAY_CSV)
+        self.assertAlmostEqual(may_report.total_cost, 89.40, delta=0.05)
         self.assertAlmostEqual(may_report.free_cost, 9.06, delta=0.02)
-        self.assertAlmostEqual(may_report.total_cost_with_free, 98.46, delta=0.05)
+        self.assertAlmostEqual(may_report.total_spend, 98.46, delta=0.05)
 
-        june_report = analyze_csv(JUNE_CSV, free_pricing_mode="strict")
+        june_report = analyze_csv(JUNE_CSV)
         self.assertAlmostEqual(june_report.free_cost, 11.50, delta=0.02)
-        self.assertAlmostEqual(june_report.total_cost_with_free, 151.31, delta=0.05)
+        self.assertAlmostEqual(june_report.total_spend, 151.31, delta=0.05)
 
     def test_composer_25_fast_daily_vs_official(self) -> None:
         official_total = sum(COMPOSER_25_FAST_DAILY_OFFICIAL.values())
@@ -338,13 +355,14 @@ class TestBillingCycleGolden(unittest.TestCase):
     """
 
     def test_all_models_recognized(self) -> None:
-        report = analyze_csv(CYCLE_CSV)
+        report = analyze_csv(CYCLE_CSV, billing_mode="official")
         self.assertEqual(report.unknown_models, {})
         self.assertEqual(report.billable_rows, 1034)
-        self.assertEqual(report.free_rows, 98)
+        self.assertEqual(report.free_rows, 0)
+        self.assertEqual(report.skipped_rows.get(FREE_STATUS_ONLY_SKIP), 98)
 
     def test_total_within_official_tolerance(self) -> None:
-        report = analyze_csv(CYCLE_CSV)
+        report = analyze_csv(CYCLE_CSV, billing_mode="official")
         gap = report.total_cost - CYCLE_OFFICIAL_TOTAL
         self.assertLess(gap, 0.0)
         self.assertLess(
@@ -355,8 +373,8 @@ class TestBillingCycleGolden(unittest.TestCase):
         self.assertEqual(report.free_cost, 0.0)
 
     def test_june_segment_matches_june_csv(self) -> None:
-        cycle = analyze_csv(CYCLE_CSV)
-        june = analyze_csv(JUNE_CSV)
+        cycle = analyze_csv(CYCLE_CSV, billing_mode="official")
+        june = analyze_csv(JUNE_CSV, billing_mode="official")
         self.assertAlmostEqual(cycle.total_cost, 47.26 + june.total_cost, delta=0.05)
 
     def test_auto_daily_stable_days_vs_official(self) -> None:

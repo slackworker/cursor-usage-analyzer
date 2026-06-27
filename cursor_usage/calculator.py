@@ -12,6 +12,7 @@ from cursor_usage.pricing import (
     AGENT_REVIEW_DISCOUNT_RATIO,
     BILLABLE_KIND,
     FREE_KIND,
+    FREE_STATUS_ONLY_SKIP,
     PRICING,
     ModelPricing,
     is_billable_kind,
@@ -72,11 +73,18 @@ class UsageReport:
     by_model: dict[str, ModelSummary]
     by_pool: dict[str, PoolSummary]
     row_costs: list[RowCost]
-    free_pricing_mode: str = "official"
+    billing_mode: str = "strict"
 
     @property
     def total_cost_with_free(self) -> float:
         return self.total_cost + self.free_cost
+
+    @property
+    def total_spend(self) -> float:
+        """Dashboard-style total for the active billing mode."""
+        if self.billing_mode == "official":
+            return self.total_cost
+        return self.total_cost_with_free
 
 
 @dataclass
@@ -122,15 +130,9 @@ def _resolve_row_cost(
     return _row_cost(model, icw, icwo, cr, out, kind=kind, max_mode=max_mode)
 
 
-def _resolve_free_row_cost(
-    row_cost_value: str | None,
-) -> float:
-    """Free rows only count when Cost has explicit USD amount."""
-    annotated = parse_official_row_cost(row_cost_value)
-    if annotated is not None:
-        return annotated
-    # Cost is status-only ("Free"/"free"/"-") -> do not count in dashboard spend.
-    return 0.0
+def _official_free_row_cost(row_cost_value: str | None) -> float | None:
+    """Return USD amount for Free rows that count in official mode, else None."""
+    return parse_official_row_cost(row_cost_value)
 
 
 def _resolve_free_row_cost_strict(
@@ -176,13 +178,52 @@ def _row_cost(
     return token_row_cost(pricing, icw, icwo, cr, out)
 
 
+def _add_included_row(
+    *,
+    date: str,
+    model: str,
+    kind: str,
+    cost: float,
+    tokens: int,
+    pool: str,
+    billable_rows: int,
+    total_tokens: int,
+    total_cost: float,
+    by_model: dict[str, ModelSummary],
+    by_pool: dict[str, PoolSummary],
+    row_costs: list[RowCost],
+) -> tuple[int, int, float]:
+    billable_rows += 1
+    total_tokens += tokens
+    total_cost += cost
+
+    if model not in by_model:
+        by_model[model] = ModelSummary(model=model, pool=pool)
+    by_model[model].rows += 1
+    by_model[model].tokens += tokens
+    by_model[model].cost += cost
+
+    if pool not in by_pool:
+        by_pool[pool] = PoolSummary(pool=pool)
+    by_pool[pool].rows += 1
+    by_pool[pool].tokens += tokens
+    by_pool[pool].cost += cost
+    by_pool[pool].models[model] = by_model[model]
+
+    row_costs.append(RowCost(date, model, kind, cost, tokens, True))
+    return billable_rows, total_tokens, total_cost
+
+
 def analyze_csv(
     path: str | Path,
     *,
-    free_pricing_mode: Literal["official", "strict"] = "official",
+    billing_mode: Literal["official", "strict"] = "strict",
+    free_pricing_mode: Literal["official", "strict"] | None = None,
 ) -> UsageReport:
-    if free_pricing_mode not in {"official", "strict"}:
-        raise ValueError("free_pricing_mode must be 'official' or 'strict'")
+    if free_pricing_mode is not None:
+        billing_mode = free_pricing_mode
+    if billing_mode not in {"official", "strict"}:
+        raise ValueError("billing_mode must be 'official' or 'strict'")
     path = Path(path)
     with path.open(newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
@@ -216,20 +257,39 @@ def analyze_csv(
         max_mode = parse_max_mode(row.get("Max Mode"))
 
         if is_free_kind(kind) and model in PRICING:
-            if free_pricing_mode == "strict":
-                cost = _resolve_free_row_cost_strict(
-                    row.get("Cost"),
-                    model,
-                    icw,
-                    icwo,
-                    cr,
-                    out,
-                    kind=kind,
-                    max_mode=max_mode,
-                )
-            else:
-                cost = _resolve_free_row_cost(row.get("Cost"))
             pool = PRICING[model].pool
+            if billing_mode == "official":
+                cost = _official_free_row_cost(row.get("Cost"))
+                if cost is None:
+                    skipped_rows[FREE_STATUS_ONLY_SKIP] += 1
+                    row_costs.append(RowCost(date, model, kind, 0.0, tokens, False))
+                    continue
+                billable_rows, total_tokens, total_cost = _add_included_row(
+                    date=date,
+                    model=model,
+                    kind=kind,
+                    cost=cost,
+                    tokens=tokens,
+                    pool=pool,
+                    billable_rows=billable_rows,
+                    total_tokens=total_tokens,
+                    total_cost=total_cost,
+                    by_model=by_model,
+                    by_pool=by_pool,
+                    row_costs=row_costs,
+                )
+                continue
+
+            cost = _resolve_free_row_cost_strict(
+                row.get("Cost"),
+                model,
+                icw,
+                icwo,
+                cr,
+                out,
+                kind=kind,
+                max_mode=max_mode,
+            )
             free_rows += 1
             free_cost += cost
             total_tokens += tokens
@@ -272,24 +332,20 @@ def analyze_csv(
         )
 
         pool = PRICING[model].pool
-        billable_rows += 1
-        total_tokens += tokens
-        total_cost += cost
-
-        if model not in by_model:
-            by_model[model] = ModelSummary(model=model, pool=pool)
-        by_model[model].rows += 1
-        by_model[model].tokens += tokens
-        by_model[model].cost += cost
-
-        if pool not in by_pool:
-            by_pool[pool] = PoolSummary(pool=pool)
-        by_pool[pool].rows += 1
-        by_pool[pool].tokens += tokens
-        by_pool[pool].cost += cost
-        by_pool[pool].models[model] = by_model[model]
-
-        row_costs.append(RowCost(date, model, kind, cost, tokens, True))
+        billable_rows, total_tokens, total_cost = _add_included_row(
+            date=date,
+            model=model,
+            kind=kind,
+            cost=cost,
+            tokens=tokens,
+            pool=pool,
+            billable_rows=billable_rows,
+            total_tokens=total_tokens,
+            total_cost=total_cost,
+            by_model=by_model,
+            by_pool=by_pool,
+            row_costs=row_costs,
+        )
 
     return UsageReport(
         source=str(path),
@@ -306,7 +362,7 @@ def analyze_csv(
         by_model=by_model,
         by_pool=by_pool,
         row_costs=row_costs,
-        free_pricing_mode=free_pricing_mode,
+        billing_mode=billing_mode,
     )
 
 
@@ -331,7 +387,7 @@ def infer_limits_from_baseline(
     """Infer per-pool limits from a baseline CSV and Dashboard usage ratios.
 
     Uses only Included pool.cost (not free_cost). Baseline CSV should be analyzed
-    with official free_pricing_mode so totals match Dashboard spend.
+    with official billing_mode so totals match Dashboard spend.
     Whether Free rows consume pool allowance is unknown (see docs/spec.md §3.3).
     """
     if not 0 < auto_composer_usage <= 1:
@@ -365,6 +421,10 @@ def apply_limits(report: UsageReport, limits: PoolLimits) -> UsageWithLimits:
 def analyze_many(
     paths: Iterable[str | Path],
     *,
-    free_pricing_mode: Literal["official", "strict"] = "official",
+    billing_mode: Literal["official", "strict"] = "strict",
+    free_pricing_mode: Literal["official", "strict"] | None = None,
 ) -> list[UsageReport]:
-    return [analyze_csv(path, free_pricing_mode=free_pricing_mode) for path in paths]
+    return [
+        analyze_csv(path, billing_mode=billing_mode, free_pricing_mode=free_pricing_mode)
+        for path in paths
+    ]

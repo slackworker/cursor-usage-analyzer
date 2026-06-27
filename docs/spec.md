@@ -60,7 +60,7 @@ Total spend = Included + On-demand + Free
 | `Errored, No Charge` | 错误，不计费 | 跳过 → `skipped_rows` | — |
 | `Aborted, Not Charged` | 中止，不计费 | 跳过 → `skipped_rows` | — |
 
-- 对账官方 Total：使用 `total_cost_with_free`（= `total_cost` + `free_cost`）；纯 Included 月可与 `total_cost` 等同
+- 对账官方 Total：使用 **official** 模式的 `total_spend`（= `total_cost`）；**strict** 模式使用 `total_spend`（= `total_cost + free_cost`）
 - `Kind` 匹配**大小写不敏感**（`normalize_kind()`）
 - On-demand 出现后需在 `normalize_kind()` 增加归一化并计入合计
 
@@ -73,23 +73,50 @@ Total spend = Included + On-demand + Free
 
 格式 B 可用于 golden 逐行对账：`cursor-usage file.csv --reconcile`（见 [`reconcile.py`](../cursor_usage/reconcile.py)）。
 
-**Cost 列有美元金额时**：合计与按模型汇总**优先采用该行标注金额**，不再对该行做 token 公式推算（见 [`calculator.py`](../cursor_usage/calculator.py) 的 `_resolve_row_cost()`）。`--reconcile` 仍会用 token 公式与标注价比对，用于发现折扣或活动价。
+### 计费模式（已确认）
 
-**Free 行特例（已确认）**：`Kind=Free` 且 `Cost` 仅为状态值（`Free`/`free`/`-`）时，该行按 **$0.00** 处理，不做 token 推算；只有 `Cost` 为美元金额时才计入 `free_cost`。
-工具同时支持 `strict` 口径（无论 `Cost` 是否有金额，Free 都按 token 计入），用于「真实消耗」视角分析。
+Dashboard **Total spend** = Included + On-demand + Free。工具提供两种模式：
+
+| 模式 | Total 公式 | Free 处理 |
+|------|-----------|-----------|
+| **strict**（默认，自然口径） | Included + On-demand + Free | Free 单独统计：Cost 有美元 → 用标注价；Cost 为状态值 → token 公式推算 |
+| **official**（衍生，对齐 Dashboard） | Included + On-demand | **无单独 Free**；Cost 有美元的 Free 行**并入 Included**；Cost 为状态值的 Free 行**不纳入统计** |
+
+概念模型：
+
+```mermaid
+flowchart TB
+  subgraph strict [strict — 自然口径，默认]
+    S1[Included] --> ST[Total]
+    S2[On-demand] --> ST
+    S3[Free 有金额] --> SF[Free]
+    S4[Free status-only] --> SF
+    SF --> ST
+  end
+
+  subgraph official [official — 对齐 Dashboard]
+    O1[Included] --> OT[Total]
+    O2[On-demand] --> OT
+    O3[Free 有金额] --> O1
+    O4[Free status-only] --> SKIP[不纳入统计]
+  end
+```
+
+**strict** 是最符合自然理解的计费方式：三类用量各自入账，Free 既含有 `Cost` 美元金额的行，也含仅状态值、需按 token 公式推算的行。**official** 在此基础上衍生，用于对齐 Dashboard **Total spend**：不再单独展示 Free，有金额的 Free 行视同 Included 计入 Total，status-only 的 Free 行则完全排除。
+
+CLI：`--billing-mode strict|official`（`--free-pricing-mode` 为兼容别名）。
+
+**Cost 列有美元金额时**：合计与按模型汇总**优先采用该行标注金额**，不再对该行做 token 公式推算（见 [`calculator.py`](../cursor_usage/calculator.py) 的 `_resolve_row_cost()`）。`--reconcile` 仍会用 token 公式与标注价比对，用于发现折扣或活动价。
 
 ### 计费过滤规则
 
-- `Kind = Included` → `total_cost`
-- `Kind = Free`：`Cost` 有美元金额 → 计入 `free_cost`；`Cost` 为状态值（无金额）→ 按 $0 处理
+- `Kind = Included` → Included（`total_cost`）
+- `Kind = Free`（**strict**）：计入 Free（`free_cost`）；有美元用标注价，无美元用 token 公式
+- `Kind = Free`（**official**）：Cost 有美元 → 并入 Included；Cost 为状态值 → 跳过（`skipped_rows["Free (status-only)"]`）
 - 跳过：`Errored, No Charge`、`Aborted, Not Charged`（计入 `skipped_rows`）
 - 模型必须在 [`cursor_usage/pricing.py`](../cursor_usage/pricing.py) 的 `PRICING` 中，否则记入 `unknown_models`
 
-**Errored + Cost=Free（已确认）**：`Kind=Errored, No Charge` 时 `Cost` 列可能出现 `Free`、`-` 或空（June 样例 13 行）。这与 `Kind=Free` **无关**，仅为 Dashboard 导出中的展示残留，**不代表**免费额度消耗。此类行**彻底排除**：不计入 `total_cost`、`free_cost`、`total_tokens` 及按模型/池汇总；仅在 `skipped_rows` 中计数供审计。`Cost` 列值对跳过逻辑无影响（一律按 `Kind` 判定）。
-
-CLI `--free-pricing-mode`：
-- `official`（默认）：对齐官方展示口径（status-only Free 记 0）
-- `strict`：统一 token 口径（status-only Free 也计入）
+**Errored + Cost=Free（已确认）**：`Kind=Errored, No Charge` 时 `Cost` 列可能出现 `Free`、`-` 或空（June 样例 13 行）。这与 `Kind=Free` **无关**，仅为 Dashboard 导出中的展示残留，**不代表**免费额度消耗。此类行**彻底排除**：不计入 Included、Free、`total_tokens` 及按模型/池汇总；仅在 `skipped_rows` 中计数供审计。`Cost` 列值对跳过逻辑无影响（一律按 `Kind` 判定）。
 
 ### 官方折扣与活动价
 
@@ -396,17 +423,17 @@ May 结构特殊：5/1–5/4 集中使用后出现 **23 天空档**（5/6–5/26
 
 **已确认规则**（由 5/27 官方 auto 日值 $0.00 直接验证）：
 
-- `Kind=Free` 且 `Cost` 无美元金额（仅状态值）→ **不计入** Dashboard spend
-- `Kind=Free` 且 `Cost` 为美元金额 → 计入 `free_cost`
+- **official** 模式：`Kind=Free` 且 `Cost` 无美元 → 不纳入统计；`Cost` 有美元 → 并入 Included
+- **strict** 模式：所有 Free 行均计入 Free（含 token 推算）
 
-按该规则更新后：
+按 official 规则：
 
 | 指标 | 数值 |
 |------|------|
-| `total_cost`（Included） | $89.40 |
-| `free_cost`（仅美元金额 Free） | $2.05 |
-| `total_cost_with_free` | **$91.45** |
+| `total_cost` / `total_spend`（Included + 有金额 Free） | **$91.45** |
 | 与官方差额 | **-$0.56**（约 0.6%） |
+
+strict 模式：`total_cost` $89.40 + `free_cost` $9.06 = `total_spend` **$98.46**。
 
 > 仍保留「文档全价」原则：不把按日活动价硬编码进 `PRICING`。
 

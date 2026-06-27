@@ -32,9 +32,10 @@ class ModelPricing:
 BILLABLE_KIND = "Included"
 
 # Free rows represent free allowance usage.
-# In official mode only rows with explicit USD in Cost count into free_cost.
-# Strict mode can still estimate status-only rows by token formula.
+# Strict mode: all Free rows count (USD in Cost or token formula).
+# Official mode: Free with USD merges into Included; status-only Free is excluded.
 FREE_KIND = "Free"
+FREE_STATUS_ONLY_SKIP = "Free (status-only)"
 
 ERRORED_KIND = "Errored, No Charge"
 ABORTED_KIND = "Aborted, Not Charged"

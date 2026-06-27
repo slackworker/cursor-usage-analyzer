@@ -18,7 +18,12 @@ from cursor_usage.calculator import (
     pool_cost_with_free,
     pool_free_cost,
 )
-from cursor_usage.pricing import AGENT_REVIEW_DISCOUNT_RATIO, BILLABLE_KIND, FREE_KIND
+from cursor_usage.pricing import (
+    AGENT_REVIEW_DISCOUNT_RATIO,
+    BILLABLE_KIND,
+    FREE_KIND,
+    FREE_STATUS_ONLY_SKIP,
+)
 from cursor_usage.pricing_sources import MODEL_SOURCES, RULE_SOURCES, PricingConfidence
 from cursor_usage.reconcile import DISCOUNT_NOTE, reconcile_csv
 
@@ -71,7 +76,12 @@ def _print_report(report: UsageReport) -> None:
         unknown = ", ".join(f"{k}={v}" for k, v in sorted(report.unknown_models.items()))
         print(f"未识别模型: {unknown}")
     print()
-    print(f"Free 计费模式: {report.free_pricing_mode}")
+    print(f"计费模式: {report.billing_mode}")
+    if report.billing_mode == "official" and report.skipped_rows.get(FREE_STATUS_ONLY_SKIP):
+        print(
+            f"  （{FREE_STATUS_ONLY_SKIP} 行已排除，"
+            f"Cost 有金额的 {FREE_KIND} 行已并入 {BILLABLE_KIND}）"
+        )
     print()
 
     print("按模型:")
@@ -102,10 +112,16 @@ def _print_report(report: UsageReport) -> None:
     print()
 
     print(f"合计 Token: {report.total_tokens:,}")
-    print(f"推算费用（不含 {FREE_KIND} 额度）: ${report.total_cost:.2f}")
-    if report.free_rows:
-        print(f"{FREE_KIND} 额度消耗（推算）:       ${report.free_cost:.2f}  ({report.free_rows} 行)")
-        print(f"合计（含 {FREE_KIND} 额度）:         ${report.total_cost_with_free:.2f}")
+    if report.billing_mode == "strict":
+        print(f"{BILLABLE_KIND} 费用:              ${report.total_cost:.2f}")
+        if report.free_rows:
+            print(
+                f"{FREE_KIND} 费用:                  ${report.free_cost:.2f}  "
+                f"({report.free_rows} 行)"
+            )
+        print(f"Total（Included+Free）:    ${report.total_spend:.2f}")
+    else:
+        print(f"Total（Included+On-demand）: ${report.total_spend:.2f}")
     print(
         "注：按文档全价推算；未建模的限时折扣或活动价可能使 Dashboard 低于推算值，"
         "差异幅度不固定。"
@@ -217,11 +233,13 @@ def _to_json(report: UsageReport, limits_result=None) -> dict:
         "skipped_rows": report.skipped_rows,
         "unknown_models": report.unknown_models,
         "total_tokens": report.total_tokens,
-        "free_pricing_mode": report.free_pricing_mode,
+        "billing_mode": report.billing_mode,
+        "free_pricing_mode": report.billing_mode,
         "total_cost": round(report.total_cost, 4),
         "free_rows": report.free_rows,
         "free_cost": round(report.free_cost, 4),
         "total_cost_with_free": round(report.total_cost_with_free, 4),
+        "total_spend": round(report.total_spend, 4),
         "by_model": {
             k: {
                 "pool": v.pool,
@@ -295,12 +313,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="直接指定 API 池总额度（美元）",
     )
     parser.add_argument(
+        "--billing-mode",
         "--free-pricing-mode",
+        dest="billing_mode",
         choices=("official", "strict"),
-        default="official",
+        default="strict",
         help=(
-            "Free 计费口径：official=仅 Cost 有美元时计入；"
-            "strict=无论 Cost 是否有金额均按 token 计入"
+            "计费模式：strict=Total=Included+Free（Free 含金额行与 token 推算行，默认）；"
+            "official=Total=Included+On-demand（Cost 有金额的 Free 并入 Included，"
+            "status-only Free 不计入）"
         ),
     )
     parser.add_argument(
@@ -323,7 +344,7 @@ def main(argv: list[str] | None = None) -> int:
     if not args.csv.exists():
         parser.error(f"文件不存在: {args.csv}")
 
-    report = analyze_csv(args.csv, free_pricing_mode=args.free_pricing_mode)
+    report = analyze_csv(args.csv, billing_mode=args.billing_mode)
     limits_result = None
 
     has_limit_flags = args.auto_composer_limit is not None or args.api_limit is not None
@@ -346,7 +367,7 @@ def main(argv: list[str] | None = None) -> int:
         if not args.baseline.exists():
             parser.error(f"基准文件不存在: {args.baseline}")
         # Pool limit inference aligns with Dashboard spend (official Free rules).
-        baseline = analyze_csv(args.baseline, free_pricing_mode="official")
+        baseline = analyze_csv(args.baseline, billing_mode="official")
         limits = infer_limits_from_baseline(
             baseline,
             auto_composer_usage=args.auto_composer_usage,
