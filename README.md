@@ -14,7 +14,9 @@ Dashboard **Total spend** = Included + On-demand + Free（当前样例中 On-dem
 - 按 `Kind` 拆分：**strict**（默认）`Total = Included + Free`；**official** 对齐 Dashboard：`Total = Included + On-demand`，Cost 有金额的 Free 并入 Included
 - 跳过 `Errored, No Charge`、`Aborted, Not Charged`
 - 按模型、用量池（Auto+Composer / API）汇总费用
-- 可选：根据基准 CSV + 池使用率推测套餐额度，并计算目标 CSV 的使用百分比
+- **套餐池使用率双向推算**（official 计费口径）：
+  - **正向**：CSV + 池额度 → 使用率（默认额度 **$145 / $45**）
+  - **反推**：CSV + Dashboard 使用率 → 池额度（`--baseline` 可省略，默认与主 CSV 相同）
 
 ## 安装
 
@@ -63,16 +65,27 @@ python -m cursor_usage.cli "examples/January - US\$1.61.csv"
 cursor-usage "examples/January - US\$1.61.csv" --reconcile
 ```
 
-### 推测套餐额度并计算使用率
+### 套餐池使用率（双向推算，official 口径）
+
+**正向**：给定池额度，从 CSV 推算使用率（默认 $145 / $45）：
 
 ```bash
-cursor-usage target.csv \
-  --baseline "examples/February - US\$46.57.csv" \
-  --auto-composer-usage 0.95 \
-  --api-usage 0.99
+cursor-usage "examples/June - US\$137.62.csv"
+cursor-usage target.csv --auto-composer-limit 150 --api-limit 50
 ```
 
-基准 CSV 推断额度时固定使用 **official** 计费模式（对齐 Dashboard Total spend）。
+**反推**：给定 CSV 与 Dashboard 使用率，反推池额度（基准 CSV 默认同主文件）：
+
+```bash
+cursor-usage "examples/May 27 - Jun 27 US\$191.60 100% + 100%.csv" \
+  --auto-composer-usage 1.0 --api-usage 1.0
+
+cursor-usage target.csv \
+  --baseline "examples/February - US\$46.57.csv" \
+  --auto-composer-usage 0.95 --api-usage 0.99
+```
+
+池使用率计算固定 **official** 计费模式（对齐 Dashboard Included）；上方费用汇总仍可用 `--billing-mode` 切换。
 
 ### JSON 输出
 

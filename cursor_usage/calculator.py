@@ -87,6 +87,10 @@ class UsageReport:
         return self.total_cost_with_free
 
 
+DEFAULT_AUTO_COMPOSER_LIMIT = 145.0
+DEFAULT_API_LIMIT = 45.0
+
+
 @dataclass
 class PoolLimits:
     auto_composer: float
@@ -95,6 +99,12 @@ class PoolLimits:
     @property
     def total(self) -> float:
         return self.auto_composer + self.api
+
+
+DEFAULT_POOL_LIMITS = PoolLimits(
+    auto_composer=DEFAULT_AUTO_COMPOSER_LIMIT,
+    api=DEFAULT_API_LIMIT,
+)
 
 
 @dataclass
@@ -377,6 +387,22 @@ def pool_free_cost(report: UsageReport, pool: str) -> float:
 def pool_cost_with_free(report: UsageReport, pool: str) -> float:
     summary = report.by_pool.get(pool, PoolSummary(pool=pool))
     return summary.cost + summary.free_cost
+
+
+def resolve_pool_limits(
+    *,
+    auto_composer_limit: float | None = None,
+    api_limit: float | None = None,
+) -> PoolLimits:
+    """Forward mode: fixed limits with $145 / $45 defaults."""
+    return PoolLimits(
+        auto_composer=(
+            auto_composer_limit
+            if auto_composer_limit is not None
+            else DEFAULT_AUTO_COMPOSER_LIMIT
+        ),
+        api=api_limit if api_limit is not None else DEFAULT_API_LIMIT,
+    )
 
 
 def infer_limits_from_baseline(

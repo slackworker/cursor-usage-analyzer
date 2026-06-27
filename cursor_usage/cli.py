@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 
 from cursor_usage.calculator import (
+    DEFAULT_API_LIMIT,
+    DEFAULT_AUTO_COMPOSER_LIMIT,
     PoolLimits,
     UsageReport,
     analyze_csv,
@@ -17,6 +19,7 @@ from cursor_usage.calculator import (
     pool_cost,
     pool_cost_with_free,
     pool_free_cost,
+    resolve_pool_limits,
 )
 from cursor_usage.pricing import (
     AGENT_REVIEW_DISCOUNT_RATIO,
@@ -189,7 +192,7 @@ def _reconcile_to_json(path: Path) -> dict:
     }
 
 
-def _print_limits(result) -> None:
+def _print_limits(result, *, limits_source: str) -> None:
     limits = result.limits
     report = result.report
     ac_used = pool_cost(report, "auto_composer")
@@ -200,7 +203,16 @@ def _print_limits(result) -> None:
     api_with_free = pool_cost_with_free(report, "api")
 
     print()
-    print("套餐额度与使用率:")
+    print("套餐池使用率（official 计费口径）:")
+    if limits_source == "default":
+        print(
+            f"  额度来源: 默认 ${DEFAULT_AUTO_COMPOSER_LIMIT:.0f} / "
+            f"${DEFAULT_API_LIMIT:.0f}"
+        )
+    elif limits_source == "explicit":
+        print("  额度来源: 命令行指定")
+    elif limits_source == "inferred":
+        print("  额度来源: 由 CSV 用量与 Dashboard 使用率反推")
     print(f"  Auto+Composer 额度: ${limits.auto_composer:.2f}")
     print(f"  API 额度:           ${limits.api:.2f}")
     print(f"  合计额度:           ${limits.total:.2f}")
@@ -223,7 +235,7 @@ def _print_limits(result) -> None:
         )
 
 
-def _to_json(report: UsageReport, limits_result=None) -> dict:
+def _to_json(report: UsageReport, limits_result=None, *, limits_source: str | None = None) -> dict:
     payload = {
         "source": report.source,
         "date_from": report.date_from,
@@ -274,6 +286,9 @@ def _to_json(report: UsageReport, limits_result=None) -> dict:
             "api": round(limits_result.api_pct, 2),
             "total": round(limits_result.total_pct, 2),
         }
+        payload["pool_usage_billing_mode"] = "official"
+        if limits_source is not None:
+            payload["limits_source"] = limits_source
     return payload
 
 
@@ -286,31 +301,40 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--baseline",
         type=Path,
-        help="用于推测套餐额度的基准 CSV（例如整月账单）",
+        help=(
+            "反推额度时使用的基准 CSV；默认与主 CSV 相同。"
+            "可与主 CSV 不同，用于从整月账单反推额度后计算另一份 CSV 的使用率"
+        ),
     )
     parser.add_argument(
         "--auto-composer-usage",
         type=float,
         metavar="RATIO",
-        help="基准 CSV 中 Auto+Composer 池使用率，如 0.95 表示 95%%",
+        help=(
+            "反推额度：基准 CSV 中 Auto+Composer 池 Dashboard 使用率，如 1.0 表示 100%%。"
+            "与 --api-usage 同时提供时进入反推模式"
+        ),
     )
     parser.add_argument(
         "--api-usage",
         type=float,
         metavar="RATIO",
-        help="基准 CSV 中 API 池使用率，如 0.99 表示 99%%",
+        help=(
+            "反推额度：基准 CSV 中 API 池 Dashboard 使用率，如 0.99 表示 99%%。"
+            "与 --auto-composer-usage 同时提供时进入反推模式"
+        ),
     )
     parser.add_argument(
         "--auto-composer-limit",
         type=float,
         metavar="USD",
-        help="直接指定 Auto+Composer 池总额度（美元）",
+        help=f"正向推算：Auto+Composer 池总额度（美元），默认 ${DEFAULT_AUTO_COMPOSER_LIMIT:.0f}",
     )
     parser.add_argument(
         "--api-limit",
         type=float,
         metavar="USD",
-        help="直接指定 API 池总额度（美元）",
+        help=f"正向推算：API 池总额度（美元），默认 ${DEFAULT_API_LIMIT:.0f}",
     )
     parser.add_argument(
         "--billing-mode",
@@ -337,6 +361,50 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _official_pool_report(report: UsageReport, csv_path: Path) -> UsageReport:
+    """Pool usage always uses official billing (Dashboard-aligned Included)."""
+    if report.billing_mode == "official":
+        return report
+    return analyze_csv(csv_path, billing_mode="official")
+
+
+def _resolve_limits_mode(
+    args: argparse.Namespace,
+) -> tuple[PoolLimits, str, Path | None]:
+    """Return (limits, limits_source, baseline_path_for_display)."""
+    has_limit_flags = (
+        args.auto_composer_limit is not None or args.api_limit is not None
+    )
+    has_usage_flags = (
+        args.auto_composer_usage is not None or args.api_usage is not None
+    )
+
+    if has_limit_flags and has_usage_flags:
+        raise ValueError("正向（--*-limit）与反推（--*-usage）不能同时使用")
+
+    if has_usage_flags:
+        if args.auto_composer_usage is None or args.api_usage is None:
+            raise ValueError("反推模式需同时提供 --auto-composer-usage 与 --api-usage")
+        baseline_path = args.baseline or args.csv
+        if not baseline_path.exists():
+            raise ValueError(f"基准文件不存在: {baseline_path}")
+        baseline = analyze_csv(baseline_path, billing_mode="official")
+        limits = infer_limits_from_baseline(
+            baseline,
+            auto_composer_usage=args.auto_composer_usage,
+            api_usage=args.api_usage,
+        )
+        return limits, "inferred", baseline_path
+
+    limits = resolve_pool_limits(
+        auto_composer_limit=args.auto_composer_limit,
+        api_limit=args.api_limit,
+    )
+    if has_limit_flags:
+        return limits, "explicit", None
+    return limits, "default", None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -345,38 +413,15 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(f"文件不存在: {args.csv}")
 
     report = analyze_csv(args.csv, billing_mode=args.billing_mode)
-    limits_result = None
-
-    has_limit_flags = args.auto_composer_limit is not None or args.api_limit is not None
-    has_baseline_flags = args.baseline is not None or args.auto_composer_usage is not None or args.api_usage is not None
-
-    if has_limit_flags and has_baseline_flags:
-        parser.error("请只使用 --baseline 或 --*-limit 其中一种方式指定额度")
-
-    if has_limit_flags:
-        if args.auto_composer_limit is None or args.api_limit is None:
-            parser.error("使用额度模式时需同时提供 --auto-composer-limit 和 --api-limit")
-        limits = PoolLimits(
-            auto_composer=args.auto_composer_limit,
-            api=args.api_limit,
-        )
-        limits_result = apply_limits(report, limits)
-    elif has_baseline_flags:
-        if args.baseline is None or args.auto_composer_usage is None or args.api_usage is None:
-            parser.error("基准模式需同时提供 --baseline、--auto-composer-usage、--api-usage")
-        if not args.baseline.exists():
-            parser.error(f"基准文件不存在: {args.baseline}")
-        # Pool limit inference aligns with Dashboard spend (official Free rules).
-        baseline = analyze_csv(args.baseline, billing_mode="official")
-        limits = infer_limits_from_baseline(
-            baseline,
-            auto_composer_usage=args.auto_composer_usage,
-            api_usage=args.api_usage,
-        )
-        limits_result = apply_limits(report, limits)
+    try:
+        limits, limits_source, baseline_path = _resolve_limits_mode(args)
+    except ValueError as exc:
+        parser.error(str(exc))
+    pool_report = _official_pool_report(report, args.csv)
+    limits_result = apply_limits(pool_report, limits)
 
     if args.json:
-        payload = _to_json(report, limits_result)
+        payload = _to_json(report, limits_result, limits_source=limits_source)
         if args.reconcile:
             payload["reconcile"] = _reconcile_to_json(args.csv)
         print(json.dumps(payload, ensure_ascii=False, indent=2))
@@ -386,14 +431,13 @@ def main(argv: list[str] | None = None) -> int:
 
     _print_report(report)
     _print_pricing_caveats(report)
-    if limits_result is not None:
-        if args.baseline is not None:
-            print()
-            print(
-                f"额度来源: 基准文件 {args.baseline} "
-                f"(Auto+Composer {args.auto_composer_usage:.0%}, API {args.api_usage:.0%})"
-            )
-        _print_limits(limits_result)
+    if limits_source == "inferred" and baseline_path is not None:
+        print()
+        print(
+            f"反推基准: {baseline_path} "
+            f"(Auto+Composer {args.auto_composer_usage:.0%}, API {args.api_usage:.0%})"
+        )
+    _print_limits(limits_result, limits_source=limits_source)
 
     exit_code = 0
     if args.reconcile:
