@@ -35,7 +35,7 @@ class CalibrationCase:
     official_total: float
     official_tolerance_pct: float | None = None
     official: ModeExpect | None = None
-    strict: ModeExpect | None = None
+    standard: ModeExpect | None = None
     calc_above_official: bool = False
     calc_below_official: bool = False
     # cycle total ≈ companion official total + prefix (same billing window).
@@ -59,7 +59,7 @@ CALIBRATION_CASES: tuple[CalibrationCase, ...] = (
         official_total=1.61,
         official_tolerance_pct=0.10,
         official=ModeExpect(total_cost=1.60, billable_rows=8, free_rows=0),
-        strict=ModeExpect(
+        standard=ModeExpect(
             total_cost=0.0,
             total_spend=1.60,
             free_cost=1.60,
@@ -71,7 +71,7 @@ CALIBRATION_CASES: tuple[CalibrationCase, ...] = (
         name="february",
         filename="February - US$46.57.csv",
         official_total=46.57,
-        strict=ModeExpect(total_cost=48.04, billable_rows=455, total_delta=0.05),
+        standard=ModeExpect(total_cost=48.04, billable_rows=455, total_delta=0.05),
         calc_above_official=True,
     ),
     CalibrationCase(
@@ -85,7 +85,7 @@ CALIBRATION_CASES: tuple[CalibrationCase, ...] = (
             free_rows=0,
             errored_skip=13,
         ),
-        strict=ModeExpect(
+        standard=ModeExpect(
             total_cost=67.74,
             total_spend=70.78,
             free_cost=3.04,
@@ -111,7 +111,7 @@ CALIBRATION_CASES: tuple[CalibrationCase, ...] = (
             free_rows=0,
             status_only_skip=74,
         ),
-        strict=ModeExpect(
+        standard=ModeExpect(
             total_cost=89.40,
             total_spend=98.46,
             free_cost=9.06,
@@ -128,7 +128,7 @@ CALIBRATION_CASES: tuple[CalibrationCase, ...] = (
             free_rows=0,
             status_only_skip=46,
         ),
-        strict=ModeExpect(
+        standard=ModeExpect(
             total_cost=143.42,
             total_spend=159.14,
             free_cost=15.72,

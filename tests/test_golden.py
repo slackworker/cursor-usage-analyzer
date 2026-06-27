@@ -152,10 +152,10 @@ class TestCalibration(unittest.TestCase):
                         gap = abs(report.total_cost - case.official_total) / case.official_total
                         self.assertLess(gap, case.official_tolerance_pct)
 
-                if case.strict:
-                    _assert_mode(self, path, case.strict)
+                if case.standard:
+                    _assert_mode(self, path, case.standard)
 
-                if case.calc_above_official and case.strict:
+                if case.calc_above_official and case.standard:
                     report = analyze_csv(path)
                     self.assertGreater(report.total_cost, case.official_total)
 
@@ -182,10 +182,10 @@ class TestCalibration(unittest.TestCase):
 
 
 class TestJanuaryReconcile(unittest.TestCase):
-    def test_strict_mode_free_rows(self) -> None:
+    def test_standard_mode_free_rows(self) -> None:
         path = example_path(JANUARY.filename)
         report = analyze_csv(path)
-        self.assertEqual(report.billing_mode, "strict")
+        self.assertEqual(report.billing_mode, "standard")
         self.assertEqual(report.billable_rows, 0)
         self.assertEqual(report.free_rows, 8)
         self.assertEqual(report.by_model["auto"].free_rows, 6)

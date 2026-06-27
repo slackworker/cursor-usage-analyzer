@@ -11,7 +11,7 @@
 | 能力 | 说明 |
 |------|------|
 | 计费模型 | 官方文档费率 + 样例 CSV 校准；不为拟合官方 Usage 页面而改价 |
-| 费用推算 | 用户 CSV → 按模型/池汇总；支持 **strict** 与 **official** 两种 Total |
+| 费用推算 | 用户 CSV → 按模型/池汇总；支持 **standard**（标准口径）与 **official**（官方口径）两种 Total |
 | 池使用率 | Auto+Composer / API 两池使用百分比；正向（给定额度）或反推（给定官方 Usage 页面使用率） |
 
 实现：`cursor_usage/pricing.py`（费率）、`calculator.py`（解析与合计）、`cli.py`（入口）。
@@ -95,12 +95,12 @@ Output Tokens, Total Tokens, Cost
 
 | 模式 | Total 公式 | Free 处理 | 用途 |
 |------|-----------|-----------|------|
-| **strict**（默认） | Included + On-demand + Free | Free 单独统计；status-only 行按 token 公式推算 | 自然理解的全量费用 |
-| **official** | Included + On-demand | Cost 有美元的 Free → 并入 Included；status-only Free → 不纳入 | 对齐官方 Usage 页面 Total spend |
+| **standard**（标准口径，默认） | Included + On-demand + Free | Free 单独统计；status-only 行按 token 公式推算 | 三分项全量合计 |
+| **official**（官方口径） | Included + On-demand | Cost 有美元的 Free → 并入 Included；status-only Free → 不纳入 | 对齐官方 Usage 页面 Total spend |
 
-CLI：`--billing-mode strict|official`（`--free-pricing-mode` 为别名）。
+CLI：`--billing-mode standard|official`（`--free-pricing-mode` 为别名）。
 
-输出字段：`total_spend` 在 `official` 下对齐官方 Total spend（Included + On-demand）；在 `strict` 下为 Included + On-demand + Free。`total_cost_with_free` = `total_cost + free_cost`（strict 语义下的 Included + Free，不含 On-demand）。
+输出字段：`total_spend` 在 `official` 下对齐官方 Total spend（Included + On-demand）；在 `standard` 下为 Included + On-demand + Free。`total_cost_with_free` = `total_cost + free_cost`（standard 语义下的 Included + Free，不含 On-demand）。
 
 池使用率（§5）固定用 **official** 口径的 Included 费用，与 `--billing-mode` 无关。
 
@@ -148,10 +148,10 @@ cursor-usage target.csv --baseline baseline.csv --auto-composer-usage 1.0 --api-
 
 | 样例 | 模式 | 对账字段 | 官方 | 推算 | 差额 | 备注 |
 |------|------|----------|------|------|------|------|
-| January | strict | `total_spend` | $1.61 | $1.73 | +$0.12 | 全 Free；auto 逐行 ±$0.01 |
-| February | strict | `total_cost` | $46.57 | $48.04 | -$1.47 | 2 月 Codex Max Mode 历史口径，见下 |
+| January | standard | `total_spend` | $1.61 | $1.73 | +$0.12 | 全 Free；auto 逐行 ±$0.01 |
+| February | standard | `total_cost` | $46.57 | $48.04 | -$1.47 | 2 月 Codex Max Mode 历史口径，见下 |
 | March | official | `total_spend` | $69.94 | $70.79 | +$0.85 | 混合格式 A/B |
-| April | strict | `total_cost` | $137.09 | $139.26 | +$2.17 | |
+| April | standard | `total_cost` | $137.09 | $139.26 | +$2.17 | |
 | May | official | `total_spend` | $92.01 | $91.45 | -$0.56 | 验证 status-only Free 不计入 official |
 | June | official | `total_spend` | $137.62 | $139.81 | +$2.19 | |
 | 账单周期 5/27–6/26 | official | `total_cost` | $191.60 | $187.08 | -$4.52 | 约 2.4%；原因未明 |

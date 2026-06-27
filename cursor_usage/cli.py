@@ -115,7 +115,7 @@ def _print_report(report: UsageReport) -> None:
     print()
 
     print(f"合计 Token: {report.total_tokens:,}")
-    if report.billing_mode == "strict":
+    if report.billing_mode == "standard":
         print(f"{BILLABLE_KIND} 费用:              ${report.total_cost:.2f}")
         if report.free_rows:
             print(
@@ -340,12 +340,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--billing-mode",
         "--free-pricing-mode",
         dest="billing_mode",
-        choices=("official", "strict"),
-        default="strict",
+        choices=("official", "standard"),
+        default="standard",
         help=(
-            "计费模式：strict=Total=Included+Free（Free 含金额行与 token 推算行，默认）；"
-            "official=Total=Included+On-demand（Cost 有金额的 Free 并入 Included，"
-            "status-only Free 不计入）"
+            "计费模式：standard（标准口径，默认）= Total=Included+On-demand+Free；"
+            "official（官方口径）= Total=Included+On-demand（Cost 有金额的 Free 并入 "
+            "Included，status-only Free 不计入）"
         ),
     )
     parser.add_argument(

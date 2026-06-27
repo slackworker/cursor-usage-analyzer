@@ -73,7 +73,7 @@ class UsageReport:
     by_model: dict[str, ModelSummary]
     by_pool: dict[str, PoolSummary]
     row_costs: list[RowCost]
-    billing_mode: str = "strict"
+    billing_mode: str = "standard"
 
     @property
     def total_cost_with_free(self) -> float:
@@ -145,7 +145,7 @@ def _official_free_row_cost(row_cost_value: str | None) -> float | None:
     return parse_official_row_cost(row_cost_value)
 
 
-def _resolve_free_row_cost_strict(
+def _resolve_free_row_cost_standard(
     row_cost_value: str | None,
     model: str,
     icw: int,
@@ -156,7 +156,7 @@ def _resolve_free_row_cost_strict(
     kind: str = FREE_KIND,
     max_mode: bool = False,
 ) -> float:
-    """Strict mode: free rows always use USD-or-token estimate."""
+    """Standard mode: free rows always use USD-or-token estimate."""
     return _resolve_row_cost(
         row_cost_value, model, icw, icwo, cr, out, kind=kind, max_mode=max_mode
     )
@@ -227,13 +227,13 @@ def _add_included_row(
 def analyze_csv(
     path: str | Path,
     *,
-    billing_mode: Literal["official", "strict"] = "strict",
-    free_pricing_mode: Literal["official", "strict"] | None = None,
+    billing_mode: Literal["official", "standard"] = "standard",
+    free_pricing_mode: Literal["official", "standard"] | None = None,
 ) -> UsageReport:
     if free_pricing_mode is not None:
         billing_mode = free_pricing_mode
-    if billing_mode not in {"official", "strict"}:
-        raise ValueError("billing_mode must be 'official' or 'strict'")
+    if billing_mode not in {"official", "standard"}:
+        raise ValueError("billing_mode must be 'official' or 'standard'")
     path = Path(path)
     with path.open(newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
@@ -290,7 +290,7 @@ def analyze_csv(
                 )
                 continue
 
-            cost = _resolve_free_row_cost_strict(
+            cost = _resolve_free_row_cost_standard(
                 row.get("Cost"),
                 model,
                 icw,
@@ -447,8 +447,8 @@ def apply_limits(report: UsageReport, limits: PoolLimits) -> UsageWithLimits:
 def analyze_many(
     paths: Iterable[str | Path],
     *,
-    billing_mode: Literal["official", "strict"] = "strict",
-    free_pricing_mode: Literal["official", "strict"] | None = None,
+    billing_mode: Literal["official", "standard"] = "standard",
+    free_pricing_mode: Literal["official", "standard"] | None = None,
 ) -> list[UsageReport]:
     return [
         analyze_csv(path, billing_mode=billing_mode, free_pricing_mode=free_pricing_mode)

@@ -5,7 +5,7 @@
 ## 能做什么
 
 1. **计费模型** — 以 [Cursor 官方定价](https://cursor.com/docs/models-and-pricing) 为基础，用 `examples/` 样例 CSV 校准与验证（详见 [`docs/spec.md`](docs/spec.md)）。
-2. **费用推算** — 用户提供 CSV，输出 **strict**（自然口径）与 **official**（对齐 Dashboard）两种合计。
+2. **费用推算** — 用户提供 CSV，输出 **standard**（标准口径）与 **official**（官方口径）两种合计。
 3. **池使用率** — 按 Auto+Composer / API 两池推算使用百分比；可指定额度（正向）或从 Dashboard 使用率反推额度（反推）。
 
 ## 安装
@@ -22,11 +22,11 @@ pip install -e .
 ### 费用推算
 
 ```bash
-cursor-usage "examples/February - US\$46.57.csv"              # strict（默认）
-cursor-usage "examples/May - US\$92.01.csv" --billing-mode official  # 对齐 Dashboard Total
+cursor-usage "examples/February - US\$46.57.csv"              # standard（标准口径，默认）
+cursor-usage "examples/May - US\$92.01.csv" --billing-mode official  # 官方口径
 ```
 
-对齐 Dashboard **Total spend** 时用 `official`；要看 Included + Free 全量时用 `strict`（默认）。两种口径说明见 [`docs/spec.md`](docs/spec.md#4-两种计费口径)。
+对齐官方 Usage 页面 **Total spend** 时用 `official`（官方口径）；要看 Included + On-demand + Free 全量时用 `standard`（标准口径，默认）。两种口径说明见 [`docs/spec.md`](docs/spec.md#4-两种计费口径)。
 
 ### 池使用率
 
