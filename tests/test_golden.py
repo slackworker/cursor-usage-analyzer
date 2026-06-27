@@ -201,6 +201,15 @@ class TestMayJuneGolden(unittest.TestCase):
             JUNE_TOTAL_TOLERANCE_PCT,
         )
 
+    def test_strict_mode_counts_status_only_free_rows(self) -> None:
+        may_report = analyze_csv(MAY_CSV, free_pricing_mode="strict")
+        self.assertAlmostEqual(may_report.free_cost, 9.06, delta=0.02)
+        self.assertAlmostEqual(may_report.total_cost_with_free, 98.46, delta=0.05)
+
+        june_report = analyze_csv(JUNE_CSV, free_pricing_mode="strict")
+        self.assertAlmostEqual(june_report.free_cost, 11.50, delta=0.02)
+        self.assertAlmostEqual(june_report.total_cost_with_free, 151.31, delta=0.05)
+
 
 if __name__ == "__main__":
     unittest.main()

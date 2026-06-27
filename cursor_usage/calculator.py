@@ -6,7 +6,7 @@ import csv
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Literal
 
 from cursor_usage.pricing import (
     AGENT_REVIEW_DISCOUNT_RATIO,
@@ -66,6 +66,7 @@ class UsageReport:
     by_model: dict[str, ModelSummary]
     by_pool: dict[str, PoolSummary]
     row_costs: list[RowCost]
+    free_pricing_mode: str = "official"
 
     @property
     def total_cost_with_free(self) -> float:
@@ -125,6 +126,20 @@ def _resolve_free_row_cost(
     return 0.0
 
 
+def _resolve_free_row_cost_strict(
+    row_cost_value: str | None,
+    model: str,
+    icw: int,
+    icwo: int,
+    cr: int,
+    out: int,
+    *,
+    kind: str = FREE_KIND,
+) -> float:
+    """Strict mode: free rows always use USD-or-token estimate."""
+    return _resolve_row_cost(row_cost_value, model, icw, icwo, cr, out, kind=kind)
+
+
 def _row_cost(
     model: str,
     icw: int,
@@ -155,7 +170,13 @@ def _row_cost(
     )
 
 
-def analyze_csv(path: str | Path) -> UsageReport:
+def analyze_csv(
+    path: str | Path,
+    *,
+    free_pricing_mode: Literal["official", "strict"] = "official",
+) -> UsageReport:
+    if free_pricing_mode not in {"official", "strict"}:
+        raise ValueError("free_pricing_mode must be 'official' or 'strict'")
     path = Path(path)
     with path.open(newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
@@ -188,7 +209,12 @@ def analyze_csv(path: str | Path) -> UsageReport:
         out = _parse_int(row.get("Output Tokens"))
 
         if is_free_kind(kind) and model in PRICING:
-            cost = _resolve_free_row_cost(row.get("Cost"))
+            if free_pricing_mode == "strict":
+                cost = _resolve_free_row_cost_strict(
+                    row.get("Cost"), model, icw, icwo, cr, out, kind=kind
+                )
+            else:
+                cost = _resolve_free_row_cost(row.get("Cost"))
             pool = PRICING[model].pool
             free_rows += 1
             free_cost += cost
@@ -248,6 +274,7 @@ def analyze_csv(path: str | Path) -> UsageReport:
         by_model=by_model,
         by_pool=by_pool,
         row_costs=row_costs,
+        free_pricing_mode=free_pricing_mode,
     )
 
 
@@ -297,5 +324,9 @@ def apply_limits(report: UsageReport, limits: PoolLimits) -> UsageWithLimits:
     )
 
 
-def analyze_many(paths: Iterable[str | Path]) -> list[UsageReport]:
-    return [analyze_csv(path) for path in paths]
+def analyze_many(
+    paths: Iterable[str | Path],
+    *,
+    free_pricing_mode: Literal["official", "strict"] = "official",
+) -> list[UsageReport]:
+    return [analyze_csv(path, free_pricing_mode=free_pricing_mode) for path in paths]

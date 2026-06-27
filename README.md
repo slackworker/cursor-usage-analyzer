@@ -9,7 +9,7 @@ Dashboard **Total spend** = Included + On-demand + Free（当前样例中 On-dem
 ## 功能
 
 - 解析 Cursor 用量 CSV
-- 按 `Kind` 拆分：`Included` → `total_cost`，`Free` 仅在 `Cost` 为美元时计入 `free_cost`（`Cost=Free` 状态行按 $0），合计 → `total_cost_with_free`
+- 按 `Kind` 拆分：`Included` → `total_cost`，`Free` 支持两种模式（`official`/`strict`），合计 → `total_cost_with_free`
 - 跳过 `Errored, No Charge`、`Aborted, Not Charged`
 - 按模型、用量池（Auto+Composer / API）汇总费用
 - 可选：根据基准 CSV + 池使用率推测套餐额度，并计算目标 CSV 的使用百分比
@@ -38,6 +38,13 @@ pip install -e .
 
 ```bash
 cursor-usage "examples/February - US\$46.57.csv"
+```
+
+Free 费用口径切换：
+
+```bash
+cursor-usage "examples/May - US\$92.01.csv" --free-pricing-mode official  # 默认
+cursor-usage "examples/May - US\$92.01.csv" --free-pricing-mode strict
 ```
 
 或:

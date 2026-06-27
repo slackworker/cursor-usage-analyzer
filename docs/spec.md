@@ -74,6 +74,7 @@ Total spend = Included + On-demand + Free
 **Cost 列有美元金额时**：合计与按模型汇总**优先采用该行标注金额**，不再对该行做 token 公式推算（见 [`calculator.py`](../cursor_usage/calculator.py) 的 `_resolve_row_cost()`）。`--reconcile` 仍会用 token 公式与标注价比对，用于发现折扣或活动价。
 
 **Free 行特例（已确认）**：`Kind=Free` 且 `Cost` 仅为状态值（`Free`/`free`/`-`）时，该行按 **$0.00** 处理，不做 token 推算；只有 `Cost` 为美元金额时才计入 `free_cost`。
+工具同时支持 `strict` 口径（无论 `Cost` 是否有金额，Free 都按 token 计入），用于「真实消耗」视角分析。
 
 ### 计费过滤规则
 
@@ -81,6 +82,10 @@ Total spend = Included + On-demand + Free
 - `Kind = Free`：`Cost` 有美元金额 → 计入 `free_cost`；`Cost` 为状态值（无金额）→ 按 $0 处理
 - 跳过：`Errored, No Charge`、`Aborted, Not Charged`（计入 `skipped_rows`）
 - 模型必须在 [`cursor_usage/pricing.py`](../cursor_usage/pricing.py) 的 `PRICING` 中，否则记入 `unknown_models`
+
+CLI `--free-pricing-mode`：
+- `official`（默认）：对齐官方展示口径（status-only Free 记 0）
+- `strict`：统一 token 口径（status-only Free 也计入）
 
 ### 官方折扣与活动价
 

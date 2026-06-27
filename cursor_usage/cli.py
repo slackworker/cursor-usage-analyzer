@@ -71,6 +71,8 @@ def _print_report(report: UsageReport) -> None:
         unknown = ", ".join(f"{k}={v}" for k, v in sorted(report.unknown_models.items()))
         print(f"未识别模型: {unknown}")
     print()
+    print(f"Free 计费模式: {report.free_pricing_mode}")
+    print()
 
     print("按模型:")
     for model, summary in sorted(report.by_model.items(), key=lambda x: -x[1].cost):
@@ -200,6 +202,7 @@ def _to_json(report: UsageReport, limits_result=None) -> dict:
         "skipped_rows": report.skipped_rows,
         "unknown_models": report.unknown_models,
         "total_tokens": report.total_tokens,
+        "free_pricing_mode": report.free_pricing_mode,
         "total_cost": round(report.total_cost, 4),
         "free_rows": report.free_rows,
         "free_cost": round(report.free_cost, 4),
@@ -274,6 +277,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="直接指定 API 池总额度（美元）",
     )
     parser.add_argument(
+        "--free-pricing-mode",
+        choices=("official", "strict"),
+        default="official",
+        help=(
+            "Free 计费口径：official=仅 Cost 有美元时计入；"
+            "strict=无论 Cost 是否有金额均按 token 计入"
+        ),
+    )
+    parser.add_argument(
         "--json",
         action="store_true",
         help="以 JSON 格式输出结果",
@@ -293,7 +305,7 @@ def main(argv: list[str] | None = None) -> int:
     if not args.csv.exists():
         parser.error(f"文件不存在: {args.csv}")
 
-    report = analyze_csv(args.csv)
+    report = analyze_csv(args.csv, free_pricing_mode=args.free_pricing_mode)
     limits_result = None
 
     has_limit_flags = args.auto_composer_limit is not None or args.api_limit is not None
@@ -315,7 +327,7 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("基准模式需同时提供 --baseline、--auto-composer-usage、--api-usage")
         if not args.baseline.exists():
             parser.error(f"基准文件不存在: {args.baseline}")
-        baseline = analyze_csv(args.baseline)
+        baseline = analyze_csv(args.baseline, free_pricing_mode=args.free_pricing_mode)
         limits = infer_limits_from_baseline(
             baseline,
             auto_composer_usage=args.auto_composer_usage,
