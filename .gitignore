@@ -14,3 +14,5 @@ Thumbs.db
 *.csv
 !examples/*.csv
 *:Zone.Identifier
+web/node_modules/
+web/dist/

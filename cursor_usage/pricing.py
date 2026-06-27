@@ -37,6 +37,9 @@ BILLABLE_KIND = "Included"
 FREE_KIND = "Free"
 FREE_STATUS_ONLY_SKIP = "Free (status-only)"
 
+# On-demand spend (pay-as-you-go beyond plan allowance).
+ON_DEMAND_KIND = "On-demand"
+
 ERRORED_KIND = "Errored, No Charge"
 ABORTED_KIND = "Aborted, Not Charged"
 
@@ -46,6 +49,8 @@ SKIP_KINDS = frozenset({FREE_KIND, ERRORED_KIND, ABORTED_KIND})
 _KIND_ALIASES: dict[str, str] = {
     "included": BILLABLE_KIND,
     "free": FREE_KIND,
+    "on-demand": ON_DEMAND_KIND,
+    "ondemand": ON_DEMAND_KIND,
     "errored, no charge": ERRORED_KIND,
     "aborted, not charged": ABORTED_KIND,
 }
@@ -63,6 +68,10 @@ def is_billable_kind(kind: str) -> bool:
 
 def is_free_kind(kind: str) -> bool:
     return normalize_kind(kind) == FREE_KIND
+
+
+def is_on_demand_kind(kind: str) -> bool:
+    return normalize_kind(kind) == ON_DEMAND_KIND
 
 
 def is_skip_kind(kind: str) -> bool:
