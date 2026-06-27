@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import unittest
-from pathlib import Path
 
 from cursor_usage.calculator import (
     DEFAULT_API_LIMIT,
@@ -15,10 +14,7 @@ from cursor_usage.calculator import (
     resolve_pool_limits,
 )
 
-EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
-CYCLE_CSV = EXAMPLES / "May 27 - Jun 27 US$195.22 100% + 100% .csv"
-FEBRUARY_CSV = EXAMPLES / "February - US$46.57.csv"
-MARCH_CSV = EXAMPLES / "March - US$69.94.csv"
+from tests.calibration import CYCLE, FEBRUARY, MARCH, example_path
 
 
 class TestPoolUsageForward(unittest.TestCase):
@@ -34,7 +30,7 @@ class TestPoolUsageForward(unittest.TestCase):
         self.assertEqual(limits.api, DEFAULT_API_LIMIT)
 
     def test_forward_percent_with_defaults_official(self) -> None:
-        report = analyze_csv(FEBRUARY_CSV, billing_mode="official")
+        report = analyze_csv(example_path(FEBRUARY.filename), billing_mode="official")
         result = apply_limits(report, resolve_pool_limits())
         ac_used = pool_cost(report, "auto_composer")
         api_used = pool_cost(report, "api")
@@ -44,7 +40,7 @@ class TestPoolUsageForward(unittest.TestCase):
 
 class TestPoolUsageReverse(unittest.TestCase):
     def test_infer_limits_at_100_percent(self) -> None:
-        report = analyze_csv(CYCLE_CSV, billing_mode="official")
+        report = analyze_csv(example_path(CYCLE.filename), billing_mode="official")
         limits = infer_limits_from_baseline(report, 1.0, 1.0)
         self.assertAlmostEqual(limits.auto_composer, pool_cost(report, "auto_composer"), places=2)
         self.assertAlmostEqual(limits.api, pool_cost(report, "api"), places=2)
@@ -52,7 +48,7 @@ class TestPoolUsageReverse(unittest.TestCase):
         self.assertAlmostEqual(limits.api, 45.48, delta=0.05)
 
     def test_infer_limits_at_partial_usage(self) -> None:
-        report = analyze_csv(CYCLE_CSV, billing_mode="official")
+        report = analyze_csv(example_path(CYCLE.filename), billing_mode="official")
         limits = infer_limits_from_baseline(report, 0.5, 0.25)
         self.assertAlmostEqual(
             limits.auto_composer,
@@ -62,8 +58,8 @@ class TestPoolUsageReverse(unittest.TestCase):
         self.assertAlmostEqual(limits.api, pool_cost(report, "api") / 0.25, places=2)
 
     def test_baseline_csv_can_differ_from_target(self) -> None:
-        baseline = analyze_csv(FEBRUARY_CSV, billing_mode="official")
-        target = analyze_csv(MARCH_CSV, billing_mode="official")
+        baseline = analyze_csv(example_path(FEBRUARY.filename), billing_mode="official")
+        target = analyze_csv(example_path(MARCH.filename), billing_mode="official")
         limits = infer_limits_from_baseline(baseline, 0.95, 0.99)
         result = apply_limits(target, limits)
         ac_used = pool_cost(target, "auto_composer")
