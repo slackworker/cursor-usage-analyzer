@@ -30,16 +30,13 @@ function ArrowRightGlyph({ className }: { className?: string }) {
   )
 }
 
-function ReleaseDropGlyph({ className }: { className?: string }) {
+function UploadGlyph({ className }: { className?: string }) {
   return (
     <svg className={className} {...glyphProps}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v8.25" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 8.25L12 12l3.75-3.75" />
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeDasharray="3 2"
-        d="M5.25 16.5h13.5a1.5 1.5 0 011.5 1.5v1.5a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-1.5a1.5 1.5 0 011.5-1.5z"
+        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
       />
     </svg>
   )
@@ -53,7 +50,7 @@ function UploadFlowIcon({ isDragging }: { isDragging: boolean }) {
     >
       <FileGlyph className="file-upload__glyph file-upload__glyph--file" />
       <ArrowRightGlyph className="file-upload__glyph file-upload__glyph--arrow" />
-      <ReleaseDropGlyph className="file-upload__glyph file-upload__glyph--release" />
+      <UploadGlyph className="file-upload__glyph file-upload__glyph--upload" />
     </div>
   )
 }

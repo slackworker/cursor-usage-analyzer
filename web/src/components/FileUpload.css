@@ -80,9 +80,9 @@
   opacity: 0.85;
 }
 
-.file-upload__icon-flow--active .file-upload__glyph--release {
+.file-upload__icon-flow--active .file-upload__glyph--upload {
   opacity: 1;
-  transform: translateY(4px);
+  transform: translateY(-2px);
 }
 
 .file-upload__prompt {
