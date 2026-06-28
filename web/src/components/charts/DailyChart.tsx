@@ -1,5 +1,5 @@
 import type { EChartsOption } from 'echarts'
-import { EChart, CHART_COLORS, baseGrid, baseLegend } from './EChart'
+import { EChart, CHART_COLORS, bottomLegend, gridWithLegend, legendExtraHeight } from './EChart'
 
 interface DailyChartProps {
   daily: { date: string; byModel: Record<string, number> }[]
@@ -33,10 +33,12 @@ export function DailyChart({ daily, cumulative, showCumulative, onToggleCumulati
     })
   }
 
+  const legendCount = models.length + (showCumulative ? 1 : 0)
+
   const option: EChartsOption = {
     tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d' },
-    legend: { ...baseLegend(), type: 'scroll', bottom: 0 },
-    grid: baseGrid(),
+    legend: bottomLegend(),
+    grid: gridWithLegend(legendCount),
     xAxis: {
       type: 'category',
       data: dates,
@@ -75,7 +77,7 @@ export function DailyChart({ daily, cumulative, showCumulative, onToggleCumulati
       </label>
       <EChart
         option={option}
-        height={260}
+        height={260 + legendExtraHeight(legendCount)}
         replaceMerge={['series', 'yAxis']}
       />
     </div>

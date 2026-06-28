@@ -31,9 +31,49 @@ export function baseGrid() {
 
 export function baseLegend() {
   return {
-    textStyle: { color: '#8b949e' },
-    pageTextStyle: { color: '#8b949e' },
+    textStyle: { color: '#8b949e', fontSize: 11 },
   }
+}
+
+const LEGEND_ITEM_WIDTH = 120
+const LEGEND_ROW_HEIGHT = 22
+
+/** 估算横向图例行数，用于为多行图例预留空间 */
+export function legendRowCount(itemCount: number, chartWidth = 900): number {
+  if (itemCount <= 0) return 0
+  const itemsPerRow = Math.max(1, Math.floor((chartWidth * 0.92) / LEGEND_ITEM_WIDTH))
+  return Math.ceil(itemCount / itemsPerRow)
+}
+
+/** 图例超过一行时额外需要的高度（px） */
+export function legendExtraHeight(itemCount: number): number {
+  const rows = legendRowCount(itemCount)
+  return Math.max(0, (rows - 1) * LEGEND_ROW_HEIGHT)
+}
+
+/** 底部图例：plain 类型自动换行，展示全部项 */
+export function bottomLegend() {
+  return {
+    ...baseLegend(),
+    type: 'plain' as const,
+    bottom: 0,
+    left: 'center' as const,
+    width: '92%',
+    itemGap: 10,
+    itemWidth: 14,
+    itemHeight: 10,
+  }
+}
+
+export function gridWithLegend(itemCount: number) {
+  const rows = legendRowCount(itemCount)
+  const bottom = 32 + Math.max(0, rows - 1) * LEGEND_ROW_HEIGHT
+  return { ...baseGrid(), bottom }
+}
+
+/** 带底部图例的饼图/环形图高度 */
+export function pieChartHeight(itemCount: number, baseHeight = 240): number {
+  return baseHeight + legendExtraHeight(itemCount)
 }
 
 /** 横向条形图：按行数撑高，保证每行 Y 轴标签有足够空间 */

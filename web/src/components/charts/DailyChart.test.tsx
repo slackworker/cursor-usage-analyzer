@@ -20,8 +20,9 @@ vi.mock('./EChart', () => ({
     return <div data-testid="echart-mock" />
   },
   CHART_COLORS: ['#000'],
-  baseGrid: () => ({}),
-  baseLegend: () => ({}),
+  bottomLegend: () => ({}),
+  gridWithLegend: () => ({}),
+  legendExtraHeight: () => 0,
 }))
 
 describe('DailyChart', () => {

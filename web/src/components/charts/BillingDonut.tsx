@@ -1,6 +1,6 @@
 import type { EChartsOption } from 'echarts'
 import type { BillingMode, BillingTotals } from '../../lib/types'
-import { EChart, baseLegend, baseTooltip, CHART_COLORS } from './EChart'
+import { EChart, bottomLegend, baseTooltip, CHART_COLORS } from './EChart'
 
 interface BillingDonutProps {
   totals: BillingTotals
@@ -22,7 +22,7 @@ export function BillingDonut({ totals, mode }: BillingDonutProps) {
 
   const option: EChartsOption = {
     tooltip: { ...baseTooltip(), formatter: '{b}: ${c} ({d}%)' },
-    legend: { ...baseLegend(), bottom: 0 },
+    legend: bottomLegend(),
     series: [
       {
         type: 'pie',

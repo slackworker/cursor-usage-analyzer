@@ -1,5 +1,5 @@
 import type { EChartsOption } from 'echarts'
-import { EChart, CHART_COLORS, baseLegend, baseTooltip } from './EChart'
+import { EChart, CHART_COLORS, bottomLegend, baseTooltip, pieChartHeight } from './EChart'
 
 interface ModelChartProps {
   byModel: Record<string, { cost: number; tokens: number }>
@@ -15,7 +15,7 @@ export function ModelChart({ byModel, view, onViewChange }: ModelChartProps) {
 
   const option: EChartsOption = {
     tooltip: baseTooltip(),
-    legend: { ...baseLegend(), type: 'scroll', bottom: 0 },
+    legend: bottomLegend(),
     series: [
       {
         type: 'pie',
@@ -46,7 +46,7 @@ export function ModelChart({ byModel, view, onViewChange }: ModelChartProps) {
           Token
         </button>
       </div>
-      <EChart option={option} height={240} />
+      <EChart option={option} height={pieChartHeight(sorted.length)} />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import type { EChartsOption } from 'echarts'
 import { formatTokens, formatUsd } from '../../hooks/useReport'
-import { EChart, baseLegend, baseTooltip } from './EChart'
+import { EChart, bottomLegend, baseTooltip } from './EChart'
 
 interface StructureData {
   icw: number
@@ -36,7 +36,7 @@ export function TokenStructureChart({ data, view, onViewChange }: TokenStructure
         return `${p.name}: ${formatValue(p.value)} (${p.percent}%)`
       },
     },
-    legend: { ...baseLegend(), bottom: 0 },
+    legend: bottomLegend(),
     series: [
       {
         type: 'pie',

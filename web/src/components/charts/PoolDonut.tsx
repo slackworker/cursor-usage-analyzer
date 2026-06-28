@@ -1,6 +1,6 @@
 import type { EChartsOption } from 'echarts'
 import { POOL_LABELS } from '../../lib/types'
-import { EChart, baseLegend, baseTooltip } from './EChart'
+import { EChart, bottomLegend, baseTooltip } from './EChart'
 
 interface PoolDonutProps {
   byPool: Record<string, { included: number; free: number; onDemand: number }>
@@ -21,7 +21,7 @@ export function PoolDonut({ byPool, limits }: PoolDonutProps) {
 
   const option: EChartsOption = {
     tooltip: { ...baseTooltip(), formatter: '{b}: ${c}' },
-    legend: { ...baseLegend(), bottom: 0 },
+    legend: bottomLegend(),
     graphic: [
       {
         type: 'text',

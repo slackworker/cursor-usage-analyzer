@@ -1,6 +1,16 @@
 import ReactECharts from 'echarts-for-react'
 import type { EChartsOption } from 'echarts'
-import { CHART_COLORS, baseGrid, baseLegend, baseTooltip, darkChartBase } from '../../lib/chartTheme'
+import {
+  CHART_COLORS,
+  baseGrid,
+  baseLegend,
+  baseTooltip,
+  bottomLegend,
+  darkChartBase,
+  gridWithLegend,
+  legendExtraHeight,
+  pieChartHeight,
+} from '../../lib/chartTheme'
 
 interface EChartProps {
   option: EChartsOption
@@ -29,4 +39,13 @@ export function EChart({
   )
 }
 
-export { CHART_COLORS, baseGrid, baseLegend, baseTooltip }
+export {
+  CHART_COLORS,
+  baseGrid,
+  baseLegend,
+  baseTooltip,
+  bottomLegend,
+  gridWithLegend,
+  legendExtraHeight,
+  pieChartHeight,
+}
