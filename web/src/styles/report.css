@@ -430,6 +430,14 @@
 
   .pool-gauges {
     grid-template-columns: 1fr;
+    gap: var(--space-sm) 0;
+  }
+
+  .pool-gauge + .pool-gauge {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-sm);
   }
 }
 
@@ -595,7 +603,18 @@
   background: rgba(139, 148, 158, 0.12);
   color: var(--color-text-muted);
 }
-.pool-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
+.pool-gauges {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 var(--space-md);
+}
+.pool-gauge {
+  min-width: 0;
+}
+.pool-gauge + .pool-gauge {
+  border-left: 1px solid var(--color-border);
+  padding-left: var(--space-md);
+}
 .pool-gauge__header { display: flex; justify-content: space-between; font-size: 0.8125rem; margin-bottom: 0.35rem; }
 .pool-gauge__bar { height: 8px; background: var(--color-bg); border-radius: 999px; overflow: hidden; }
 .pool-gauge__fill { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
@@ -605,8 +624,9 @@
 .pool-projection {
   width: 100%;
   height: 100%;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   gap: var(--space-sm);
 }
 .pool-projection__config {
@@ -636,7 +656,7 @@
 .pool-projection__usage {
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  flex: 0 0 auto;
   padding: var(--space-sm);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
@@ -659,12 +679,27 @@
 
 .report-grid--quad .pool-gauges {
   grid-template-columns: 1fr;
-  gap: var(--space-sm);
+  gap: var(--space-sm) 0;
+}
+
+.report-grid--quad .pool-gauge + .pool-gauge {
+  border-left: none;
+  padding-left: 0;
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-sm);
 }
 
 @media (max-width: 1024px) {
   .report-grid--quad .pool-gauges {
     grid-template-columns: 1fr 1fr;
+    gap: 0 var(--space-md);
+  }
+
+  .report-grid--quad .pool-gauge + .pool-gauge {
+    border-top: none;
+    padding-top: 0;
+    border-left: 1px solid var(--color-border);
+    padding-left: var(--space-md);
   }
 }
 
