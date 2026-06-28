@@ -62,7 +62,7 @@ export function PoolProjection({
   return (
     <div className="pool-projection">
       <div className="pool-projection__config">
-        <label className="pool-projection__field">
+        <label className="pool-projection__field pool-projection__field--plan">
           <span className="pool-projection__field-label">套餐</span>
           <select
             className="filter-bar__select"
@@ -106,7 +106,7 @@ export function PoolProjection({
         <h4 className="pool-projection__section-title">
           {isDirect ? '月度使用率' : '月均推算'}
         </h4>
-        <div className="pool-gauges pool-gauges--compact">
+        <div className="pool-gauges">
           <PoolGauge
             label="Auto + Composer"
             pct={projection.autoComposerPct}
@@ -122,12 +122,13 @@ export function PoolProjection({
             fillClass="pool-gauge__fill--api"
           />
         </div>
-        <p className="pool-projection__hint">
-          {isDirect
-            ? `数据 ${projection.startDate} 至 ${projection.endDate}（在一个账单月内），按 Included 直接占月度额度。`
-            : `数据 ${projection.startDate} 至 ${projection.endDate}（跨账单月），按日均 Included 归一化至 30 天；仅供参考。`}
-        </p>
       </section>
+
+      <p className="pool-projection__hint">
+        {isDirect
+          ? `数据 ${projection.startDate} 至 ${projection.endDate}（在一个账单月内），按 Included 直接占月度额度。`
+          : `数据 ${projection.startDate} 至 ${projection.endDate}（跨账单月），按日均 Included 归一化至 30 天；仅供参考。`}
+      </p>
     </div>
   )
 }

@@ -112,33 +112,30 @@ export function ReportPage() {
           </ChartPanel>
         )}
 
-        <div className="report-grid report-grid--daily-side">
-          <ChartPanel title="#8 用量结构" tall>
+        <div className="report-grid report-grid--quad">
+          <ChartPanel title="#8 用量结构">
             <TokenStructureChart
               data={agg.structure}
               view={structureView}
               onViewChange={setStructureView}
             />
           </ChartPanel>
-          <div className="report-stack">
-            <ChartPanel title="#9 缓存命中率">
-              <CacheHitChart rates={agg.cacheHit} modelTokens={agg.modelTokens} />
-            </ChartPanel>
-            <ChartPanel title="#10 单 Token 价">
-              <UnitPriceChart prices={agg.unitPrice} modelTokens={agg.modelTokens} />
-            </ChartPanel>
-          </div>
+          <ChartPanel title="#9 缓存命中率">
+            <CacheHitChart rates={agg.cacheHit} modelTokens={agg.modelTokens} />
+          </ChartPanel>
+          <ChartPanel title="#10 单 Token 价">
+            <UnitPriceChart prices={agg.unitPrice} modelTokens={agg.modelTokens} />
+          </ChartPanel>
+          <ChartPanel title="#14 套餐池使用率">
+            <PoolProjection
+              projection={agg.projection}
+              plan={plan}
+              limits={poolLimits}
+              onPlanChange={setPlan}
+              onLimitsChange={setPoolLimits}
+            />
+          </ChartPanel>
         </div>
-
-        <ChartPanel title="#14 套餐池使用率">
-          <PoolProjection
-            projection={agg.projection}
-            plan={plan}
-            limits={poolLimits}
-            onPlanChange={setPlan}
-            onLimitsChange={setPoolLimits}
-          />
-        </ChartPanel>
       </div>
     </div>
   )
