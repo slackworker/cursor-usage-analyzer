@@ -10,6 +10,15 @@ const DATE_PRESETS: { value: DateRangePreset; label: string }[] = [
   { value: 'custom', label: '自定义' },
 ]
 
+const BILLING_MODES: {
+  value: FilterState['billingMode']
+  label: string
+  title: string
+}[] = [
+  { value: 'standard', label: '标准', title: '标准 (Inc+Free+OD)' },
+  { value: 'official', label: '官方', title: '官方 (Inc+OD)' },
+]
+
 interface FilterBarProps {
   filters: FilterState
   onChange: (patch: Partial<FilterState>) => void
@@ -20,6 +29,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
   const customFrom =
     typeof filters.dateRange === 'object' ? filters.dateRange.from : ''
   const customTo = typeof filters.dateRange === 'object' ? filters.dateRange.to : ''
+  const billingMode = BILLING_MODES.find((m) => m.value === filters.billingMode) ?? BILLING_MODES[0]
 
   return (
     <div className="filter-bar__controls">
@@ -68,15 +78,19 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
         </>
       )}
 
-      <label className="filter-bar__group">
+      <label className="filter-bar__group" title={billingMode.title}>
         <span className="filter-bar__group-label">口径</span>
         <select
           className="filter-bar__select"
           value={filters.billingMode}
+          title={billingMode.title}
           onChange={(e) => onChange({ billingMode: e.target.value as FilterState['billingMode'] })}
         >
-          <option value="standard">标准 (Inc+Free+OD)</option>
-          <option value="official">官方 (Inc+OD)</option>
+          {BILLING_MODES.map((mode) => (
+            <option key={mode.value} value={mode.value} title={mode.title}>
+              {mode.label}
+            </option>
+          ))}
         </select>
       </label>
     </div>

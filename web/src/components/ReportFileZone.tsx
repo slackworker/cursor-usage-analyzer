@@ -1,12 +1,15 @@
 import { useRef } from 'react'
-import type { ReportMeta } from '../lib/types'
+import type { FilterState, ReportMeta } from '../lib/types'
 import { useCsvFileDrop } from '../hooks/useCsvFileDrop'
-import { ParseStatusBadge } from './ParseStatusBadge'
+import { FilterBar } from './FilterBar'
+import { ExportPngButton } from './charts/ExportPngButton'
 
 interface ReportFileZoneProps {
   fileName: string | null
   meta: ReportMeta | null
   rowCount: number
+  filters: FilterState
+  onFiltersChange: (patch: Partial<FilterState>) => void
   onFileSelect: (file: File) => void | Promise<void>
 }
 
@@ -18,7 +21,14 @@ function DropZoneIcon() {
   )
 }
 
-export function ReportFileZone({ fileName, meta, rowCount, onFileSelect }: ReportFileZoneProps) {
+export function ReportFileZone({
+  fileName,
+  meta,
+  rowCount,
+  filters,
+  onFiltersChange,
+  onFileSelect,
+}: ReportFileZoneProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { isDragging, error: dropError, dropTargetProps } = useCsvFileDrop(onFileSelect)
 
@@ -30,8 +40,8 @@ export function ReportFileZone({ fileName, meta, rowCount, onFileSelect }: Repor
 
   return (
     <section
-      className={`report-file-zone${isDragging ? ' report-file-zone--drag-active' : ''}`}
-      aria-label="数据文件"
+      className={`report-header-card${isDragging ? ' report-header-card--drag-active' : ''}`}
+      aria-label="报告顶栏与数据文件"
       {...dropTargetProps}
     >
       <input
@@ -47,39 +57,48 @@ export function ReportFileZone({ fileName, meta, rowCount, onFileSelect }: Repor
         aria-hidden
       />
 
-      <div className="report-file-zone__header">
-        {fileName ? (
-          <>
-            <p className="report-file-zone__name">
+      <div className="report-header-card__upper">
+        <div className="report-header-card__row report-header-card__row--titlebar">
+          <h1 className="report-header-card__title">Cursor Usage 分析报告</h1>
+          <div className="report-header-card__actions">
+            <FilterBar filters={filters} onChange={onFiltersChange} />
+            <ExportPngButton />
+          </div>
+        </div>
+
+        <div className="report-header-card__row report-header-card__row--file">
+          {fileName ? (
+            <span className="report-file-zone__file-info">
               <span className="report-file-zone__filename">{fileName}</span>
-            </p>
-            <p className="report-file-zone__meta">
-              <span>
-                {meta?.dateFrom && meta?.dateTo
-                  ? `${meta.dateFrom} ~ ${meta.dateTo}`
-                  : '日期范围 —'}
+              <span className="report-file-zone__info-meta">
+                <span>
+                  {meta?.dateFrom && meta?.dateTo
+                    ? `${meta.dateFrom} ~ ${meta.dateTo}`
+                    : '日期范围 —'}
+                </span>
+                <span>{rowCount.toLocaleString()} 行</span>
               </span>
-              <span>{rowCount.toLocaleString()} 行</span>
-              <ParseStatusBadge unknownModels={meta?.unknownModels} skippedRows={meta?.skippedRows} />
-            </p>
-          </>
-        ) : (
-          <p className="report-file-zone__name report-file-zone__name--empty">尚未加载 CSV</p>
-        )}
+            </span>
+          ) : (
+            <span className="report-header-card__file-empty">尚未加载 CSV</span>
+          )}
+        </div>
       </div>
 
-      <button
-        type="button"
-        className="report-file-zone__drop-center"
-        data-export-hide
-        aria-label={hintText}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <DropZoneIcon />
-        <span className="report-file-zone__hint">{hintText}</span>
-      </button>
+      <div className="report-header-card__drop report-file-zone__drop">
+        <button
+          type="button"
+          className="report-file-zone__drop-center"
+          data-export-hide
+          aria-label={hintText}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <DropZoneIcon />
+          <span className="report-file-zone__hint">{hintText}</span>
+        </button>
 
-      {dropError ? <p className="report-file-zone__error">{dropError}</p> : null}
+        {dropError ? <p className="report-file-zone__error">{dropError}</p> : null}
+      </div>
     </section>
   )
 }

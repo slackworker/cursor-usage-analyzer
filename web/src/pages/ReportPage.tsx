@@ -1,10 +1,8 @@
-import { FilterBar } from '../components/FilterBar'
 import { ReportFileZone } from '../components/ReportFileZone'
 import { BillingDonut } from '../components/charts/BillingDonut'
 import { CacheHitChart } from '../components/charts/CacheHitChart'
 import { ChartPanel } from '../components/charts/ChartPanel'
 import { DailyChart } from '../components/charts/DailyChart'
-import { ExportPngButton } from '../components/charts/ExportPngButton'
 import { HourlyChart, WeeklyHeatmap } from '../components/charts/ActivityCharts'
 import { KpiCards } from '../components/charts/KpiCards'
 import { ModelChart } from '../components/charts/ModelChart'
@@ -47,16 +45,12 @@ export function ReportPage() {
   return (
     <div className="report-page">
       <div className="report-container">
-        <header className="report-topbar" role="region" aria-label="报告顶栏">
-          <h1 className="report-topbar__title">Cursor Usage 分析报告</h1>
-          <FilterBar filters={filters} onChange={setFilters} />
-          <ExportPngButton />
-        </header>
-
         <ReportFileZone
           fileName={fileName}
           meta={meta}
           rowCount={rowCount}
+          filters={filters}
+          onFiltersChange={setFilters}
           onFileSelect={setCsvFile}
         />
 
