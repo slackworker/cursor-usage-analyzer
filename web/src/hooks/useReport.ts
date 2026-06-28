@@ -27,6 +27,7 @@ export function useReport() {
   const poolLimits = useReportStore((s) => s.poolLimits)
   const showCumulative = useReportStore((s) => s.showCumulative)
   const modelView = useReportStore((s) => s.modelView)
+  const structureView = useReportStore((s) => s.structureView)
   const hourlyView = useReportStore((s) => s.hourlyView)
   const projectionOpen = useReportStore((s) => s.projectionOpen)
   const setCsvFile = useReportStore((s) => s.setCsvFile)
@@ -35,6 +36,7 @@ export function useReport() {
   const setPoolLimits = useReportStore((s) => s.setPoolLimits)
   const setShowCumulative = useReportStore((s) => s.setShowCumulative)
   const setModelView = useReportStore((s) => s.setModelView)
+  const setStructureView = useReportStore((s) => s.setStructureView)
   const setHourlyView = useReportStore((s) => s.setHourlyView)
   const setProjectionOpen = useReportStore((s) => s.setProjectionOpen)
 
@@ -47,7 +49,7 @@ export function useReport() {
     const byPool = rollupByPool(filtered, mode)
     const daily = rollupDaily(filtered, 'cost', 'all', mode)
     const dailyCumulative = rollupDailyCumulative(filtered, 'cost', 'all', mode)
-    const tokens = rollupTokenStructure(filtered)
+    const structure = rollupTokenStructure(filtered, structureView, mode)
     const cacheHit = cacheHitRateByModel(filtered)
     const unitPrice = unitPriceByModel(filtered, mode)
     const hourly = rollupHourly(filtered, hourlyView)
@@ -65,7 +67,7 @@ export function useReport() {
       byPool,
       daily,
       dailyCumulative,
-      tokens,
+      structure,
       cacheHit,
       unitPrice,
       hourly,
@@ -77,7 +79,7 @@ export function useReport() {
       top,
       totalTokens,
     }
-  }, [filtered, mode, modelView, hourlyView, poolLimits])
+  }, [filtered, mode, modelView, structureView, hourlyView, poolLimits])
 
   const allModels = useMemo(() => {
     const set = new Set<string>()
@@ -100,6 +102,7 @@ export function useReport() {
     poolLimits,
     showCumulative,
     modelView,
+    structureView,
     hourlyView,
     projectionOpen,
     allModels,
@@ -111,6 +114,7 @@ export function useReport() {
     setPoolLimits,
     setShowCumulative,
     setModelView,
+    setStructureView,
     setHourlyView,
     setProjectionOpen,
   }

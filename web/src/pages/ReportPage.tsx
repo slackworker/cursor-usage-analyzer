@@ -24,6 +24,7 @@ export function ReportPage() {
     poolLimits,
     showCumulative,
     modelView,
+    structureView,
     hourlyView,
     projectionOpen,
     allModels,
@@ -34,6 +35,7 @@ export function ReportPage() {
     setPoolLimits,
     setShowCumulative,
     setModelView,
+    setStructureView,
     setHourlyView,
     setProjectionOpen,
   } = useReport()
@@ -104,8 +106,12 @@ export function ReportPage() {
               onViewChange={setModelView}
             />
           </ChartPanel>
-          <ChartPanel title="#8 Token 结构" tall>
-            <TokenStructureChart tokens={agg.tokens} />
+          <ChartPanel title="#8 用量结构" tall>
+            <TokenStructureChart
+              data={agg.structure}
+              view={structureView}
+              onViewChange={setStructureView}
+            />
           </ChartPanel>
         </div>
 

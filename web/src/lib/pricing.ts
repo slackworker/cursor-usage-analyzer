@@ -49,6 +49,38 @@ export function parseMaxMode(value: string | undefined | null): boolean {
   return (value ?? '').trim().toLowerCase() === 'yes'
 }
 
+export interface TokenCostBreakdown {
+  icw: number
+  icwo: number
+  cacheRead: number
+  output: number
+}
+
+export function tokenRowCostComponents(
+  pricing: ModelPricing,
+  icw: number,
+  icwo: number,
+  cr: number,
+  out: number,
+  opts: {
+    inputMult?: number
+    cacheWriteMult?: number
+    cacheReadMult?: number
+    outputMult?: number
+  } = {},
+): TokenCostBreakdown {
+  const inputMult = opts.inputMult ?? 1
+  const cwm = opts.cacheWriteMult ?? inputMult
+  const crm = opts.cacheReadMult ?? inputMult
+  const outputMult = opts.outputMult ?? 1
+  return {
+    icw: (icw / 1e6) * pricing.cacheWrite * cwm,
+    icwo: (icwo / 1e6) * pricing.input * inputMult,
+    cacheRead: (cr / 1e6) * pricing.cacheRead * crm,
+    output: (out / 1e6) * pricing.output * outputMult,
+  }
+}
+
 export function tokenRowCost(
   pricing: ModelPricing,
   icw: number,
@@ -62,16 +94,8 @@ export function tokenRowCost(
     outputMult?: number
   } = {},
 ): number {
-  const inputMult = opts.inputMult ?? 1
-  const cwm = opts.cacheWriteMult ?? inputMult
-  const crm = opts.cacheReadMult ?? inputMult
-  const outputMult = opts.outputMult ?? 1
-  return (
-    (icw / 1e6) * pricing.cacheWrite * cwm +
-    (icwo / 1e6) * pricing.input * inputMult +
-    (cr / 1e6) * pricing.cacheRead * crm +
-    (out / 1e6) * pricing.output * outputMult
-  )
+  const parts = tokenRowCostComponents(pricing, icw, icwo, cr, out, opts)
+  return parts.icw + parts.icwo + parts.cacheRead + parts.output
 }
 
 export function maxModeAdjustedCost(
@@ -128,6 +152,44 @@ export const PRICING: Record<string, ModelPricing> = {
   'claude-4.6-opus-high-thinking': { input: 5.0, cacheWrite: 6.25, cacheRead: 0.5, output: 25.0, pool: 'api' },
   'claude-opus-4-7-thinking-high': { input: 5.0, cacheWrite: 6.25, cacheRead: 0.5, output: 25.0, pool: 'api' },
   agent_review: { input: 1.25, cacheWrite: 1.25, cacheRead: 0.25, output: 6.0, pool: 'api' },
+}
+
+export function rowCostBreakdown(
+  model: string,
+  icw: number,
+  icwo: number,
+  cr: number,
+  out: number,
+  maxMode = false,
+): TokenCostBreakdown {
+  if (model === 'agent_review') {
+    const parts = tokenRowCostComponents(PRICING.auto, icw, icwo, cr, out)
+    const ratio = AGENT_REVIEW_DISCOUNT_RATIO
+    return {
+      icw: parts.icw * ratio,
+      icwo: parts.icwo * ratio,
+      cacheRead: parts.cacheRead * ratio,
+      output: parts.output * ratio,
+    }
+  }
+
+  const pricing = PRICING[model]
+  if (!pricing) return { icw: 0, icwo: 0, cacheRead: 0, output: 0 }
+
+  if (maxMode && CODEX_MAX_MODE_FAST_MODELS.has(model)) {
+    const m = CODEX_MAX_MODE_MULTIPLIER
+    return tokenRowCostComponents(pricing, icw, icwo, cr, out, { inputMult: m, outputMult: m })
+  }
+
+  if (maxMode && GPT_LONG_CONTEXT_MODELS.has(model) && icw + icwo + cr > LONG_CONTEXT_INPUT_THRESHOLD) {
+    return tokenRowCostComponents(pricing, icw, icwo, cr, out, {
+      inputMult: LONG_CONTEXT_INPUT_MULTIPLIER,
+      cacheReadMult: LONG_CONTEXT_INPUT_MULTIPLIER,
+      outputMult: LONG_CONTEXT_OUTPUT_MULTIPLIER,
+    })
+  }
+
+  return tokenRowCostComponents(pricing, icw, icwo, cr, out)
 }
 
 export function rowCost(

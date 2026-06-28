@@ -5,6 +5,7 @@ import {
   isBillableKind,
   isFreeKind,
   isOnDemandKind,
+  rowCostBreakdown,
 } from './pricing'
 
 function eventCost(event: UsageEvent, mode: BillingMode): number {
@@ -195,7 +196,21 @@ export function rollupDailyCumulative(
   })
 }
 
-export function rollupTokenStructure(events: UsageEvent[]): {
+function structureRowCharge(event: UsageEvent, mode: BillingMode): number {
+  if (isOnDemandKind(event.kind)) return event.costs.onDemand
+  if (isFreeKind(event.kind)) {
+    if (mode === 'official') return event.costs.annotated != null ? event.costs.included : 0
+    return event.costs.free
+  }
+  if (isBillableKind(event.kind)) return event.costs.included
+  return 0
+}
+
+export function rollupTokenStructure(
+  events: UsageEvent[],
+  view: 'cost' | 'token' = 'token',
+  mode: BillingMode = 'standard',
+): {
   icw: number
   icwo: number
   cacheRead: number
@@ -205,11 +220,37 @@ export function rollupTokenStructure(events: UsageEvent[]): {
   const t = { icw: 0, icwo: 0, cacheRead: 0, output: 0, total: 0 }
   for (const event of events) {
     if (event.skipReason) continue
-    t.icw += event.tokens.icw
-    t.icwo += event.tokens.icwo
-    t.cacheRead += event.tokens.cacheRead
-    t.output += event.tokens.output
-    t.total += event.tokens.total
+
+    if (view === 'token') {
+      t.icw += event.tokens.icw
+      t.icwo += event.tokens.icwo
+      t.cacheRead += event.tokens.cacheRead
+      t.output += event.tokens.output
+      t.total += event.tokens.total
+      continue
+    }
+
+    const rowCharge = structureRowCharge(event, mode)
+    if (rowCharge <= 0) continue
+
+    const breakdown = rowCostBreakdown(
+      event.model,
+      event.tokens.icw,
+      event.tokens.icwo,
+      event.tokens.cacheRead,
+      event.tokens.output,
+      event.maxMode,
+    )
+    const breakdownTotal =
+      breakdown.icw + breakdown.icwo + breakdown.cacheRead + breakdown.output
+    if (breakdownTotal <= 0) continue
+
+    const scale = rowCharge / breakdownTotal
+    t.icw += breakdown.icw * scale
+    t.icwo += breakdown.icwo * scale
+    t.cacheRead += breakdown.cacheRead * scale
+    t.output += breakdown.output * scale
+    t.total += rowCharge
   }
   return t
 }
