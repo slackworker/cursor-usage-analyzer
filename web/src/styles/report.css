@@ -23,6 +23,31 @@
   background: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.report-header--drag-active {
+  border-color: var(--color-accent);
+  background: rgba(88, 166, 255, 0.06);
+}
+
+.report-header__file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.report-header__drop-error {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--color-danger);
 }
 
 .report-header__title {

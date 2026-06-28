@@ -4,9 +4,11 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
   defaultHeatmapYear,
+  filterByModelTokenShare,
   filterHeatmapByYear,
   heatmapYears,
   rollupDaily,
+  tokenTotalsByModel,
 } from './aggregation'
 import { parseCsvText } from './parser'
 
@@ -50,6 +52,25 @@ describe('rollupDaily', () => {
       '2026-06-24',
       '2026-06-25',
     ])
+  })
+})
+
+describe('filterByModelTokenShare', () => {
+  it('keeps models at or above 1% of total tokens', () => {
+    const modelTokens = { 'model-a': 500, 'model-b': 40, 'model-c': 4 }
+    const data = { 'model-a': 0.8, 'model-b': 0.5, 'model-c': 0.2 }
+    const filtered = filterByModelTokenShare(data, modelTokens)
+    expect(filtered.map(([m]) => m)).toEqual(['model-a', 'model-b'])
+  })
+})
+
+describe('tokenTotalsByModel', () => {
+  it('sums tokens per model from parsed events', () => {
+    const content = readFileSync(join(root, 'examples/usage-events-2026-06-27.csv'), 'utf-8')
+    const { events } = parseCsvText(content, 'usage-events.csv')
+    const totals = tokenTotalsByModel(events)
+    expect(Object.keys(totals).length).toBeGreaterThan(0)
+    expect(Object.values(totals).every((n) => n > 0)).toBe(true)
   })
 })
 

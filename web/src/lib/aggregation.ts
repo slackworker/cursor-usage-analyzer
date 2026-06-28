@@ -280,6 +280,29 @@ export function rollupTokenStructure(
   return t
 }
 
+/** 横向条形图等仅展示 token 占比不低于此阈值的模型 */
+export const MIN_MODEL_TOKEN_SHARE = 0.01
+
+export function tokenTotalsByModel(events: UsageEvent[]): Record<string, number> {
+  const totals: Record<string, number> = {}
+  for (const event of events) {
+    if (event.skipReason || !event.model) continue
+    totals[event.model] = (totals[event.model] ?? 0) + event.tokens.total
+  }
+  return totals
+}
+
+export function filterByModelTokenShare<T>(
+  data: Record<string, T>,
+  modelTokens: Record<string, number>,
+  minShare = MIN_MODEL_TOKEN_SHARE,
+): [string, T][] {
+  const total = Object.values(modelTokens).reduce((a, b) => a + b, 0)
+  if (total <= 0) return Object.entries(data)
+  const threshold = total * minShare
+  return Object.entries(data).filter(([model]) => (modelTokens[model] ?? 0) >= threshold)
+}
+
 export function cacheHitRateByModel(events: UsageEvent[]): Record<string, number> {
   const numer: Record<string, number> = {}
   const denom: Record<string, number> = {}

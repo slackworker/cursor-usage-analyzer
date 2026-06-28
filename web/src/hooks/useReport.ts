@@ -15,6 +15,7 @@ import {
   rollupWeeklyHourly,
   rollupYearHeatmap,
   spanDays,
+  tokenTotalsByModel,
   unitPriceByModel,
 } from '../lib/aggregation'
 import { useReportStore } from '../store/reportStore'
@@ -55,6 +56,7 @@ export function useReport() {
     const daily = rollupDaily(filtered, dailyView, 'all', mode, dateBounds)
     const dailyCumulative = rollupDailyCumulative(filtered, dailyView, 'all', mode, dateBounds)
     const structure = rollupTokenStructure(filtered, structureView, mode)
+    const modelTokens = tokenTotalsByModel(filtered)
     const cacheHit = cacheHitRateByModel(filtered)
     const unitPrice = unitPriceByModel(filtered, mode)
     const hourly = rollupHourly(filtered, hourlyView, dailyActivityGranularity)
@@ -72,6 +74,7 @@ export function useReport() {
       daily,
       dailyCumulative,
       structure,
+      modelTokens,
       cacheHit,
       unitPrice,
       hourly,

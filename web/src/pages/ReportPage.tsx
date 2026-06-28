@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { FilterBar } from '../components/FilterBar'
 import { ParseStatusBadge } from '../components/ParseStatusBadge'
 import { BillingDonut } from '../components/charts/BillingDonut'
@@ -13,6 +14,7 @@ import { PoolProjection } from '../components/charts/PoolProjection'
 import { TokenStructureChart } from '../components/charts/TokenStructureChart'
 import { UnitPriceChart } from '../components/charts/UnitPriceChart'
 import { YearHeatmap } from '../components/charts/YearHeatmap'
+import { useCsvFileDrop } from '../hooks/useCsvFileDrop'
 import { useReport } from '../hooks/useReport'
 import '../styles/report.css'
 
@@ -33,7 +35,7 @@ export function ReportPage() {
     allModels,
     heatmapVisible,
     agg,
-    clear,
+    setCsvFile,
     setFilters,
     setPoolLimits,
     setModelView,
@@ -45,10 +47,16 @@ export function ReportPage() {
     setProjectionOpen,
   } = useReport()
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { isDragging, error: dropError, dropTargetProps } = useCsvFileDrop(setCsvFile)
+
   return (
     <div className="report-page">
       <div className="report-container">
-        <header className="report-header">
+        <header
+          className={`report-header${isDragging ? ' report-header--drag-active' : ''}`}
+          {...dropTargetProps}
+        >
           <h1 className="report-header__title">Cursor 用量报告</h1>
           <div className="report-header__meta">
             <span>{fileName ?? '未选择文件'}</span>
@@ -63,9 +71,26 @@ export function ReportPage() {
             <ParseStatusBadge unknownModels={meta?.unknownModels} skippedRows={meta?.skippedRows} />
           </div>
           <ExportPngButton />
-          <button type="button" className="report-header__action" onClick={clear}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="report-header__file-input"
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              if (file) void setCsvFile(file)
+              event.target.value = ''
+            }}
+            aria-hidden
+          />
+          <button
+            type="button"
+            className="report-header__action"
+            onClick={() => fileInputRef.current?.click()}
+          >
             更换文件
           </button>
+          {dropError ? <p className="report-header__drop-error">{dropError}</p> : null}
         </header>
 
         <FilterBar filters={filters} allModels={allModels} onChange={setFilters} />
@@ -115,10 +140,10 @@ export function ReportPage() {
           </ChartPanel>
           <div className="report-stack">
             <ChartPanel title="#9 缓存命中率">
-              <CacheHitChart rates={agg.cacheHit} />
+              <CacheHitChart rates={agg.cacheHit} modelTokens={agg.modelTokens} />
             </ChartPanel>
             <ChartPanel title="#10 单 Token 价">
-              <UnitPriceChart prices={agg.unitPrice} />
+              <UnitPriceChart prices={agg.unitPrice} modelTokens={agg.modelTokens} />
             </ChartPanel>
           </div>
         </div>

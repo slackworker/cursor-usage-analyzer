@@ -1,4 +1,5 @@
 import type { EChartsOption } from 'echarts'
+import { filterByModelTokenShare } from '../../lib/aggregation'
 import {
   formatChartUsd,
   horizontalBarGrid,
@@ -10,13 +11,13 @@ import { EChart, baseTooltip } from './EChart'
 
 interface UnitPriceChartProps {
   prices: Record<string, number>
+  modelTokens: Record<string, number>
 }
 
-export function UnitPriceChart({ prices }: UnitPriceChartProps) {
-  const sorted = Object.entries(prices)
+export function UnitPriceChart({ prices, modelTokens }: UnitPriceChartProps) {
+  const sorted = filterByModelTokenShare(prices, modelTokens)
     .filter(([, v]) => v > 0)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
 
   const option: EChartsOption = {
     tooltip: {

@@ -1,16 +1,16 @@
 import type { EChartsOption } from 'echarts'
 import { formatPct } from '../../hooks/useReport'
+import { filterByModelTokenShare } from '../../lib/aggregation'
 import { horizontalBarGrid, horizontalBarHeight, horizontalBarYAxisLabel } from '../../lib/chartTheme'
 import { EChart, baseTooltip } from './EChart'
 
 interface CacheHitChartProps {
   rates: Record<string, number>
+  modelTokens: Record<string, number>
 }
 
-export function CacheHitChart({ rates }: CacheHitChartProps) {
-  const sorted = Object.entries(rates)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 12)
+export function CacheHitChart({ rates, modelTokens }: CacheHitChartProps) {
+  const sorted = filterByModelTokenShare(rates, modelTokens).sort((a, b) => b[1] - a[1])
 
   const option: EChartsOption = {
     tooltip: {

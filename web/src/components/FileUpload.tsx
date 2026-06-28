@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState, type DragEvent, type ChangeEvent } from 'react'
+import { useRef, type ChangeEvent } from 'react'
+import { useCsvFileDrop } from '../hooks/useCsvFileDrop'
 import './FileUpload.css'
 
 interface FileUploadProps {
@@ -13,57 +14,18 @@ export function FileUpload({
   disabled = false,
 }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const handleFile = useCallback(
-    async (file: File | undefined) => {
-      if (!file || disabled) return
-
-      const isCsv =
-        file.name.toLowerCase().endsWith('.csv') ||
-        file.type === 'text/csv' ||
-        file.type === 'application/vnd.ms-excel'
-
-      if (!isCsv) {
-        setError('请选择 CSV 文件')
-        return
-      }
-
-      setError(null)
-      await onFileSelect(file)
-    },
-    [disabled, onFileSelect],
-  )
+  const { isDragging, error, dropTargetProps, handleFile } = useCsvFileDrop(onFileSelect, disabled)
 
   const onInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     void handleFile(event.target.files?.[0])
     event.target.value = ''
   }
 
-  const onDragOver = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    if (!disabled) setIsDragging(true)
-  }
-
-  const onDragLeave = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    setIsDragging(false)
-  }
-
-  const onDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    setIsDragging(false)
-    void handleFile(event.dataTransfer.files?.[0])
-  }
-
   return (
     <div className="file-upload">
       <div
         className={`file-upload__dropzone${isDragging ? ' file-upload__dropzone--active' : ''}${disabled ? ' file-upload__dropzone--disabled' : ''}`}
-        onDragOver={onDragOver}
-        onDragLeave={onDragLeave}
-        onDrop={onDrop}
+        {...dropTargetProps}
         onClick={() => !disabled && inputRef.current?.click()}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
