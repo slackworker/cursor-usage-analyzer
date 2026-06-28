@@ -10,15 +10,6 @@ const DATE_PRESETS: { value: DateRangePreset; label: string }[] = [
   { value: 'custom', label: '自定义' },
 ]
 
-const TIMEZONES = [
-  'UTC',
-  'America/Los_Angeles',
-  'America/New_York',
-  'Europe/London',
-  'Asia/Shanghai',
-  'Asia/Tokyo',
-]
-
 interface FilterBarProps {
   filters: FilterState
   allModels: string[]
@@ -130,24 +121,6 @@ export function FilterBar({ filters, allModels, onChange }: FilterBarProps) {
           ))}
         </div>
       </details>
-
-      <label className="filter-bar__group">
-        <span className="filter-bar__group-label">时区</span>
-        <select
-          className="filter-bar__select"
-          value={filters.timezone}
-          onChange={(e) => onChange({ timezone: e.target.value })}
-        >
-          <option value={Intl.DateTimeFormat().resolvedOptions().timeZone}>
-            浏览器 ({Intl.DateTimeFormat().resolvedOptions().timeZone})
-          </option>
-          {TIMEZONES.filter((tz) => tz !== Intl.DateTimeFormat().resolvedOptions().timeZone).map((tz) => (
-            <option key={tz} value={tz}>
-              {tz}
-            </option>
-          ))}
-        </select>
-      </label>
     </div>
   )
 }

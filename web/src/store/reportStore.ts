@@ -2,11 +2,7 @@ import { create } from 'zustand'
 import type { ActivityGranularity, FilterState, ReportMeta, UsageEvent } from '../lib/types'
 import { DEFAULT_ACTIVITY_GRANULARITY, DEFAULT_POOL_LIMITS } from '../lib/types'
 import { parseCsvText } from '../lib/parser'
-
-const defaultTimezone =
-  typeof Intl !== 'undefined'
-    ? Intl.DateTimeFormat().resolvedOptions().timeZone
-    : 'UTC'
+import { getUserTimezone } from '../lib/timezone'
 
 export interface ReportStore {
   fileName: string | null
@@ -37,7 +33,6 @@ const defaultFilters: FilterState = {
   dateRange: 'all',
   billingMode: 'standard',
   models: 'all',
-  timezone: defaultTimezone,
 }
 
 export const useReportStore = create<ReportStore>((set) => ({
@@ -56,8 +51,7 @@ export const useReportStore = create<ReportStore>((set) => ({
 
   setCsvFile: async (file: File) => {
     const content = await file.text()
-    const tz = useReportStore.getState().filters.timezone
-    const { events, meta } = parseCsvText(content, file.name, tz)
+    const { events, meta } = parseCsvText(content, file.name, getUserTimezone())
     set({
       fileName: file.name,
       fileContent: content,
@@ -72,7 +66,7 @@ export const useReportStore = create<ReportStore>((set) => ({
       fileContent: null,
       events: [],
       meta: null,
-      filters: { ...defaultFilters, timezone: defaultTimezone },
+      filters: { ...defaultFilters },
       poolLimits: { ...DEFAULT_POOL_LIMITS },
       showCumulative: false,
       modelView: 'cost',
@@ -82,16 +76,7 @@ export const useReportStore = create<ReportStore>((set) => ({
       projectionOpen: false,
     }),
 
-  setFilters: (patch) => {
-    set((s) => {
-      const filters = { ...s.filters, ...patch }
-      if (patch.timezone && s.fileContent && s.fileName) {
-        const { events, meta } = parseCsvText(s.fileContent, s.fileName, filters.timezone)
-        return { filters, events, meta }
-      }
-      return { filters }
-    })
-  },
+  setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch } })),
 
   setPoolLimits: (patch) => set((s) => ({ poolLimits: { ...s.poolLimits, ...patch } })),
   setShowCumulative: (showCumulative) => set({ showCumulative }),

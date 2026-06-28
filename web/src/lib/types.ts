@@ -56,7 +56,6 @@ export interface FilterState {
   dateRange: DateRangePreset | { from: string; to: string }
   billingMode: BillingMode
   models: string[] | 'all'
-  timezone: string
 }
 
 export interface ReportMeta {
