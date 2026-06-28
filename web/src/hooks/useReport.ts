@@ -4,6 +4,7 @@ import {
   filterEvents,
   peakDailyCost,
   projectUsagePercent,
+  resolveDateBounds,
   rollupBillingTotals,
   rollupByModel,
   rollupByPool,
@@ -50,8 +51,9 @@ export function useReport() {
     const billing = rollupBillingTotals(filtered, mode)
     const byModel = rollupByModel(filtered, modelView, mode)
     const byPool = rollupByPool(filtered, mode)
-    const daily = rollupDaily(filtered, dailyView, 'all', mode)
-    const dailyCumulative = rollupDailyCumulative(filtered, dailyView, 'all', mode)
+    const dateBounds = resolveDateBounds(events, filters.dateRange)
+    const daily = rollupDaily(filtered, dailyView, 'all', mode, dateBounds)
+    const dailyCumulative = rollupDailyCumulative(filtered, dailyView, 'all', mode, dateBounds)
     const structure = rollupTokenStructure(filtered, structureView, mode)
     const cacheHit = cacheHitRateByModel(filtered)
     const unitPrice = unitPriceByModel(filtered, mode)
@@ -80,7 +82,7 @@ export function useReport() {
       peak,
       totalTokens,
     }
-  }, [filtered, mode, modelView, structureView, dailyView, hourlyView, dailyActivityGranularity, weeklyActivityGranularity, poolLimits])
+  }, [events, filtered, mode, modelView, structureView, dailyView, hourlyView, dailyActivityGranularity, weeklyActivityGranularity, poolLimits, filters.dateRange])
 
   const allModels = useMemo(() => {
     const set = new Set<string>()

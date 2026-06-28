@@ -29,7 +29,18 @@ function dataMaxDate(events: UsageEvent[]): string | null {
   return dates.length ? dates.sort().at(-1)! : null
 }
 
-function resolveDateBounds(
+function eachDateInRange(from: string, to: string): string[] {
+  const dates: string[] = []
+  let current = parseISO(from)
+  const end = parseISO(to)
+  while (current <= end) {
+    dates.push(format(current, 'yyyy-MM-dd'))
+    current = addDays(current, 1)
+  }
+  return dates
+}
+
+export function resolveDateBounds(
   events: UsageEvent[],
   dateRange: FilterState['dateRange'],
 ): { from: string | null; to: string | null } {
@@ -162,6 +173,7 @@ export function rollupDaily(
   view: 'cost' | 'token',
   models: string[] | 'all' = 'all',
   mode: BillingMode = 'standard',
+  bounds?: { from: string | null; to: string | null },
 ): { date: string; byModel: Record<string, number> }[] {
   const modelSet = models === 'all' ? null : new Set(models)
   const byDay: Record<string, Record<string, number>> = {}
@@ -185,9 +197,12 @@ export function rollupDaily(
     byDay[event.localDate][event.model] = (byDay[event.localDate][event.model] ?? 0) + cost
   }
 
-  return Object.keys(byDay)
-    .sort()
-    .map((date) => ({ date, byModel: byDay[date] }))
+  const eventDates = Object.keys(byDay).sort()
+  const from = bounds?.from ?? eventDates[0] ?? null
+  const to = bounds?.to ?? eventDates.at(-1) ?? null
+  if (!from || !to) return []
+
+  return eachDateInRange(from, to).map((date) => ({ date, byModel: byDay[date] ?? {} }))
 }
 
 export function rollupDailyCumulative(
@@ -195,8 +210,9 @@ export function rollupDailyCumulative(
   view: 'cost' | 'token',
   models: string[] | 'all' = 'all',
   mode: BillingMode = 'standard',
+  bounds?: { from: string | null; to: string | null },
 ): { date: string; daily: number; cumulative: number }[] {
-  const daily = rollupDaily(events, view, models, mode)
+  const daily = rollupDaily(events, view, models, mode, bounds)
   let cumulative = 0
   return daily.map(({ date, byModel }) => {
     const dayTotal = Object.values(byModel).reduce((a, b) => a + b, 0)
