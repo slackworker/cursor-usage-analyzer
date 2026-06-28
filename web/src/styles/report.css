@@ -316,10 +316,6 @@
   grid-template-columns: 1.2fr 1fr;
 }
 
-.report-grid--activity {
-  grid-template-columns: repeat(3, 1fr);
-}
-
 @media (max-width: 1200px) {
   .report-grid--triple {
     grid-template-columns: 1fr 1fr;
@@ -328,17 +324,12 @@
   .report-grid--triple > :first-child {
     grid-column: 1 / -1;
   }
-
-  .report-grid--activity {
-    grid-template-columns: 1fr 1fr;
-  }
 }
 
 @media (max-width: 1024px) {
   .report-grid--triple,
   .report-grid--double,
-  .report-grid--daily-side,
-  .report-grid--activity {
+  .report-grid--daily-side {
     grid-template-columns: 1fr;
   }
 

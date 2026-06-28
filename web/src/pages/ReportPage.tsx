@@ -87,7 +87,7 @@ export function ReportPage() {
           />
         </ChartPanel>
 
-        <div className="report-grid report-grid--activity">
+        <div className="report-grid report-grid--double">
           <ChartPanel title="#11 日活跃时段">
             <HourlyChart
               hourly={agg.hourly}
@@ -104,14 +104,13 @@ export function ReportPage() {
               onGranularityChange={setWeeklyActivityGranularity}
             />
           </ChartPanel>
-          <ChartPanel title="#13 年热力图">
-            {heatmapVisible ? (
-              <YearHeatmap data={agg.heatmap} />
-            ) : (
-              <p className="chart-empty">数据跨度 &lt; 90 天，已隐藏年热力图</p>
-            )}
-          </ChartPanel>
         </div>
+
+        {heatmapVisible && (
+          <ChartPanel title="#13 年热力图" tall>
+            <YearHeatmap data={agg.heatmap} />
+          </ChartPanel>
+        )}
 
         <div className="report-grid report-grid--daily-side">
           <ChartPanel title="#8 用量结构" tall>
