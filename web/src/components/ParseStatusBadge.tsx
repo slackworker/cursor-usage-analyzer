@@ -12,13 +12,6 @@ interface ParseStatusBadgeProps {
   skippedRows?: Record<string, number>
 }
 
-function formatCounts(counts: Record<string, number>): string {
-  return Object.entries(counts)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, count]) => `${EXPECTED_SKIP_LABELS[key] ?? key} ${count}`)
-    .join(' · ')
-}
-
 export function ParseStatusBadge({ unknownModels, skippedRows }: ParseStatusBadgeProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -79,9 +72,17 @@ export function ParseStatusBadge({ unknownModels, skippedRows }: ParseStatusBadg
             </p>
           ) : null}
           {hasSkipped ? (
-            <p className="parse-details__item parse-details__item--muted">
+            <p className="parse-details__item">
               <span className="parse-details__label">无需计入</span>
-              <span className="parse-details__content">{formatCounts(Object.fromEntries(skippedEntries))}</span>
+              <span className="parse-details__content">
+                {[...skippedEntries]
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([key, count]) => (
+                    <span key={key} className="parse-details__tag parse-details__tag--muted">
+                      {EXPECTED_SKIP_LABELS[key] ?? key} ×{count}
+                    </span>
+                  ))}
+              </span>
             </p>
           ) : null}
         </div>

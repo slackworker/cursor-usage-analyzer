@@ -590,6 +590,11 @@
   color: var(--color-warning);
   font-size: 0.75rem;
 }
+
+.parse-details__tag--muted {
+  background: rgba(139, 148, 158, 0.12);
+  color: var(--color-text-muted);
+}
 .pool-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
 .pool-gauge__header { display: flex; justify-content: space-between; font-size: 0.8125rem; margin-bottom: 0.35rem; }
 .pool-gauge__bar { height: 8px; background: var(--color-bg); border-radius: 999px; overflow: hidden; }
