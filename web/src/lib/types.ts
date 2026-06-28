@@ -9,10 +9,10 @@ export type DateRangePreset =
   | 'last_month'
   | 'custom'
 
-/** #11 日活跃时段：30m / 15m / 5m */
+/** 日内时段分布：30m / 15m / 5m */
 export type DailyActivityGranularity = 30 | 15 | 5
 
-/** #12 周活跃时段：1h / 30m / 15m */
+/** 周内时段分布：1h / 30m / 15m */
 export type WeeklyActivityGranularity = 60 | 30 | 15
 
 /** 聚合层通用时间槽粒度（两图并集） */

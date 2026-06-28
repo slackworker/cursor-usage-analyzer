@@ -62,15 +62,15 @@ export function ReportPage() {
             peakDate={agg.peak?.date ?? null}
             peakValue={agg.peak?.value ?? 0}
           />
-          <ChartPanel title="#4 计费口径环图">
+          <ChartPanel title="费用构成">
             <BillingDonut totals={agg.billing} mode={filters.billingMode} />
           </ChartPanel>
-          <ChartPanel title="#6 池环图">
+          <ChartPanel title="模型池分布">
             <PoolDonut byPool={agg.byPool} />
           </ChartPanel>
         </div>
 
-        <ChartPanel title="#5 模型消费" tall>
+        <ChartPanel title="模型分布" tall>
           <ModelChart
             byModel={agg.byModel}
             view={modelView}
@@ -78,7 +78,7 @@ export function ReportPage() {
           />
         </ChartPanel>
 
-        <ChartPanel title="#7 日消费" tall>
+        <ChartPanel title="每日趋势" tall>
           <DailyChart
             daily={agg.daily}
             cumulative={agg.dailyCumulative}
@@ -88,7 +88,7 @@ export function ReportPage() {
         </ChartPanel>
 
         <div className="report-grid report-grid--double">
-          <ChartPanel title="#11 日活跃时段">
+          <ChartPanel title="日内时段分布">
             <HourlyChart
               hourly={agg.hourly}
               view={hourlyView}
@@ -97,7 +97,7 @@ export function ReportPage() {
               onGranularityChange={setDailyActivityGranularity}
             />
           </ChartPanel>
-          <ChartPanel title="#12 周活跃时段">
+          <ChartPanel title="周内时段分布">
             <WeeklyHeatmap
               matrix={agg.weekly}
               granularity={weeklyActivityGranularity}
@@ -107,26 +107,26 @@ export function ReportPage() {
         </div>
 
         {heatmapVisible && (
-          <ChartPanel title="#13 年热力图" tall>
+          <ChartPanel title="年度活跃日历" tall>
             <YearHeatmap data={agg.heatmap} />
           </ChartPanel>
         )}
 
         <div className="report-grid report-grid--quad">
-          <ChartPanel title="#8 用量结构">
+          <ChartPanel title="Token 构成">
             <TokenStructureChart
               data={agg.structure}
               view={structureView}
               onViewChange={setStructureView}
             />
           </ChartPanel>
-          <ChartPanel title="#9 缓存命中率">
+          <ChartPanel title="缓存命中率">
             <CacheHitChart rates={agg.cacheHit} modelTokens={agg.modelTokens} />
           </ChartPanel>
-          <ChartPanel title="#10 单 Token 价">
+          <ChartPanel title="单位 Token 费用">
             <UnitPriceChart prices={agg.unitPrice} modelTokens={agg.modelTokens} />
           </ChartPanel>
-          <ChartPanel title="#14 套餐池使用率">
+          <ChartPanel title="池使用率">
             <PoolProjection
               projection={agg.projection}
               plan={plan}
