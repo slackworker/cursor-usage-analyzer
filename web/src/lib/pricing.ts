@@ -115,6 +115,7 @@ export const PRICING: Record<string, ModelPricing> = {
   'composer-1': { input: 1.25, cacheWrite: 1.25, cacheRead: 0.125, output: 10.0, pool: 'auto_composer' },
   'composer-2': { input: 0.5, cacheWrite: 0.5, cacheRead: 0.2, output: 2.5, pool: 'auto_composer' },
   'composer-2-fast': { input: 1.0, cacheWrite: 1.0, cacheRead: 0.4, output: 5.0, pool: 'auto_composer' },
+  'composer-2.5': { input: 0.5, cacheWrite: 0.5, cacheRead: 0.2, output: 2.5, pool: 'auto_composer' },
   'composer-2.5-fast': { input: 3.0, cacheWrite: 3.0, cacheRead: 0.5, output: 15.0, pool: 'auto_composer' },
   'gpt-5.2': { input: 1.75, cacheWrite: 1.75, cacheRead: 0.175, output: 14.0, pool: 'api' },
   'gpt-5.2-codex': { input: 1.75, cacheWrite: 1.75, cacheRead: 0.175, output: 14.0, pool: 'api' },

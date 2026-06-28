@@ -63,7 +63,7 @@ CSV 每行输入侧三列语义（与 §2.2 计费列一致）：
 | 模型 | 池 | 费率来源 |
 |------|-----|----------|
 | auto | auto_composer | Auto pricing 表 |
-| composer-1/2, composer-2-fast, composer-2.5-fast | auto_composer | API 表或 Composer pricing 表；`-fast` 为 slug 映射（见 pricing_sources） |
+| composer-1/2, composer-2.5, composer-2-fast, composer-2.5-fast | auto_composer | Composer pricing 表；`-fast` 为 Fast 变体 slug 映射（见 pricing_sources） |
 | gpt-*, claude-*-thinking | api | API Model pricing；slug 后缀为 thinking 变体，费率同基座 |
 | agent_review | api | 基数同 Auto 四列；官方可能有未文档化折扣 |
 

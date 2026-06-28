@@ -164,7 +164,14 @@ def parse_official_row_cost(value: str | None) -> float | None:
         return None
 
 AUTO_COMPOSER_MODELS = frozenset(
-    {"auto", "composer-1", "composer-2", "composer-2-fast", "composer-2.5-fast"}
+    {
+        "auto",
+        "composer-1",
+        "composer-2",
+        "composer-2-fast",
+        "composer-2.5",
+        "composer-2.5-fast",
+    }
 )
 API_MODELS = frozenset(
     {
@@ -212,6 +219,14 @@ PRICING: Mapping[str, ModelPricing] = {
         cache_write=1.0,
         cache_read=0.4,
         output=5.0,
+        pool="auto_composer",
+    ),
+    # Composer pricing table → Composer 2.5 ($0.5 / $0.2 / $2.5); cache write at input rate.
+    "composer-2.5": ModelPricing(
+        input=0.5,
+        cache_write=0.5,
+        cache_read=0.2,
+        output=2.5,
         pool="auto_composer",
     ),
     # Composer pricing table → Composer 2.5 (Fast); not the API-table Composer 2.5 row.
