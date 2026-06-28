@@ -1,26 +1,43 @@
 import type { EChartsOption } from 'echarts'
-import { EChart, baseGrid, baseLegend, baseTooltip } from './EChart'
+import { formatTokens } from '../../hooks/useReport'
+import { EChart, baseLegend, baseTooltip } from './EChart'
 
 interface TokenStructureChartProps {
   tokens: { icw: number; icwo: number; cacheRead: number; output: number }
 }
 
+const TOKEN_COLORS = ['#58a6ff', '#3fb950', '#d29922', '#f85149']
+
 export function TokenStructureChart({ tokens }: TokenStructureChartProps) {
+  const data = [
+    { name: 'ICW', value: tokens.icw },
+    { name: 'ICWO', value: tokens.icwo },
+    { name: 'Cache Read', value: tokens.cacheRead },
+    { name: 'Output', value: tokens.output },
+  ].filter((d) => d.value > 0)
+
   const option: EChartsOption = {
-    tooltip: { ...baseTooltip(), trigger: 'axis' },
-    legend: { ...baseLegend(), bottom: 0 },
-    grid: baseGrid(),
-    xAxis: { type: 'category', data: ['Token 结构'], axisLabel: { show: false } },
-    yAxis: {
-      type: 'value',
-      axisLabel: { color: '#8b949e', formatter: (v: number) => `${(v / 1e6).toFixed(1)}M` },
-      splitLine: { lineStyle: { color: '#21262d' } },
+    tooltip: {
+      ...baseTooltip(),
+      formatter: (params) => {
+        const p = Array.isArray(params) ? params[0] : params
+        if (!p || typeof p.value !== 'number') return ''
+        return `${p.name}: ${formatTokens(p.value)} (${p.percent}%)`
+      },
     },
+    legend: { ...baseLegend(), bottom: 0 },
     series: [
-      { name: 'ICW', type: 'bar', stack: 't', data: [tokens.icw], itemStyle: { color: '#58a6ff' } },
-      { name: 'ICWO', type: 'bar', stack: 't', data: [tokens.icwo], itemStyle: { color: '#3fb950' } },
-      { name: 'Cache Read', type: 'bar', stack: 't', data: [tokens.cacheRead], itemStyle: { color: '#d29922' } },
-      { name: 'Output', type: 'bar', stack: 't', data: [tokens.output], itemStyle: { color: '#f85149' } },
+      {
+        type: 'pie',
+        radius: ['45%', '70%'],
+        center: ['50%', '45%'],
+        data,
+        label: {
+          color: '#e6edf3',
+          formatter: ({ name, percent }) => `${name}\n${percent}%`,
+        },
+        color: TOKEN_COLORS,
+      },
     ],
   }
 
