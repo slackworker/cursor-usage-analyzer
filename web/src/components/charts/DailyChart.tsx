@@ -29,6 +29,7 @@ export function DailyChart({ daily, cumulative, showCumulative, onToggleCumulati
       itemStyle: { color: '#ffa657' },
       lineStyle: { width: 2 },
       smooth: true,
+      showSymbol: false,
     })
   }
 
