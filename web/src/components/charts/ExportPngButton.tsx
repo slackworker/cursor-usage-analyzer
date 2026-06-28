@@ -1,5 +1,6 @@
 import html2canvas from 'html2canvas'
 import { useState } from 'react'
+import { prepareExportClone } from '../../lib/prepareExportClone'
 import { useReportStore } from '../../store/reportStore'
 
 function buildExportFileName(fileName: string | null): string {
@@ -23,11 +24,7 @@ export function ExportPngButton() {
         scale: 2,
         useCORS: true,
         logging: false,
-        onclone: (doc) => {
-          doc.querySelectorAll<HTMLElement>('[data-export-hide]').forEach((el) => {
-            el.style.display = 'none'
-          })
-        },
+        onclone: prepareExportClone,
       })
 
       const link = document.createElement('a')
