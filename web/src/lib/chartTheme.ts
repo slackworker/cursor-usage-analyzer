@@ -22,6 +22,17 @@ export function baseTooltip() {
     backgroundColor: '#161b22',
     borderColor: '#30363d',
     textStyle: { color: '#e6edf3' },
+    confine: true,
+  }
+}
+
+export function baseAxisTooltip() {
+  return {
+    trigger: 'axis' as const,
+    backgroundColor: '#161b22',
+    borderColor: '#30363d',
+    textStyle: { color: '#e6edf3' },
+    confine: true,
   }
 }
 

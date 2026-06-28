@@ -19,7 +19,12 @@ let lastEChartProps: {
     series?: { name?: string; type?: string; stack?: string; areaStyle?: unknown }[]
     legend?: { data?: string[] }
     yAxis?: { name?: string; axisLabel?: { formatter?: (v: number) => string } }[]
-    tooltip?: { formatter?: unknown }
+    tooltip?: {
+      formatter?: unknown
+      textStyle?: { fontSize?: number }
+      extraCssText?: string
+      enterable?: boolean
+    }
   }
   replaceMerge?: string | string[]
 } | null = null
@@ -30,7 +35,12 @@ vi.mock('./EChart', () => ({
       series?: { name?: string; type?: string; stack?: string; areaStyle?: unknown }[]
       legend?: { data?: string[] }
       yAxis?: { name?: string; axisLabel?: { formatter?: (v: number) => string } }[]
-      tooltip?: { formatter?: unknown }
+      tooltip?: {
+      formatter?: unknown
+      textStyle?: { fontSize?: number }
+      extraCssText?: string
+      enterable?: boolean
+    }
     }
     replaceMerge?: string | string[]
   }) => {
@@ -71,10 +81,10 @@ describe('DailyChart', () => {
     return lastEChartProps?.buildOption?.(900)
   }
 
-  it('passes replaceMerge for series, yAxis, and legend updates', () => {
+  it('passes replaceMerge for series, yAxis, legend, and tooltip updates', () => {
     renderChart()
 
-    expect(lastEChartProps?.replaceMerge).toEqual(['series', 'yAxis', 'legend'])
+    expect(lastEChartProps?.replaceMerge).toEqual(['series', 'yAxis', 'legend', 'tooltip'])
   })
 
   it('includes cumulative line series in bar layout', () => {
@@ -129,6 +139,17 @@ describe('DailyChart', () => {
     const barSeries = getOption()?.series?.filter((s) => s.name !== '累积') ?? []
     expect(barSeries.map((s) => s.name)).toEqual(['gpt', 'auto'])
     expect(getOption()?.legend?.data).toEqual(['gpt', 'auto', '累积'])
+  })
+
+  it('uses compact tooltip styling only in stack layout', () => {
+    renderChart('cost', 'bar')
+    expect(getOption()?.tooltip?.textStyle?.fontSize).toBeUndefined()
+    expect(getOption()?.tooltip?.extraCssText).toBeUndefined()
+
+    renderChart('cost', 'stack')
+    expect(getOption()?.tooltip?.textStyle?.fontSize).toBe(10)
+    expect(getOption()?.tooltip?.extraCssText).toBeUndefined()
+    expect(getOption()?.tooltip?.enterable).toBeUndefined()
   })
 
   it('builds cumulative stacked values per model in stack layout', () => {

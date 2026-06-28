@@ -9,7 +9,7 @@ import {
   DAILY_ACTIVITY_GRANULARITY_OPTIONS,
   WEEKLY_ACTIVITY_GRANULARITY_OPTIONS,
 } from '../../lib/types'
-import { EChart, baseGrid } from './EChart'
+import { EChart, baseGrid, baseAxisTooltip } from './EChart'
 
 const DAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
 
@@ -34,7 +34,7 @@ export function HourlyChart({
   const labels = ordered.map((h) => formatActivitySlotLabel(h.slot, granularity))
 
   const option: EChartsOption = {
-    tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d' },
+    tooltip: { ...baseAxisTooltip() },
     grid: baseGrid(),
     xAxis: {
       type: 'category',

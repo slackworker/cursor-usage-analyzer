@@ -2,6 +2,7 @@ import type { EChartsOption } from 'echarts'
 import {
   axisTooltipTokenFormatter,
   axisTooltipUsdFormatter,
+  baseAxisTooltip,
   tokenAxisLabel,
   usdAxisLabel,
 } from '../../lib/chartTheme'
@@ -95,10 +96,12 @@ export function DailyChart({
 
   const buildOption = (chartWidth: number): EChartsOption => ({
     tooltip: {
-      trigger: 'axis',
-      backgroundColor: '#161b22',
-      borderColor: '#30363d',
+      ...baseAxisTooltip(),
       formatter: isCost ? axisTooltipUsdFormatter : axisTooltipTokenFormatter,
+      ...(isStack && {
+        textStyle: { color: '#e6edf3', fontSize: 10, lineHeight: 14 },
+        padding: [4, 8],
+      }),
     },
     legend: { ...bottomLegend(), data: legendData },
     grid: gridWithLegend(legendCount, chartWidth),
@@ -169,7 +172,7 @@ export function DailyChart({
       <EChart
         buildOption={buildOption}
         buildHeight={(chartWidth) => 260 + legendExtraHeight(legendCount, chartWidth)}
-        replaceMerge={['series', 'yAxis', 'legend']}
+        replaceMerge={['series', 'yAxis', 'legend', 'tooltip']}
       />
     </div>
   )
