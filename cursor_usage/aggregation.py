@@ -373,12 +373,27 @@ def rollup_year_heatmap(
     return [{"date": day, "value": by_day[day]} for day in sorted(by_day)]
 
 
+def _add_calendar_month(d: date) -> date:
+    """Same calendar day next month, clamped to month end (e.g. Jan 31 → Feb 28)."""
+    if d.month == 12:
+        year, month = d.year + 1, 1
+    else:
+        year, month = d.year, d.month + 1
+    last_day = monthrange(year, month)[1]
+    return date(year, month, min(d.day, last_day))
+
+
+def is_within_billing_cycle(start: date, end: date) -> bool:
+    """True when end is on or before the same-day-next-month anniversary."""
+    return end <= _add_calendar_month(start)
+
+
 def project_usage_percent(
     events: list[UsageEvent],
     limits: PoolLimits,
     *,
     mode: Literal["official", "standard"] = "official",
-) -> dict[str, float]:
+) -> dict[str, float | int | str]:
     totals = rollup_billing_totals(events, mode)
     included = float(totals["included"])
     dates = sorted(e.local_date for e in events if e.local_date and not e.skip_reason)
@@ -390,27 +405,59 @@ def project_usage_percent(
             "auto_composer_pct": 0.0,
             "api_pct": 0.0,
             "total_pct": 0.0,
+            "usage_mode": "direct",
+            "ac_used": 0.0,
+            "api_used": 0.0,
+            "start_date": "",
+            "end_date": "",
         }
 
-    span_days = (date.fromisoformat(dates[-1]) - date.fromisoformat(dates[0])).days + 1
+    start = date.fromisoformat(dates[0])
+    end = date.fromisoformat(dates[-1])
+    span_days = (end - start).days + 1
     daily_avg = included / span_days if span_days else 0.0
     projected_30d = daily_avg * 30
 
     pool_totals = rollup_by_pool(events, mode=mode)
     ac_included = float(pool_totals.get("auto_composer", {}).get("included", 0))
     api_included = float(pool_totals.get("api", {}).get("included", 0))
+
+    if is_within_billing_cycle(start, end):
+        return {
+            "span_days": span_days,
+            "daily_avg": daily_avg,
+            "projected_30d": projected_30d,
+            "auto_composer_pct": (ac_included / limits.auto_composer * 100)
+            if limits.auto_composer
+            else 0.0,
+            "api_pct": (api_included / limits.api * 100) if limits.api else 0.0,
+            "total_pct": (included / limits.total * 100) if limits.total else 0.0,
+            "usage_mode": "direct",
+            "ac_used": ac_included,
+            "api_used": api_included,
+            "start_date": dates[0],
+            "end_date": dates[-1],
+        }
+
     ac_daily = ac_included / span_days if span_days else 0.0
     api_daily = api_included / span_days if span_days else 0.0
+    projected_ac = ac_daily * 30
+    projected_api = api_daily * 30
 
     return {
         "span_days": span_days,
         "daily_avg": daily_avg,
         "projected_30d": projected_30d,
-        "auto_composer_pct": (ac_daily * 30 / limits.auto_composer * 100)
+        "auto_composer_pct": (projected_ac / limits.auto_composer * 100)
         if limits.auto_composer
         else 0.0,
-        "api_pct": (api_daily * 30 / limits.api * 100) if limits.api else 0.0,
+        "api_pct": (projected_api / limits.api * 100) if limits.api else 0.0,
         "total_pct": (projected_30d / limits.total * 100) if limits.total else 0.0,
+        "usage_mode": "normalized",
+        "ac_used": projected_ac,
+        "api_used": projected_api,
+        "start_date": dates[0],
+        "end_date": dates[-1],
     }
 
 

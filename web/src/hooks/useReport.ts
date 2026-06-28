@@ -26,24 +26,24 @@ export function useReport() {
   const meta = useReportStore((s) => s.meta)
   const filters = useReportStore((s) => s.filters)
   const poolLimits = useReportStore((s) => s.poolLimits)
+  const plan = useReportStore((s) => s.plan)
   const modelView = useReportStore((s) => s.modelView)
   const structureView = useReportStore((s) => s.structureView)
   const dailyView = useReportStore((s) => s.dailyView)
   const hourlyView = useReportStore((s) => s.hourlyView)
   const dailyActivityGranularity = useReportStore((s) => s.dailyActivityGranularity)
   const weeklyActivityGranularity = useReportStore((s) => s.weeklyActivityGranularity)
-  const projectionOpen = useReportStore((s) => s.projectionOpen)
   const setCsvFile = useReportStore((s) => s.setCsvFile)
   const clear = useReportStore((s) => s.clear)
   const setFilters = useReportStore((s) => s.setFilters)
   const setPoolLimits = useReportStore((s) => s.setPoolLimits)
+  const setPlan = useReportStore((s) => s.setPlan)
   const setModelView = useReportStore((s) => s.setModelView)
   const setStructureView = useReportStore((s) => s.setStructureView)
   const setDailyView = useReportStore((s) => s.setDailyView)
   const setHourlyView = useReportStore((s) => s.setHourlyView)
   const setDailyActivityGranularity = useReportStore((s) => s.setDailyActivityGranularity)
   const setWeeklyActivityGranularity = useReportStore((s) => s.setWeeklyActivityGranularity)
-  const setProjectionOpen = useReportStore((s) => s.setProjectionOpen)
 
   const filtered = useMemo(() => filterEvents(events, filters), [events, filters])
   const mode = filters.billingMode
@@ -106,13 +106,13 @@ export function useReport() {
     filtered,
     filters,
     poolLimits,
+    plan,
     modelView,
     structureView,
     dailyView,
     hourlyView,
     dailyActivityGranularity,
     weeklyActivityGranularity,
-    projectionOpen,
     allModels,
     heatmapVisible,
     agg,
@@ -120,13 +120,13 @@ export function useReport() {
     clear,
     setFilters,
     setPoolLimits,
+    setPlan,
     setModelView,
     setStructureView,
     setDailyView,
     setHourlyView,
     setDailyActivityGranularity,
     setWeeklyActivityGranularity,
-    setProjectionOpen,
   }
 }
 

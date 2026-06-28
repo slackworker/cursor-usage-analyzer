@@ -21,25 +21,25 @@ export function ReportPage() {
     rowCount,
     filters,
     poolLimits,
+    plan,
     modelView,
     structureView,
     dailyView,
     hourlyView,
     dailyActivityGranularity,
     weeklyActivityGranularity,
-    projectionOpen,
     heatmapVisible,
     agg,
     setCsvFile,
     setFilters,
     setPoolLimits,
+    setPlan,
     setModelView,
     setStructureView,
     setDailyView,
     setHourlyView,
     setDailyActivityGranularity,
     setWeeklyActivityGranularity,
-    setProjectionOpen,
   } = useReport()
 
   return (
@@ -130,14 +130,15 @@ export function ReportPage() {
           </div>
         </div>
 
-        <PoolProjection
-          projection={agg.projection}
-          limits={poolLimits}
-          byPool={agg.byPool}
-          open={projectionOpen}
-          onToggle={setProjectionOpen}
-          onLimitsChange={setPoolLimits}
-        />
+        <ChartPanel title="#14 套餐池使用率">
+          <PoolProjection
+            projection={agg.projection}
+            plan={plan}
+            limits={poolLimits}
+            onPlanChange={setPlan}
+            onLimitsChange={setPoolLimits}
+          />
+        </ChartPanel>
       </div>
     </div>
   )

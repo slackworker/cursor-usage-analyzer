@@ -1,71 +1,85 @@
 import { formatUsd } from '../../hooks/useReport'
+import { PLAN_PRESETS, type PlanId } from '../../lib/types'
 
 interface PoolProjectionProps {
   projection: {
     spanDays: number
-    dailyAvg: number
-    projected30d: number
     autoComposerPct: number
     apiPct: number
-    totalPct: number
+    usageMode: 'direct' | 'normalized'
+    acUsed: number
+    apiUsed: number
+    startDate: string
+    endDate: string
   }
+  plan: PlanId
   limits: { autoComposer: number; api: number }
-  byPool: Record<string, { included: number; free: number; onDemand: number }>
-  open: boolean
-  onToggle: (v: boolean) => void
+  onPlanChange: (plan: PlanId) => void
   onLimitsChange: (patch: Partial<{ autoComposer: number; api: number }>) => void
+}
+
+function PoolGauge({
+  label,
+  pct,
+  used,
+  limit,
+  fillClass,
+}: {
+  label: string
+  pct: number
+  used: number
+  limit: number
+  fillClass: 'pool-gauge__fill--ac' | 'pool-gauge__fill--api'
+}) {
+  return (
+    <div className="pool-gauge">
+      <div className="pool-gauge__header">
+        <span>{label}</span>
+        <span>{pct.toFixed(1)}%</span>
+      </div>
+      <div className="pool-gauge__bar">
+        <div
+          className={`pool-gauge__fill ${fillClass}`}
+          style={{ width: `${Math.min(pct, 100)}%` }}
+        />
+      </div>
+      <span className="pool-gauge__sub">
+        {formatUsd(used)} / {formatUsd(limit)}
+      </span>
+    </div>
+  )
 }
 
 export function PoolProjection({
   projection,
+  plan,
   limits,
-  byPool,
-  open,
-  onToggle,
+  onPlanChange,
   onLimitsChange,
 }: PoolProjectionProps) {
-  const acUsed =
-    (byPool.auto_composer?.included ?? 0) +
-    (byPool.auto_composer?.free ?? 0) +
-    (byPool.auto_composer?.onDemand ?? 0)
-  const apiUsed =
-    (byPool.api?.included ?? 0) + (byPool.api?.free ?? 0) + (byPool.api?.onDemand ?? 0)
-
-  const acPct = limits.autoComposer ? (acUsed / limits.autoComposer) * 100 : 0
-  const apiPct = limits.api ? (apiUsed / limits.api) * 100 : 0
+  const isDirect = projection.usageMode === 'direct'
 
   return (
-    <footer className="report-footer">
-      <div className="pool-gauges">
-        <div className="pool-gauge">
-          <div className="pool-gauge__header">
-            <span>Auto + Composer</span>
-            <span>{acPct.toFixed(1)}%</span>
-          </div>
-          <div className="pool-gauge__bar">
-            <div className="pool-gauge__fill pool-gauge__fill--ac" style={{ width: `${Math.min(acPct, 100)}%` }} />
-          </div>
-          <span className="pool-gauge__sub">
-            {formatUsd(acUsed)} / {formatUsd(limits.autoComposer)}
-          </span>
-        </div>
-        <div className="pool-gauge">
-          <div className="pool-gauge__header">
-            <span>API</span>
-            <span>{apiPct.toFixed(1)}%</span>
-          </div>
-          <div className="pool-gauge__bar">
-            <div className="pool-gauge__fill pool-gauge__fill--api" style={{ width: `${Math.min(apiPct, 100)}%` }} />
-          </div>
-          <span className="pool-gauge__sub">
-            {formatUsd(apiUsed)} / {formatUsd(limits.api)}
-          </span>
-        </div>
-      </div>
-
-      <div className="pool-limits-config">
-        <label>
-          AC 额度 $
+    <div className="pool-projection">
+      <div className="pool-projection__config">
+        <label className="pool-projection__field">
+          <span className="pool-projection__field-label">套餐</span>
+          <select
+            className="filter-bar__select"
+            value={plan}
+            onChange={(e) => onPlanChange(e.target.value as PlanId)}
+          >
+            {(Object.entries(PLAN_PRESETS) as [PlanId, (typeof PLAN_PRESETS)[PlanId]][]).map(
+              ([id, preset]) => (
+                <option key={id} value={id}>
+                  {preset.label}
+                </option>
+              ),
+            )}
+          </select>
+        </label>
+        <label className="pool-projection__field">
+          <span className="pool-projection__field-label">AC 额度 $</span>
           <input
             type="number"
             className="filter-bar__input"
@@ -75,8 +89,8 @@ export function PoolProjection({
             onChange={(e) => onLimitsChange({ autoComposer: Number(e.target.value) })}
           />
         </label>
-        <label>
-          API 额度 $
+        <label className="pool-projection__field">
+          <span className="pool-projection__field-label">API 额度 $</span>
           <input
             type="number"
             className="filter-bar__input"
@@ -88,27 +102,32 @@ export function PoolProjection({
         </label>
       </div>
 
-      <details className="projection-details" open={open} onToggle={(e) => onToggle((e.target as HTMLDetailsElement).open)}>
-        <summary className="projection-details__summary">Usage 推算 #14（实验性）</summary>
-        <div className="projection-details__body">
-          <p className="projection-disclaimer">
-            ⚠️ 免责声明：此推算基于当前 CSV 片段按 30 天归一化，非完整账单周期，非 Pro 套餐时不准确。仅供参考，不构成账单承诺。
-          </p>
-          <ul className="projection-stats">
-            <li>数据跨度：{projection.spanDays} 天</li>
-            <li>日均 Included：{formatUsd(projection.dailyAvg)}</li>
-            <li>30 天推算：{formatUsd(projection.projected30d)}</li>
-            <li>推算 AC 池使用率：{projection.autoComposerPct.toFixed(1)}%</li>
-            <li>推算 API 池使用率：{projection.apiPct.toFixed(1)}%</li>
-          </ul>
+      <section className="pool-projection__usage">
+        <h4 className="pool-projection__section-title">
+          {isDirect ? '月度使用率' : '月均推算'}
+        </h4>
+        <div className="pool-gauges pool-gauges--compact">
+          <PoolGauge
+            label="Auto + Composer"
+            pct={projection.autoComposerPct}
+            used={projection.acUsed}
+            limit={limits.autoComposer}
+            fillClass="pool-gauge__fill--ac"
+          />
+          <PoolGauge
+            label="API"
+            pct={projection.apiPct}
+            used={projection.apiUsed}
+            limit={limits.api}
+            fillClass="pool-gauge__fill--api"
+          />
         </div>
-      </details>
-
-      <div className="report-actions">
-        <button type="button" className="report-actions__btn" disabled title="二期功能">
-          对比 CSV（即将推出）
-        </button>
-      </div>
-    </footer>
+        <p className="pool-projection__hint">
+          {isDirect
+            ? `数据 ${projection.startDate} 至 ${projection.endDate}（在一个账单月内），按 Included 直接占月度额度。`
+            : `数据 ${projection.startDate} 至 ${projection.endDate}（跨账单月），按日均 Included 归一化至 30 天；仅供参考。`}
+        </p>
+      </section>
+    </div>
   )
 }

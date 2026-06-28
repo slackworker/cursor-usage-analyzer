@@ -7,10 +7,13 @@ import {
   filterByModelTokenShare,
   filterHeatmapByYear,
   heatmapYears,
+  isWithinBillingCycle,
+  projectUsagePercent,
   rollupDaily,
   tokenTotalsByModel,
 } from './aggregation'
 import { parseCsvText } from './parser'
+import { DEFAULT_POOL_LIMITS } from './types'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../../..')
 
@@ -99,5 +102,52 @@ describe('year heatmap helpers', () => {
       { date: '2026-01-01', value: 3 },
       { date: '2026-03-15', value: 4 },
     ])
+  })
+})
+
+describe('isWithinBillingCycle', () => {
+  it('treats same-day-next-month as within one billing cycle', () => {
+    expect(isWithinBillingCycle('2026-05-07', '2026-06-07')).toBe(true)
+    expect(isWithinBillingCycle('2026-05-07', '2026-05-20')).toBe(true)
+  })
+
+  it('treats day after anniversary as crossing billing cycle', () => {
+    expect(isWithinBillingCycle('2026-05-07', '2026-06-08')).toBe(false)
+  })
+
+  it('clamps month-end anniversaries', () => {
+    expect(isWithinBillingCycle('2026-01-31', '2026-02-28')).toBe(true)
+    expect(isWithinBillingCycle('2026-01-31', '2026-03-01')).toBe(false)
+  })
+})
+
+describe('projectUsagePercent', () => {
+  it('uses direct pool usage when data stays within one billing month', () => {
+    const content = readFileSync(join(root, 'examples/usage-events-2026-06-27.csv'), 'utf-8')
+    const { events } = parseCsvText(content, 'usage-events.csv')
+    const result = projectUsagePercent(events, DEFAULT_POOL_LIMITS, 'official')
+
+    expect(result.spanDays).toBeLessThanOrEqual(30)
+    expect(result.usageMode).toBe('direct')
+    expect(isWithinBillingCycle(result.startDate, result.endDate)).toBe(true)
+    expect(result.acUsed).toBeGreaterThan(0)
+    expect(result.autoComposerPct).toBeCloseTo(
+      (result.acUsed / DEFAULT_POOL_LIMITS.autoComposer) * 100,
+      5,
+    )
+  })
+
+  it('normalizes when data crosses a billing month boundary', () => {
+    const content = readFileSync(join(root, 'examples/Jan 01 - Jun 27 US$488.45.csv'), 'utf-8')
+    const { events } = parseCsvText(content, 'Jan-Jun.csv')
+    const result = projectUsagePercent(events, DEFAULT_POOL_LIMITS, 'official')
+
+    expect(isWithinBillingCycle(result.startDate, result.endDate)).toBe(false)
+    expect(result.usageMode).toBe('normalized')
+    expect(result.autoComposerPct).toBeCloseTo(
+      (result.acUsed / DEFAULT_POOL_LIMITS.autoComposer) * 100,
+      5,
+    )
+    expect(result.apiPct).toBeCloseTo((result.apiUsed / DEFAULT_POOL_LIMITS.api) * 100, 5)
   })
 })

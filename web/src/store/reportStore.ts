@@ -1,6 +1,18 @@
 import { create } from 'zustand'
-import type { DailyActivityGranularity, FilterState, ReportMeta, UsageEvent, WeeklyActivityGranularity } from '../lib/types'
-import { DEFAULT_DAILY_ACTIVITY_GRANULARITY, DEFAULT_WEEKLY_ACTIVITY_GRANULARITY, DEFAULT_POOL_LIMITS } from '../lib/types'
+import type {
+  DailyActivityGranularity,
+  FilterState,
+  PlanId,
+  ReportMeta,
+  UsageEvent,
+  WeeklyActivityGranularity,
+} from '../lib/types'
+import {
+  DEFAULT_DAILY_ACTIVITY_GRANULARITY,
+  DEFAULT_WEEKLY_ACTIVITY_GRANULARITY,
+  DEFAULT_POOL_LIMITS,
+  PLAN_PRESETS,
+} from '../lib/types'
 import { parseCsvText } from '../lib/parser'
 import { getUserTimezone } from '../lib/timezone'
 
@@ -11,24 +23,24 @@ export interface ReportStore {
   meta: ReportMeta | null
   filters: FilterState
   poolLimits: { autoComposer: number; api: number }
+  plan: PlanId
   modelView: 'cost' | 'token'
   structureView: 'cost' | 'token'
   dailyView: 'cost' | 'token'
   hourlyView: 'sessions' | 'tokens'
   dailyActivityGranularity: DailyActivityGranularity
   weeklyActivityGranularity: WeeklyActivityGranularity
-  projectionOpen: boolean
   setCsvFile: (file: File) => Promise<void>
   clear: () => void
   setFilters: (patch: Partial<FilterState>) => void
   setPoolLimits: (patch: Partial<{ autoComposer: number; api: number }>) => void
+  setPlan: (plan: PlanId) => void
   setModelView: (v: 'cost' | 'token') => void
   setStructureView: (v: 'cost' | 'token') => void
   setDailyView: (v: 'cost' | 'token') => void
   setHourlyView: (v: 'sessions' | 'tokens') => void
   setDailyActivityGranularity: (v: DailyActivityGranularity) => void
   setWeeklyActivityGranularity: (v: WeeklyActivityGranularity) => void
-  setProjectionOpen: (v: boolean) => void
 }
 
 const defaultFilters: FilterState = {
@@ -44,14 +56,13 @@ export const useReportStore = create<ReportStore>((set) => ({
   meta: null,
   filters: defaultFilters,
   poolLimits: { ...DEFAULT_POOL_LIMITS },
+  plan: 'pro',
   modelView: 'cost',
   structureView: 'token',
   dailyView: 'token',
   hourlyView: 'sessions',
   dailyActivityGranularity: DEFAULT_DAILY_ACTIVITY_GRANULARITY,
   weeklyActivityGranularity: DEFAULT_WEEKLY_ACTIVITY_GRANULARITY,
-  projectionOpen: false,
-
   setCsvFile: async (file: File) => {
     const content = await file.text()
     const { events, meta } = parseCsvText(content, file.name, getUserTimezone())
@@ -71,23 +82,26 @@ export const useReportStore = create<ReportStore>((set) => ({
       meta: null,
       filters: { ...defaultFilters },
       poolLimits: { ...DEFAULT_POOL_LIMITS },
+      plan: 'pro',
       modelView: 'cost',
       structureView: 'token',
       dailyView: 'token',
       hourlyView: 'sessions',
       dailyActivityGranularity: DEFAULT_DAILY_ACTIVITY_GRANULARITY,
       weeklyActivityGranularity: DEFAULT_WEEKLY_ACTIVITY_GRANULARITY,
-      projectionOpen: false,
     }),
 
   setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch } })),
 
   setPoolLimits: (patch) => set((s) => ({ poolLimits: { ...s.poolLimits, ...patch } })),
+  setPlan: (plan) => {
+    const preset = PLAN_PRESETS[plan]
+    set({ plan, poolLimits: { autoComposer: preset.autoComposer, api: preset.api } })
+  },
   setModelView: (modelView) => set({ modelView }),
   setStructureView: (structureView) => set({ structureView }),
   setDailyView: (dailyView) => set({ dailyView }),
   setHourlyView: (hourlyView) => set({ hourlyView }),
   setDailyActivityGranularity: (dailyActivityGranularity) => set({ dailyActivityGranularity }),
   setWeeklyActivityGranularity: (weeklyActivityGranularity) => set({ weeklyActivityGranularity }),
-  setProjectionOpen: (projectionOpen) => set({ projectionOpen }),
 }))

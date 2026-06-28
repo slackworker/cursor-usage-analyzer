@@ -99,6 +99,15 @@ export interface BillingTotals {
 
 export const DEFAULT_POOL_LIMITS = { autoComposer: 145, api: 45 }
 
+/** 归一化推算时折算的天数（跨账单月后按日均 Included 映射到 30 天） */
+export const BILLING_CYCLE_DAYS = 30
+
+export type PlanId = 'pro'
+
+export const PLAN_PRESETS: Record<PlanId, { label: string; autoComposer: number; api: number }> = {
+  pro: { label: 'Pro', ...DEFAULT_POOL_LIMITS },
+}
+
 export const POOL_LABELS: Record<string, string> = {
   auto_composer: 'Auto + Composer',
   api: 'API',

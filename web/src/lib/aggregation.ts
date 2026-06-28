@@ -1,4 +1,4 @@
-import { addDays, differenceInCalendarDays, format, parseISO, startOfMonth, subDays, subMonths } from 'date-fns'
+import { addDays, addMonths, differenceInCalendarDays, format, parseISO, startOfMonth, subDays, subMonths } from 'date-fns'
 import type {
   BillingMode,
   BillingTotals,
@@ -440,6 +440,14 @@ export function filterHeatmapByYear(
   return data.filter((d) => d.date.startsWith(`${year}-`))
 }
 
+/** 末日在「起始日 + 1 个自然月」当日或之前，视为未跨账单月（如 5/7–6/7 算一月内，6/8 起归一化） */
+export function isWithinBillingCycle(startDate: string, endDate: string): boolean {
+  const start = parseISO(startDate)
+  const end = parseISO(endDate)
+  const cycleEnd = addMonths(start, 1)
+  return end <= cycleEnd
+}
+
 export function projectUsagePercent(
   events: UsageEvent[],
   limits: { autoComposer: number; api: number },
@@ -451,30 +459,76 @@ export function projectUsagePercent(
   autoComposerPct: number
   apiPct: number
   totalPct: number
+  usageMode: 'direct' | 'normalized'
+  acUsed: number
+  apiUsed: number
+  startDate: string
+  endDate: string
 } {
   const totals = rollupBillingTotals(events, mode)
   const dates = events.filter((e) => e.localDate && !e.skipReason).map((e) => e.localDate).sort()
 
   if (!dates.length) {
-    return { spanDays: 0, dailyAvg: 0, projected30d: 0, autoComposerPct: 0, apiPct: 0, totalPct: 0 }
+    return {
+      spanDays: 0,
+      dailyAvg: 0,
+      projected30d: 0,
+      autoComposerPct: 0,
+      apiPct: 0,
+      totalPct: 0,
+      usageMode: 'direct',
+      acUsed: 0,
+      apiUsed: 0,
+      startDate: '',
+      endDate: '',
+    }
   }
 
-  const spanDays = differenceInCalendarDays(parseISO(dates.at(-1)!), parseISO(dates[0])) + 1
+  const startDate = dates[0]
+  const endDate = dates.at(-1)!
+  const spanDays = differenceInCalendarDays(parseISO(endDate), parseISO(startDate)) + 1
   const dailyAvg = totals.included / spanDays
   const projected30d = dailyAvg * 30
 
   const pools = rollupByPool(events, mode)
-  const acDaily = (pools.auto_composer?.included ?? 0) / spanDays
-  const apiDaily = (pools.api?.included ?? 0) / spanDays
+  const acIncluded = pools.auto_composer?.included ?? 0
+  const apiIncluded = pools.api?.included ?? 0
   const totalLimit = limits.autoComposer + limits.api
+  const withinCycle = isWithinBillingCycle(startDate, endDate)
+
+  if (withinCycle) {
+    return {
+      spanDays,
+      dailyAvg,
+      projected30d,
+      autoComposerPct: limits.autoComposer ? (acIncluded / limits.autoComposer) * 100 : 0,
+      apiPct: limits.api ? (apiIncluded / limits.api) * 100 : 0,
+      totalPct: totalLimit ? (totals.included / totalLimit) * 100 : 0,
+      usageMode: 'direct',
+      acUsed: acIncluded,
+      apiUsed: apiIncluded,
+      startDate,
+      endDate,
+    }
+  }
+
+  const acDaily = acIncluded / spanDays
+  const apiDaily = apiIncluded / spanDays
+  const projectedAc = acDaily * 30
+  const projectedApi = apiDaily * 30
 
   return {
     spanDays,
     dailyAvg,
     projected30d,
-    autoComposerPct: limits.autoComposer ? (acDaily * 30 / limits.autoComposer) * 100 : 0,
-    apiPct: limits.api ? (apiDaily * 30 / limits.api) * 100 : 0,
+    autoComposerPct: limits.autoComposer ? (projectedAc / limits.autoComposer) * 100 : 0,
+    apiPct: limits.api ? (projectedApi / limits.api) * 100 : 0,
     totalPct: totalLimit ? (projected30d / totalLimit) * 100 : 0,
+    usageMode: 'normalized',
+    acUsed: projectedAc,
+    apiUsed: projectedApi,
+    startDate,
+    endDate,
   }
 }
 
