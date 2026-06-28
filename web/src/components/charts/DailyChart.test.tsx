@@ -14,7 +14,7 @@ const cumulative = [
 const onViewChange = vi.fn()
 
 let lastEChartProps: {
-  option: {
+  buildOption?: (chartWidth: number) => {
     series?: { name?: string }[]
     legend?: { data?: string[] }
     yAxis?: { name?: string; axisLabel?: { formatter?: (v: number) => string } }[]
@@ -25,7 +25,7 @@ let lastEChartProps: {
 
 vi.mock('./EChart', () => ({
   EChart: (props: {
-    option: {
+    buildOption?: (chartWidth: number) => {
       series?: { name?: string }[]
       legend?: { data?: string[] }
       yAxis?: { name?: string; axisLabel?: { formatter?: (v: number) => string } }[]
@@ -55,6 +55,10 @@ describe('DailyChart', () => {
     )
   }
 
+  function getOption() {
+    return lastEChartProps?.buildOption?.(900)
+  }
+
   it('passes replaceMerge for series, yAxis, and legend updates', () => {
     renderChart()
 
@@ -64,22 +68,22 @@ describe('DailyChart', () => {
   it('always includes cumulative line series', () => {
     renderChart()
 
-    expect(lastEChartProps?.option.series?.some((s) => s.name === '累积')).toBe(true)
-    expect(lastEChartProps?.option.yAxis).toHaveLength(2)
+    expect(getOption()?.series?.some((s) => s.name === '累积')).toBe(true)
+    expect(getOption()?.yAxis).toHaveLength(2)
   })
 
   it('uses cost axis labels by default', () => {
     renderChart('cost')
 
-    expect(lastEChartProps?.option.yAxis?.[0]?.name).toBe('费用')
-    expect(lastEChartProps?.option.yAxis?.[0]?.axisLabel?.formatter?.(1.2)).toBe('1.20')
+    expect(getOption()?.yAxis?.[0]?.name).toBe('费用')
+    expect(getOption()?.yAxis?.[0]?.axisLabel?.formatter?.(1.2)).toBe('1.20')
   })
 
   it('uses token axis labels in token view', () => {
     renderChart('token')
 
-    expect(lastEChartProps?.option.yAxis?.[0]?.name).toBe('Token')
-    expect(lastEChartProps?.option.yAxis?.[0]?.axisLabel?.formatter?.(1500)).toBe('1.5K')
+    expect(getOption()?.yAxis?.[0]?.name).toBe('Token')
+    expect(getOption()?.yAxis?.[0]?.axisLabel?.formatter?.(1500)).toBe('1.5K')
   })
 
   it('calls onViewChange when toggling view', () => {
@@ -92,8 +96,8 @@ describe('DailyChart', () => {
   it('sorts legend and stack by total usage descending', () => {
     renderChart('token')
 
-    const barSeries = lastEChartProps?.option.series?.filter((s) => s.name !== '累积') ?? []
+    const barSeries = getOption()?.series?.filter((s) => s.name !== '累积') ?? []
     expect(barSeries.map((s) => s.name)).toEqual(['gpt', 'auto'])
-    expect(lastEChartProps?.option.legend?.data).toEqual(['gpt', 'auto', '累积'])
+    expect(getOption()?.legend?.data).toEqual(['gpt', 'auto', '累积'])
   })
 })

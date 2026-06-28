@@ -5,6 +5,7 @@ import {
   donutSeriesLayout,
   formatChartTokens,
   formatChartUsd,
+  gridWithLegend,
   legendRowCount,
   NARROW_CHART_WIDTH,
   pieChartHeight,
@@ -78,6 +79,12 @@ describe('donut layout', () => {
 
   it('pieChartHeight grows for multi-row legends in narrow columns', () => {
     expect(pieChartHeight(3, 200, NARROW_CHART_WIDTH)).toBeGreaterThan(200)
+  })
+
+  it('gridWithLegend reserves more bottom space for narrow widths', () => {
+    const wide = gridWithLegend(8, 1200).bottom ?? 0
+    const narrow = gridWithLegend(8, 400).bottom ?? 0
+    expect(narrow).toBeGreaterThan(wide)
   })
 
   it('donutSeriesLayout keeps center above legend area', () => {

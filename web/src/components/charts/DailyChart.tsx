@@ -51,7 +51,7 @@ export function DailyChart({ daily, cumulative, view, onViewChange }: DailyChart
   const legendCount = models.length + 1
   const axisLabelFormatter = isCost ? usdAxisLabel : tokenAxisLabel
 
-  const option: EChartsOption = {
+  const buildOption = (chartWidth: number): EChartsOption => ({
     tooltip: {
       trigger: 'axis',
       backgroundColor: '#161b22',
@@ -59,7 +59,7 @@ export function DailyChart({ daily, cumulative, view, onViewChange }: DailyChart
       formatter: isCost ? axisTooltipUsdFormatter : axisTooltipTokenFormatter,
     },
     legend: { ...bottomLegend(), data: legendData },
-    grid: gridWithLegend(legendCount),
+    grid: gridWithLegend(legendCount, chartWidth),
     xAxis: {
       type: 'category',
       data: dates,
@@ -80,7 +80,7 @@ export function DailyChart({ daily, cumulative, view, onViewChange }: DailyChart
       },
     ],
     series,
-  }
+  })
 
   return (
     <div className="chart-with-controls">
@@ -101,8 +101,8 @@ export function DailyChart({ daily, cumulative, view, onViewChange }: DailyChart
         </button>
       </div>
       <EChart
-        option={option}
-        height={260 + legendExtraHeight(legendCount)}
+        buildOption={buildOption}
+        buildHeight={(chartWidth) => 260 + legendExtraHeight(legendCount, chartWidth)}
         replaceMerge={['series', 'yAxis', 'legend']}
       />
     </div>

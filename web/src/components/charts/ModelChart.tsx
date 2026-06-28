@@ -20,43 +20,46 @@ export function ModelChart({ byModel, view, onViewChange }: ModelChartProps) {
     .sort((a, b) => b.value - a.value)
 
   const pieData = sorted.map((d) => ({ name: d.model, value: d.value }))
-  const height = pieChartHeight(pieData.length, 240)
-  const layout = pieSeriesLayout(pieData.length, height)
 
-  const option: EChartsOption = {
-    tooltip: {
-      ...baseTooltip(),
-      formatter:
-        view === 'cost'
-          ? pieUsdTooltipFormatter
-          : (params) => {
-              const item = (Array.isArray(params) ? params[0] : params) as {
-                name?: string
-                value?: number
-                percent?: number
-              }
-              if (!item || typeof item.value !== 'number') return ''
-              return `${item.name}: ${formatTokens(item.value)} (${item.percent}%)`
-            },
-    },
-    legend: { ...bottomLegend(), data: pieData.map((d) => d.name) },
-    series: [
-      {
-        type: 'pie',
-        ...layout,
-        minShowLabelAngle: pieLabelMinShowAngle(),
-        data: pieData,
-        label: {
-          color: '#e6edf3',
-          fontSize: 10,
-          formatter:
-            view === 'cost'
-              ? pieUsdLabelFormatter
-              : ({ name, percent }) => `${name}\n${percent}%`,
-        },
-        color: CHART_COLORS,
+  const buildOption = (chartWidth: number): EChartsOption => {
+    const height = pieChartHeight(pieData.length, 240, chartWidth)
+    const layout = pieSeriesLayout(pieData.length, height, chartWidth)
+
+    return {
+      tooltip: {
+        ...baseTooltip(),
+        formatter:
+          view === 'cost'
+            ? pieUsdTooltipFormatter
+            : (params) => {
+                const item = (Array.isArray(params) ? params[0] : params) as {
+                  name?: string
+                  value?: number
+                  percent?: number
+                }
+                if (!item || typeof item.value !== 'number') return ''
+                return `${item.name}: ${formatTokens(item.value)} (${item.percent}%)`
+              },
       },
-    ],
+      legend: { ...bottomLegend(), data: pieData.map((d) => d.name) },
+      series: [
+        {
+          type: 'pie',
+          ...layout,
+          minShowLabelAngle: pieLabelMinShowAngle(),
+          data: pieData,
+          label: {
+            color: '#e6edf3',
+            fontSize: 10,
+            formatter:
+              view === 'cost'
+                ? pieUsdLabelFormatter
+                : ({ name, percent }) => `${name}\n${percent}%`,
+          },
+          color: CHART_COLORS,
+        },
+      ],
+    }
   }
 
   return (
@@ -77,7 +80,10 @@ export function ModelChart({ byModel, view, onViewChange }: ModelChartProps) {
           Token
         </button>
       </div>
-      <EChart option={option} height={height} />
+      <EChart
+        buildOption={buildOption}
+        buildHeight={(chartWidth) => pieChartHeight(pieData.length, 240, chartWidth)}
+      />
     </div>
   )
 }

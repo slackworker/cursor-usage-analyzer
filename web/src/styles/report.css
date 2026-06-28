@@ -398,6 +398,12 @@
   overflow: hidden;
 }
 
+.chart-panel__echart-wrap {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .chart-panel__echart {
   width: 100%;
   min-width: 0;

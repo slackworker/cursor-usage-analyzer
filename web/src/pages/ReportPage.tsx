@@ -70,41 +70,22 @@ export function ReportPage() {
           </ChartPanel>
         </div>
 
-        <div className="report-grid report-grid--double">
-          <ChartPanel title="#5 模型消费" tall>
-            <ModelChart
-              byModel={agg.byModel}
-              view={modelView}
-              onViewChange={setModelView}
-            />
-          </ChartPanel>
-          <ChartPanel title="#8 用量结构" tall>
-            <TokenStructureChart
-              data={agg.structure}
-              view={structureView}
-              onViewChange={setStructureView}
-            />
-          </ChartPanel>
-        </div>
+        <ChartPanel title="#5 模型消费" tall>
+          <ModelChart
+            byModel={agg.byModel}
+            view={modelView}
+            onViewChange={setModelView}
+          />
+        </ChartPanel>
 
-        <div className="report-grid report-grid--daily-side">
-          <ChartPanel title="#7 日消费" tall>
-            <DailyChart
-              daily={agg.daily}
-              cumulative={agg.dailyCumulative}
-              view={dailyView}
-              onViewChange={setDailyView}
-            />
-          </ChartPanel>
-          <div className="report-stack">
-            <ChartPanel title="#9 缓存命中率">
-              <CacheHitChart rates={agg.cacheHit} modelTokens={agg.modelTokens} />
-            </ChartPanel>
-            <ChartPanel title="#10 单 Token 价">
-              <UnitPriceChart prices={agg.unitPrice} modelTokens={agg.modelTokens} />
-            </ChartPanel>
-          </div>
-        </div>
+        <ChartPanel title="#7 日消费" tall>
+          <DailyChart
+            daily={agg.daily}
+            cumulative={agg.dailyCumulative}
+            view={dailyView}
+            onViewChange={setDailyView}
+          />
+        </ChartPanel>
 
         <div className="report-grid report-grid--activity">
           <ChartPanel title="#11 日活跃时段">
@@ -130,6 +111,24 @@ export function ReportPage() {
               <p className="chart-empty">数据跨度 &lt; 90 天，已隐藏年热力图</p>
             )}
           </ChartPanel>
+        </div>
+
+        <div className="report-grid report-grid--daily-side">
+          <ChartPanel title="#8 用量结构" tall>
+            <TokenStructureChart
+              data={agg.structure}
+              view={structureView}
+              onViewChange={setStructureView}
+            />
+          </ChartPanel>
+          <div className="report-stack">
+            <ChartPanel title="#9 缓存命中率">
+              <CacheHitChart rates={agg.cacheHit} modelTokens={agg.modelTokens} />
+            </ChartPanel>
+            <ChartPanel title="#10 单 Token 价">
+              <UnitPriceChart prices={agg.unitPrice} modelTokens={agg.modelTokens} />
+            </ChartPanel>
+          </div>
         </div>
 
         <PoolProjection

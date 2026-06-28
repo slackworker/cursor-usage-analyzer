@@ -151,8 +151,8 @@ export function bottomLegend() {
   }
 }
 
-export function gridWithLegend(itemCount: number) {
-  const rows = legendRowCount(itemCount)
+export function gridWithLegend(itemCount: number, chartWidth = 900) {
+  const rows = legendRowCount(itemCount, chartWidth)
   const bottom = 32 + Math.max(0, rows - 1) * LEGEND_ROW_HEIGHT
   return { ...baseGrid(), bottom }
 }
