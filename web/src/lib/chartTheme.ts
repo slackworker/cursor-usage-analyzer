@@ -35,3 +35,17 @@ export function baseLegend() {
     pageTextStyle: { color: '#8b949e' },
   }
 }
+
+/** 横向条形图：按行数撑高，保证每行 Y 轴标签有足够空间 */
+export function horizontalBarHeight(rowCount: number, minHeight = 180): number {
+  if (rowCount === 0) return minHeight
+  return Math.max(minHeight, rowCount * 26 + 48)
+}
+
+export function horizontalBarYAxisLabel() {
+  return { color: '#8b949e', fontSize: 10, interval: 0 as const }
+}
+
+export function horizontalBarGrid() {
+  return { left: 8, right: 16, top: 8, bottom: 8, containLabel: true }
+}

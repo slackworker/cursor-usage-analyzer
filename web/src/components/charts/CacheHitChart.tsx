@@ -1,6 +1,7 @@
 import type { EChartsOption } from 'echarts'
 import { formatPct } from '../../hooks/useReport'
-import { EChart, baseGrid, baseTooltip } from './EChart'
+import { horizontalBarGrid, horizontalBarHeight, horizontalBarYAxisLabel } from '../../lib/chartTheme'
+import { EChart, baseTooltip } from './EChart'
 
 interface CacheHitChartProps {
   rates: Record<string, number>
@@ -20,7 +21,7 @@ export function CacheHitChart({ rates }: CacheHitChartProps) {
         return p ? `${p.name}: ${formatPct(p.value)}` : ''
       },
     },
-    grid: { ...baseGrid(), left: 100 },
+    grid: horizontalBarGrid(),
     xAxis: {
       type: 'value',
       max: 1,
@@ -30,7 +31,7 @@ export function CacheHitChart({ rates }: CacheHitChartProps) {
     yAxis: {
       type: 'category',
       data: sorted.map(([m]) => m).reverse(),
-      axisLabel: { color: '#8b949e', fontSize: 10 },
+      axisLabel: horizontalBarYAxisLabel(),
     },
     series: [
       {
@@ -41,5 +42,5 @@ export function CacheHitChart({ rates }: CacheHitChartProps) {
     ],
   }
 
-  return <EChart option={option} height={180} />
+  return <EChart option={option} height={horizontalBarHeight(sorted.length)} />
 }

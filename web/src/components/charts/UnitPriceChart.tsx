@@ -1,5 +1,6 @@
 import type { EChartsOption } from 'echarts'
-import { EChart, baseGrid, baseTooltip } from './EChart'
+import { horizontalBarGrid, horizontalBarHeight, horizontalBarYAxisLabel } from '../../lib/chartTheme'
+import { EChart, baseTooltip } from './EChart'
 
 interface UnitPriceChartProps {
   prices: Record<string, number>
@@ -20,7 +21,7 @@ export function UnitPriceChart({ prices }: UnitPriceChartProps) {
         return p ? `${p.name}: $${p.value.toFixed(2)}/M tokens` : ''
       },
     },
-    grid: { ...baseGrid(), left: 100 },
+    grid: horizontalBarGrid(),
     xAxis: {
       type: 'value',
       axisLabel: { color: '#8b949e' },
@@ -29,7 +30,7 @@ export function UnitPriceChart({ prices }: UnitPriceChartProps) {
     yAxis: {
       type: 'category',
       data: sorted.map(([m]) => m).reverse(),
-      axisLabel: { color: '#8b949e', fontSize: 10 },
+      axisLabel: horizontalBarYAxisLabel(),
     },
     series: [
       {
@@ -40,5 +41,5 @@ export function UnitPriceChart({ prices }: UnitPriceChartProps) {
     ],
   }
 
-  return <EChart option={option} height={180} />
+  return <EChart option={option} height={horizontalBarHeight(sorted.length)} />
 }
