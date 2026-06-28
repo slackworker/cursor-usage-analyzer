@@ -9,6 +9,16 @@ export type DateRangePreset =
   | 'last_month'
   | 'custom'
 
+export type ActivityGranularity = 30 | 15 | 5
+
+export const ACTIVITY_GRANULARITY_OPTIONS: { value: ActivityGranularity; label: string }[] = [
+  { value: 30, label: '30m' },
+  { value: 15, label: '15m' },
+  { value: 5, label: '5m' },
+]
+
+export const DEFAULT_ACTIVITY_GRANULARITY: ActivityGranularity = 15
+
 export interface TokenCounts {
   icw: number
   icwo: number
@@ -29,6 +39,8 @@ export interface UsageEvent {
   timestamp: string
   localDate: string
   localHour: number
+  /** 0–1439，本地时区当日分钟偏移 */
+  localMinuteOfDay: number
   model: string
   pool: PoolKind | string
   kind: string

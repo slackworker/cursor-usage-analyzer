@@ -29,6 +29,7 @@ export function useReport() {
   const modelView = useReportStore((s) => s.modelView)
   const structureView = useReportStore((s) => s.structureView)
   const hourlyView = useReportStore((s) => s.hourlyView)
+  const hourlyGranularity = useReportStore((s) => s.hourlyGranularity)
   const projectionOpen = useReportStore((s) => s.projectionOpen)
   const setCsvFile = useReportStore((s) => s.setCsvFile)
   const clear = useReportStore((s) => s.clear)
@@ -38,6 +39,7 @@ export function useReport() {
   const setModelView = useReportStore((s) => s.setModelView)
   const setStructureView = useReportStore((s) => s.setStructureView)
   const setHourlyView = useReportStore((s) => s.setHourlyView)
+  const setHourlyGranularity = useReportStore((s) => s.setHourlyGranularity)
   const setProjectionOpen = useReportStore((s) => s.setProjectionOpen)
 
   const filtered = useMemo(() => filterEvents(events, filters), [events, filters])
@@ -52,7 +54,7 @@ export function useReport() {
     const structure = rollupTokenStructure(filtered, structureView, mode)
     const cacheHit = cacheHitRateByModel(filtered)
     const unitPrice = unitPriceByModel(filtered, mode)
-    const hourly = rollupHourly(filtered, hourlyView)
+    const hourly = rollupHourly(filtered, hourlyView, hourlyGranularity)
     const weekly = rollupWeeklyHourly(filtered)
     const heatmap = rollupYearHeatmap(filtered, 'cost', mode)
     const projection = projectUsagePercent(filtered, poolLimits, 'official')
@@ -79,7 +81,7 @@ export function useReport() {
       top,
       totalTokens,
     }
-  }, [filtered, mode, modelView, structureView, hourlyView, poolLimits])
+  }, [filtered, mode, modelView, structureView, hourlyView, hourlyGranularity, poolLimits])
 
   const allModels = useMemo(() => {
     const set = new Set<string>()
@@ -104,6 +106,7 @@ export function useReport() {
     modelView,
     structureView,
     hourlyView,
+    hourlyGranularity,
     projectionOpen,
     allModels,
     heatmapVisible,
@@ -116,6 +119,7 @@ export function useReport() {
     setModelView,
     setStructureView,
     setHourlyView,
+    setHourlyGranularity,
     setProjectionOpen,
   }
 }

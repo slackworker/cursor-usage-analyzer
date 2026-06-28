@@ -194,6 +194,13 @@
   color: var(--color-text-muted); cursor: pointer;
 }
 .chart-controls__btn--active { border-color: var(--color-accent); color: var(--color-accent); }
+.chart-controls__divider {
+  align-self: center;
+  width: 1px;
+  height: 1rem;
+  margin: 0 0.15rem;
+  background: var(--color-border);
+}
 .chart-controls__check { font-size: 0.75rem; color: var(--color-text-muted); display: flex; align-items: center; gap: 0.35rem; }
 .chart-empty { margin: 0; color: var(--color-text-muted); font-size: 0.875rem; text-align: center; padding: var(--space-md); }
 .kpi-card__sub { margin: 0.25rem 0 0; font-size: 0.75rem; color: var(--color-text-muted); }

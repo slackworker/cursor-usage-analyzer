@@ -22,14 +22,20 @@ function parseIntSafe(value: string | undefined | null): number {
   return Number.isFinite(n) ? n : 0
 }
 
-function localDateHour(timestamp: string, timezone: string): { localDate: string; localHour: number } {
-  if (!timestamp) return { localDate: '', localHour: 0 }
+function localDateHour(
+  timestamp: string,
+  timezone: string,
+): { localDate: string; localHour: number; localMinuteOfDay: number } {
+  if (!timestamp) return { localDate: '', localHour: 0, localMinuteOfDay: 0 }
   try {
     const localDate = formatInTimeZone(timestamp, timezone, 'yyyy-MM-dd')
     const localHour = parseInt(formatInTimeZone(timestamp, timezone, 'H'), 10)
-    return { localDate, localHour: Number.isFinite(localHour) ? localHour : 0 }
+    const localMinute = parseInt(formatInTimeZone(timestamp, timezone, 'm'), 10)
+    const hour = Number.isFinite(localHour) ? localHour : 0
+    const minute = Number.isFinite(localMinute) ? localMinute : 0
+    return { localDate, localHour: hour, localMinuteOfDay: hour * 60 + minute }
   } catch {
-    return { localDate: timestamp.slice(0, 10), localHour: 0 }
+    return { localDate: timestamp.slice(0, 10), localHour: 0, localMinuteOfDay: 0 }
   }
 }
 
@@ -49,7 +55,7 @@ export function parseCsvRows(
     const model = row.Model ?? ''
     const kind = normalizeKind(row.Kind ?? '')
     const timestamp = row.Date ?? ''
-    const { localDate, localHour } = localDateHour(timestamp, timezone)
+    const { localDate, localHour, localMinuteOfDay } = localDateHour(timestamp, timezone)
 
     const tokens: TokenCounts = {
       icw: parseIntSafe(row['Input (w/ Cache Write)']),
@@ -96,6 +102,7 @@ export function parseCsvRows(
       timestamp,
       localDate,
       localHour,
+      localMinuteOfDay,
       model,
       pool,
       kind: eventKind,

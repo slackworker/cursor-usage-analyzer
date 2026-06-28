@@ -1,5 +1,6 @@
 import { addDays, differenceInCalendarDays, format, parseISO, startOfMonth, subDays, subMonths } from 'date-fns'
-import type { BillingMode, BillingTotals, FilterState, UsageEvent } from './types'
+import type { ActivityGranularity, BillingMode, BillingTotals, FilterState, UsageEvent } from './types'
+import { DEFAULT_ACTIVITY_GRANULARITY } from './types'
 import {
   FREE_STATUS_ONLY_SKIP,
   isBillableKind,
@@ -297,13 +298,41 @@ export function unitPriceByModel(events: UsageEvent[], mode: BillingMode = 'stan
   return result
 }
 
-export function rollupHourly(events: UsageEvent[], view: 'sessions' | 'tokens' = 'sessions'): { hour: number; value: number }[] {
-  const buckets = Array.from({ length: 24 }, (_, hour) => ({ hour, value: 0 }))
+export const ACTIVITY_AXIS_START_HOUR = 3
+
+export function activitySlotsPerDay(granularityMinutes: ActivityGranularity): number {
+  return 1440 / granularityMinutes
+}
+
+export function activityAxisOrder(granularityMinutes: ActivityGranularity): number[] {
+  const slots = activitySlotsPerDay(granularityMinutes)
+  const start = (ACTIVITY_AXIS_START_HOUR * 60) / granularityMinutes
+  return Array.from({ length: slots }, (_, i) => (start + i) % slots)
+}
+
+export function formatActivitySlotLabel(slot: number, granularityMinutes: ActivityGranularity): string {
+  const minutes = slot * granularityMinutes
+  const hour = Math.floor(minutes / 60) % 24
+  const minute = minutes % 60
+  return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+}
+
+export function activityLabelStep(granularityMinutes: ActivityGranularity): number {
+  return 60 / granularityMinutes
+}
+
+export function rollupHourly(
+  events: UsageEvent[],
+  view: 'sessions' | 'tokens' = 'sessions',
+  granularityMinutes: ActivityGranularity = DEFAULT_ACTIVITY_GRANULARITY,
+): { slot: number; value: number }[] {
+  const slotsPerDay = activitySlotsPerDay(granularityMinutes)
+  const buckets = Array.from({ length: slotsPerDay }, (_, slot) => ({ slot, value: 0 }))
   for (const event of events) {
     if (event.skipReason) continue
-    const h = event.localHour
-    if (h < 0 || h > 23) continue
-    buckets[h].value += view === 'sessions' ? 1 : event.tokens.total
+    const slot = Math.floor(event.localMinuteOfDay / granularityMinutes)
+    if (slot < 0 || slot >= slotsPerDay) continue
+    buckets[slot].value += view === 'sessions' ? 1 : event.tokens.total
   }
   return buckets
 }

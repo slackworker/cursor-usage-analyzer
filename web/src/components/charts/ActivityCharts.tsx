@@ -1,4 +1,11 @@
 import type { EChartsOption } from 'echarts'
+import {
+  activityAxisOrder,
+  activityLabelStep,
+  formatActivitySlotLabel,
+} from '../../lib/aggregation'
+import type { ActivityGranularity } from '../../lib/types'
+import { ACTIVITY_GRANULARITY_OPTIONS } from '../../lib/types'
 import { EChart, baseGrid } from './EChart'
 
 const DAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
@@ -12,21 +19,37 @@ function formatHourLabel(hour: number): string {
 }
 
 interface HourlyChartProps {
-  hourly: { hour: number; value: number }[]
+  hourly: { slot: number; value: number }[]
   view: 'sessions' | 'tokens'
+  granularity: ActivityGranularity
   onViewChange: (v: 'sessions' | 'tokens') => void
+  onGranularityChange: (v: ActivityGranularity) => void
 }
 
-export function HourlyChart({ hourly, view, onViewChange }: HourlyChartProps) {
-  const ordered = HOUR_AXIS_ORDER.map((h) => hourly[h] ?? { hour: h, value: 0 })
+export function HourlyChart({
+  hourly,
+  view,
+  granularity,
+  onViewChange,
+  onGranularityChange,
+}: HourlyChartProps) {
+  const axisOrder = activityAxisOrder(granularity)
+  const labelStep = activityLabelStep(granularity)
+  const ordered = axisOrder.map((s) => hourly[s] ?? { slot: s, value: 0 })
+  const labels = ordered.map((h) => formatActivitySlotLabel(h.slot, granularity))
 
   const option: EChartsOption = {
     tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d' },
     grid: baseGrid(),
     xAxis: {
       type: 'category',
-      data: ordered.map((h) => formatHourLabel(h.hour)),
-      axisLabel: { color: '#8b949e', fontSize: 9, interval: 1 },
+      data: labels,
+      axisLabel: {
+        color: '#8b949e',
+        fontSize: granularity <= 15 ? 8 : 9,
+        interval: 0,
+        formatter: (value: string, index: number) => (index % labelStep === 0 ? value : ''),
+      },
     },
     yAxis: {
       type: 'value',
@@ -59,6 +82,17 @@ export function HourlyChart({ hourly, view, onViewChange }: HourlyChartProps) {
         >
           Token
         </button>
+        <span className="chart-controls__divider" aria-hidden="true" />
+        {ACTIVITY_GRANULARITY_OPTIONS.map(({ value, label }) => (
+          <button
+            key={value}
+            type="button"
+            className={granularity === value ? 'chart-controls__btn--active' : 'chart-controls__btn'}
+            onClick={() => onGranularityChange(value)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
       <EChart option={option} height={200} />
     </div>

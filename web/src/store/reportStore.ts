@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import type { FilterState, ReportMeta, UsageEvent } from '../lib/types'
-import { DEFAULT_POOL_LIMITS } from '../lib/types'
+import type { ActivityGranularity, FilterState, ReportMeta, UsageEvent } from '../lib/types'
+import { DEFAULT_ACTIVITY_GRANULARITY, DEFAULT_POOL_LIMITS } from '../lib/types'
 import { parseCsvText } from '../lib/parser'
 
 const defaultTimezone =
@@ -19,6 +19,7 @@ export interface ReportStore {
   modelView: 'cost' | 'token'
   structureView: 'cost' | 'token'
   hourlyView: 'sessions' | 'tokens'
+  hourlyGranularity: ActivityGranularity
   projectionOpen: boolean
   setCsvFile: (file: File) => Promise<void>
   clear: () => void
@@ -28,6 +29,7 @@ export interface ReportStore {
   setModelView: (v: 'cost' | 'token') => void
   setStructureView: (v: 'cost' | 'token') => void
   setHourlyView: (v: 'sessions' | 'tokens') => void
+  setHourlyGranularity: (v: ActivityGranularity) => void
   setProjectionOpen: (v: boolean) => void
 }
 
@@ -49,6 +51,7 @@ export const useReportStore = create<ReportStore>((set) => ({
   modelView: 'cost',
   structureView: 'token',
   hourlyView: 'sessions',
+  hourlyGranularity: DEFAULT_ACTIVITY_GRANULARITY,
   projectionOpen: false,
 
   setCsvFile: async (file: File) => {
@@ -75,6 +78,7 @@ export const useReportStore = create<ReportStore>((set) => ({
       modelView: 'cost',
       structureView: 'token',
       hourlyView: 'sessions',
+      hourlyGranularity: DEFAULT_ACTIVITY_GRANULARITY,
       projectionOpen: false,
     }),
 
@@ -94,5 +98,6 @@ export const useReportStore = create<ReportStore>((set) => ({
   setModelView: (modelView) => set({ modelView }),
   setStructureView: (structureView) => set({ structureView }),
   setHourlyView: (hourlyView) => set({ hourlyView }),
+  setHourlyGranularity: (hourlyGranularity) => set({ hourlyGranularity }),
   setProjectionOpen: (projectionOpen) => set({ projectionOpen }),
 }))
