@@ -88,8 +88,11 @@ export function baseLegend() {
   }
 }
 
-const LEGEND_ITEM_WIDTH = 120
+const LEGEND_ITEM_WIDTH = 100
 const LEGEND_ROW_HEIGHT = 22
+
+/** report-grid 窄列（1fr）环图的估算宽度 */
+export const NARROW_CHART_WIDTH = 280
 
 /** 估算横向图例行数，用于为多行图例预留空间 */
 export function legendRowCount(itemCount: number, chartWidth = 900): number {
@@ -99,8 +102,8 @@ export function legendRowCount(itemCount: number, chartWidth = 900): number {
 }
 
 /** 图例超过一行时额外需要的高度（px） */
-export function legendExtraHeight(itemCount: number): number {
-  const rows = legendRowCount(itemCount)
+export function legendExtraHeight(itemCount: number, chartWidth = 900): number {
+  const rows = legendRowCount(itemCount, chartWidth)
   return Math.max(0, (rows - 1) * LEGEND_ROW_HEIGHT)
 }
 
@@ -125,8 +128,33 @@ export function gridWithLegend(itemCount: number) {
 }
 
 /** 带底部图例的饼图/环形图高度 */
-export function pieChartHeight(itemCount: number, baseHeight = 240): number {
-  return baseHeight + legendExtraHeight(itemCount)
+export function pieChartHeight(
+  itemCount: number,
+  baseHeight = 240,
+  chartWidth = 900,
+): number {
+  return baseHeight + legendExtraHeight(itemCount, chartWidth)
+}
+
+const DONUT_TOP_PADDING = 24
+const DONUT_LEGEND_BOTTOM = 6
+
+/** 环图 center / radius：为顶部标签与底部图例留出空间，避免重叠裁切 */
+export function donutSeriesLayout(
+  itemCount: number,
+  height: number,
+  chartWidth = NARROW_CHART_WIDTH,
+) {
+  const rows = legendRowCount(itemCount, chartWidth)
+  const legendPx = rows * LEGEND_ROW_HEIGHT + DONUT_LEGEND_BOTTOM
+  const avail = Math.max(56, height - legendPx - DONUT_TOP_PADDING)
+  const centerY = ((DONUT_TOP_PADDING + avail / 2) / height) * 100
+  const outerPct = Math.min(62, Math.round((avail / height) * 100 * 0.88))
+  const innerPct = Math.round(outerPct * (45 / 70))
+  return {
+    center: ['50%', `${centerY.toFixed(1)}%`] as [string, string],
+    radius: [`${innerPct}%`, `${outerPct}%`] as [string, string],
+  }
 }
 
 /** 横向条形图：按行数撑高，保证每行 Y 轴标签有足够空间 */

@@ -7,8 +7,10 @@ import {
   baseTooltip,
   bottomLegend,
   darkChartBase,
+  donutSeriesLayout,
   gridWithLegend,
   legendExtraHeight,
+  NARROW_CHART_WIDTH,
   pieChartHeight,
 } from '../../lib/chartTheme'
 
@@ -45,7 +47,9 @@ export {
   baseLegend,
   baseTooltip,
   bottomLegend,
+  donutSeriesLayout,
   gridWithLegend,
   legendExtraHeight,
+  NARROW_CHART_WIDTH,
   pieChartHeight,
 }
