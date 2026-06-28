@@ -32,8 +32,9 @@ export function EChart({
 }: EChartProps) {
   return (
     <ReactECharts
+      className="chart-panel__echart"
       option={{ ...darkChartBase, ...option }}
-      style={{ height, width: '100%' }}
+      style={{ height, width: '100%', minWidth: 0 }}
       opts={{ renderer: 'canvas' }}
       onChartReady={onChartReady}
       notMerge={notMerge}
