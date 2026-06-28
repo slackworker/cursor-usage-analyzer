@@ -1,4 +1,5 @@
 import { FilterBar } from '../components/FilterBar'
+import { ParseStatusBadge } from '../components/ParseStatusBadge'
 import { BillingDonut } from '../components/charts/BillingDonut'
 import { CacheHitChart } from '../components/charts/CacheHitChart'
 import { ChartPanel } from '../components/charts/ChartPanel'
@@ -42,10 +43,6 @@ export function ReportPage() {
     setProjectionOpen,
   } = useReport()
 
-  const hasWarnings =
-    (meta?.unknownModels && Object.keys(meta.unknownModels).length > 0) ||
-    (meta?.skippedRows && Object.keys(meta.skippedRows).length > 0)
-
   return (
     <div className="report-page">
       <div className="report-container">
@@ -61,25 +58,13 @@ export function ReportPage() {
             </span>
             <span>·</span>
             <span>{rowCount.toLocaleString()} 行</span>
-            {hasWarnings && <span className="report-header__badge report-header__badge--warn">数据质量提示</span>}
-            {!hasWarnings && <span className="report-header__badge">已解析</span>}
+            <ParseStatusBadge unknownModels={meta?.unknownModels} skippedRows={meta?.skippedRows} />
           </div>
           <ExportPngButton />
           <button type="button" className="report-header__action" onClick={clear}>
             更换文件
           </button>
         </header>
-
-        {hasWarnings && (
-          <div className="quality-banner" role="status">
-            {meta?.unknownModels && Object.keys(meta.unknownModels).length > 0 && (
-              <span>未知模型: {JSON.stringify(meta.unknownModels)}</span>
-            )}
-            {meta?.skippedRows && Object.keys(meta.skippedRows).length > 0 && (
-              <span>跳过行: {JSON.stringify(meta.skippedRows)}</span>
-            )}
-          </div>
-        )}
 
         <FilterBar filters={filters} allModels={allModels} onChange={setFilters} />
 

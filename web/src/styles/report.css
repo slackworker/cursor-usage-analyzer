@@ -204,16 +204,54 @@
 .chart-controls__check { font-size: 0.75rem; color: var(--color-text-muted); display: flex; align-items: center; gap: 0.35rem; }
 .chart-empty { margin: 0; color: var(--color-text-muted); font-size: 0.875rem; text-align: center; padding: var(--space-md); }
 .kpi-card__sub { margin: 0.25rem 0 0; font-size: 0.75rem; color: var(--color-text-muted); }
-.quality-banner {
-  padding: var(--space-sm) var(--space-md);
-  background: rgba(210, 153, 34, 0.1);
-  border: 1px solid rgba(210, 153, 34, 0.3);
-  border-radius: var(--radius-md);
-  font-size: 0.8125rem; color: var(--color-warning);
-  display: flex; flex-wrap: wrap; gap: var(--space-md);
-}
 .report-header__badge--warn {
   background: rgba(210, 153, 34, 0.15); color: var(--color-warning); border-color: rgba(210, 153, 34, 0.3);
+}
+.parse-details {
+  position: relative;
+  display: inline-flex;
+}
+.parse-details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.parse-details > summary::-webkit-details-marker { display: none; }
+.parse-details[open] > summary { border-color: var(--color-warning); }
+.parse-details__panel {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 10;
+  min-width: 16rem;
+  max-width: 24rem;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+.parse-details__item {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+}
+.parse-details__item + .parse-details__item { margin-top: 0.5rem; }
+.parse-details__item--muted { color: var(--color-text-muted); }
+.parse-details__label {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.parse-details__tag {
+  display: inline-block;
+  padding: 0.05rem 0.35rem;
+  border-radius: var(--radius-sm);
+  background: rgba(210, 153, 34, 0.12);
+  color: var(--color-warning);
+  font-size: 0.75rem;
 }
 .pool-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-md); }
 .pool-gauge__header { display: flex; justify-content: space-between; font-size: 0.8125rem; margin-bottom: 0.35rem; }
