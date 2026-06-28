@@ -39,10 +39,50 @@
   outline-offset: 2px;
 }
 
-.file-upload__icon {
-  font-size: 2rem;
-  color: var(--color-accent);
+.file-upload__icon-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
   margin-bottom: var(--space-sm);
+  color: var(--color-accent);
+}
+
+.file-upload__glyph {
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  opacity: 0.55;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.file-upload__glyph--arrow {
+  width: 1.25rem;
+  opacity: 0.4;
+}
+
+.file-upload__dropzone:hover:not(.file-upload__dropzone--disabled) .file-upload__glyph,
+.file-upload__icon-flow--active .file-upload__glyph {
+  opacity: 0.75;
+}
+
+.file-upload__dropzone:hover:not(.file-upload__dropzone--disabled) .file-upload__glyph--arrow,
+.file-upload__icon-flow--active .file-upload__glyph--arrow {
+  opacity: 0.6;
+}
+
+.file-upload__icon-flow--active .file-upload__glyph--file {
+  opacity: 0.9;
+  transform: translateX(6px);
+}
+
+.file-upload__icon-flow--active .file-upload__glyph--arrow {
+  opacity: 0.85;
+}
+
+.file-upload__icon-flow--active .file-upload__glyph--release {
+  opacity: 1;
+  transform: translateY(4px);
 }
 
 .file-upload__prompt {
