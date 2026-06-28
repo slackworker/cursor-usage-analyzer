@@ -89,11 +89,11 @@ describe('DailyChart', () => {
     expect(onViewChange).toHaveBeenCalledWith('token')
   })
 
-  it('sorts legend by total usage while keeping series stack order alphabetical', () => {
+  it('sorts legend and stack by total usage descending', () => {
     renderChart('token')
 
     const barSeries = lastEChartProps?.option.series?.filter((s) => s.name !== '累积') ?? []
-    expect(barSeries.map((s) => s.name)).toEqual(['auto', 'gpt'])
+    expect(barSeries.map((s) => s.name)).toEqual(['gpt', 'auto'])
     expect(lastEChartProps?.option.legend?.data).toEqual(['gpt', 'auto', '累积'])
   })
 })

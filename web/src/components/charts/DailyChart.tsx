@@ -16,19 +16,18 @@ interface DailyChartProps {
 
 export function DailyChart({ daily, cumulative, view, onViewChange }: DailyChartProps) {
   const dates = daily.map((d) => d.date)
-  const models = [...new Set(daily.flatMap((d) => Object.keys(d.byModel)))].sort()
-  const isCost = view === 'cost'
-
+  const allModels = [...new Set(daily.flatMap((d) => Object.keys(d.byModel)))]
   const modelTotals = new Map(
-    models.map((model) => [
+    allModels.map((model) => [
       model,
       daily.reduce((sum, d) => sum + (d.byModel[model] ?? 0), 0),
     ]),
   )
-  const legendData = [
-    ...[...models].sort((a, b) => (modelTotals.get(b) ?? 0) - (modelTotals.get(a) ?? 0)),
-    '累积',
-  ]
+  const models = allModels.sort(
+    (a, b) => (modelTotals.get(b) ?? 0) - (modelTotals.get(a) ?? 0),
+  )
+  const legendData = [...models, '累积']
+  const isCost = view === 'cost'
 
   const series: EChartsOption['series'] = models.map((model, i) => ({
     name: model,
