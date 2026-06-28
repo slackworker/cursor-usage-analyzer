@@ -3,6 +3,14 @@ import { EChart, baseGrid } from './EChart'
 
 const DAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
 
+/** 小时轴从 03:00 起，将深夜低活跃时段置于两端 */
+const HOUR_AXIS_START = 3
+const HOUR_AXIS_ORDER = Array.from({ length: 24 }, (_, i) => (HOUR_AXIS_START + i) % 24)
+
+function formatHourLabel(hour: number): string {
+  return `${hour.toString().padStart(2, '0')}:00`
+}
+
 interface HourlyChartProps {
   hourly: { hour: number; value: number }[]
   view: 'sessions' | 'tokens'
@@ -10,13 +18,15 @@ interface HourlyChartProps {
 }
 
 export function HourlyChart({ hourly, view, onViewChange }: HourlyChartProps) {
+  const ordered = HOUR_AXIS_ORDER.map((h) => hourly[h] ?? { hour: h, value: 0 })
+
   const option: EChartsOption = {
     tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d' },
     grid: baseGrid(),
     xAxis: {
       type: 'category',
-      data: hourly.map((h) => `${h.hour}`),
-      axisLabel: { color: '#8b949e' },
+      data: ordered.map((h) => formatHourLabel(h.hour)),
+      axisLabel: { color: '#8b949e', fontSize: 9, interval: 1 },
     },
     yAxis: {
       type: 'value',
@@ -26,7 +36,7 @@ export function HourlyChart({ hourly, view, onViewChange }: HourlyChartProps) {
     series: [
       {
         type: 'bar',
-        data: hourly.map((h) => h.value),
+        data: ordered.map((h) => h.value),
         itemStyle: { color: '#58a6ff' },
       },
     ],
@@ -63,10 +73,11 @@ export function WeeklyHeatmap({ matrix }: WeeklyHeatmapProps) {
   const data: [number, number, number][] = []
   let max = 0
   for (let dow = 0; dow < 7; dow++) {
-    for (let hour = 0; hour < 24; hour++) {
+    for (let xi = 0; xi < 24; xi++) {
+      const hour = HOUR_AXIS_ORDER[xi]
       const v = matrix[dow]?.[hour] ?? 0
       if (v > max) max = v
-      data.push([hour, dow, v])
+      data.push([xi, dow, v])
     }
   }
 
@@ -77,16 +88,17 @@ export function WeeklyHeatmap({ matrix }: WeeklyHeatmapProps) {
       borderColor: '#30363d',
       formatter: (p: unknown) => {
         const params = p as { value: [number, number, number] }
-        const [hour, dow, val] = params.value
-        return `周${DAY_LABELS[dow]} ${hour}:00 — ${val} 次`
+        const [xi, dow, val] = params.value
+        const hour = HOUR_AXIS_ORDER[xi] ?? xi
+        return `周${DAY_LABELS[dow]} ${formatHourLabel(hour)} — ${val} 次`
       },
     },
     grid: { height: '70%', top: 24, left: 48, right: 16 },
     xAxis: {
       type: 'category',
-      data: Array.from({ length: 24 }, (_, i) => `${i}`),
+      data: HOUR_AXIS_ORDER.map(formatHourLabel),
       splitArea: { show: true },
-      axisLabel: { color: '#8b949e', fontSize: 9 },
+      axisLabel: { color: '#8b949e', fontSize: 9, interval: 1 },
     },
     yAxis: {
       type: 'category',
