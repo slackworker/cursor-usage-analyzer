@@ -11,11 +11,12 @@ interface DailyChartProps {
   daily: { date: string; byModel: Record<string, number> }[]
   cumulative: { date: string; cumulative: number }[]
   view: 'cost' | 'token'
+  layout: 'bar' | 'stack'
   onViewChange: (v: 'cost' | 'token') => void
+  onLayoutChange: (v: 'bar' | 'stack') => void
 }
 
-export function DailyChart({ daily, cumulative, view, onViewChange }: DailyChartProps) {
-  const dates = daily.map((d) => d.date)
+function sortModelsByTotal(daily: DailyChartProps['daily']): string[] {
   const allModels = [...new Set(daily.flatMap((d) => Object.keys(d.byModel)))]
   const modelTotals = new Map(
     allModels.map((model) => [
@@ -23,33 +24,74 @@ export function DailyChart({ daily, cumulative, view, onViewChange }: DailyChart
       daily.reduce((sum, d) => sum + (d.byModel[model] ?? 0), 0),
     ]),
   )
-  const models = allModels.sort(
+  return allModels.sort(
     (a, b) => (modelTotals.get(b) ?? 0) - (modelTotals.get(a) ?? 0),
   )
-  const legendData = [...models, '累积']
-  const isCost = view === 'cost'
+}
 
-  const series: EChartsOption['series'] = models.map((model, i) => ({
-    name: model,
-    type: 'bar',
-    stack: 'daily',
-    data: daily.map((d) => d.byModel[model] ?? 0),
-    itemStyle: { color: CHART_COLORS[i % CHART_COLORS.length] },
-  }))
-
-  series.push({
-    name: '累积',
-    type: 'line',
-    yAxisIndex: 1,
-    data: cumulative.map((d) => d.cumulative),
-    itemStyle: { color: '#ffa657' },
-    lineStyle: { width: 2 },
-    smooth: true,
-    showSymbol: false,
+function cumulativeByModel(
+  daily: DailyChartProps['daily'],
+  models: string[],
+): { date: string; byModel: Record<string, number> }[] {
+  const running = new Map<string, number>()
+  return daily.map(({ date, byModel }) => {
+    const cumulative: Record<string, number> = {}
+    for (const model of models) {
+      running.set(model, (running.get(model) ?? 0) + (byModel[model] ?? 0))
+      cumulative[model] = running.get(model)!
+    }
+    return { date, byModel: cumulative }
   })
+}
 
-  const legendCount = models.length + 1
+export function DailyChart({
+  daily,
+  cumulative,
+  view,
+  layout,
+  onViewChange,
+  onLayoutChange,
+}: DailyChartProps) {
+  const dates = daily.map((d) => d.date)
+  const models = sortModelsByTotal(daily)
+  const isCost = view === 'cost'
+  const isStack = layout === 'stack'
+  const legendData = isStack ? models : [...models, '累积']
+  const legendCount = legendData.length
   const axisLabelFormatter = isCost ? usdAxisLabel : tokenAxisLabel
+  const cumulativeDaily = isStack ? cumulativeByModel(daily, models) : null
+
+  const series: EChartsOption['series'] = isStack
+    ? models.map((model, i) => ({
+        name: model,
+        type: 'line',
+        stack: 'cumulative',
+        smooth: true,
+        showSymbol: false,
+        data: cumulativeDaily!.map((d) => d.byModel[model] ?? 0),
+        itemStyle: { color: CHART_COLORS[i % CHART_COLORS.length] },
+        areaStyle: { opacity: 0.78 },
+        emphasis: { focus: 'series' },
+      }))
+    : [
+        ...models.map((model, i) => ({
+          name: model,
+          type: 'bar' as const,
+          stack: 'daily',
+          data: daily.map((d) => d.byModel[model] ?? 0),
+          itemStyle: { color: CHART_COLORS[i % CHART_COLORS.length] },
+        })),
+        {
+          name: '累积',
+          type: 'line' as const,
+          yAxisIndex: 1,
+          data: cumulative.map((d) => d.cumulative),
+          itemStyle: { color: '#ffa657' },
+          lineStyle: { width: 2 },
+          smooth: true,
+          showSymbol: false,
+        },
+      ]
 
   const buildOption = (chartWidth: number): EChartsOption => ({
     tooltip: {
@@ -65,20 +107,29 @@ export function DailyChart({ daily, cumulative, view, onViewChange }: DailyChart
       data: dates,
       axisLabel: { color: '#8b949e', fontSize: 10, rotate: dates.length > 14 ? 45 : 0 },
     },
-    yAxis: [
-      {
-        type: 'value',
-        name: isCost ? '费用' : 'Token',
-        axisLabel: { color: '#8b949e', formatter: axisLabelFormatter },
-        splitLine: { lineStyle: { color: '#21262d' } },
-      },
-      {
-        type: 'value',
-        name: '累积',
-        axisLabel: { color: '#8b949e', formatter: axisLabelFormatter },
-        splitLine: { show: false },
-      },
-    ],
+    yAxis: isStack
+      ? [
+          {
+            type: 'value',
+            name: isCost ? '累积费用' : '累积 Token',
+            axisLabel: { color: '#8b949e', formatter: axisLabelFormatter },
+            splitLine: { lineStyle: { color: '#21262d' } },
+          },
+        ]
+      : [
+          {
+            type: 'value',
+            name: isCost ? '费用' : 'Token',
+            axisLabel: { color: '#8b949e', formatter: axisLabelFormatter },
+            splitLine: { lineStyle: { color: '#21262d' } },
+          },
+          {
+            type: 'value',
+            name: '累积',
+            axisLabel: { color: '#8b949e', formatter: axisLabelFormatter },
+            splitLine: { show: false },
+          },
+        ],
     series,
   })
 
@@ -98,6 +149,21 @@ export function DailyChart({ daily, cumulative, view, onViewChange }: DailyChart
           onClick={() => onViewChange('token')}
         >
           Token
+        </button>
+        <span className="chart-controls__divider" aria-hidden="true" />
+        <button
+          type="button"
+          className={layout === 'bar' ? 'chart-controls__btn--active' : 'chart-controls__btn'}
+          onClick={() => onLayoutChange('bar')}
+        >
+          柱状
+        </button>
+        <button
+          type="button"
+          className={layout === 'stack' ? 'chart-controls__btn--active' : 'chart-controls__btn'}
+          onClick={() => onLayoutChange('stack')}
+        >
+          叠层
         </button>
       </div>
       <EChart

@@ -25,6 +25,7 @@ export function ReportPage() {
     modelView,
     structureView,
     dailyView,
+    dailyChartLayout,
     hourlyView,
     dailyActivityGranularity,
     weeklyActivityGranularity,
@@ -37,6 +38,7 @@ export function ReportPage() {
     setModelView,
     setStructureView,
     setDailyView,
+    setDailyChartLayout,
     setHourlyView,
     setDailyActivityGranularity,
     setWeeklyActivityGranularity,
@@ -83,7 +85,9 @@ export function ReportPage() {
             daily={agg.daily}
             cumulative={agg.dailyCumulative}
             view={dailyView}
+            layout={dailyChartLayout}
             onViewChange={setDailyView}
+            onLayoutChange={setDailyChartLayout}
           />
         </ChartPanel>
 

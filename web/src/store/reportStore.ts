@@ -27,6 +27,7 @@ export interface ReportStore {
   modelView: 'cost' | 'token'
   structureView: 'cost' | 'token'
   dailyView: 'cost' | 'token'
+  dailyChartLayout: 'bar' | 'stack'
   hourlyView: 'sessions' | 'tokens'
   dailyActivityGranularity: DailyActivityGranularity
   weeklyActivityGranularity: WeeklyActivityGranularity
@@ -38,6 +39,7 @@ export interface ReportStore {
   setModelView: (v: 'cost' | 'token') => void
   setStructureView: (v: 'cost' | 'token') => void
   setDailyView: (v: 'cost' | 'token') => void
+  setDailyChartLayout: (v: 'bar' | 'stack') => void
   setHourlyView: (v: 'sessions' | 'tokens') => void
   setDailyActivityGranularity: (v: DailyActivityGranularity) => void
   setWeeklyActivityGranularity: (v: WeeklyActivityGranularity) => void
@@ -60,6 +62,7 @@ export const useReportStore = create<ReportStore>((set) => ({
   modelView: 'cost',
   structureView: 'token',
   dailyView: 'token',
+  dailyChartLayout: 'bar',
   hourlyView: 'sessions',
   dailyActivityGranularity: DEFAULT_DAILY_ACTIVITY_GRANULARITY,
   weeklyActivityGranularity: DEFAULT_WEEKLY_ACTIVITY_GRANULARITY,
@@ -86,6 +89,7 @@ export const useReportStore = create<ReportStore>((set) => ({
       modelView: 'cost',
       structureView: 'token',
       dailyView: 'token',
+      dailyChartLayout: 'bar',
       hourlyView: 'sessions',
       dailyActivityGranularity: DEFAULT_DAILY_ACTIVITY_GRANULARITY,
       weeklyActivityGranularity: DEFAULT_WEEKLY_ACTIVITY_GRANULARITY,
@@ -101,6 +105,7 @@ export const useReportStore = create<ReportStore>((set) => ({
   setModelView: (modelView) => set({ modelView }),
   setStructureView: (structureView) => set({ structureView }),
   setDailyView: (dailyView) => set({ dailyView }),
+  setDailyChartLayout: (dailyChartLayout) => set({ dailyChartLayout }),
   setHourlyView: (hourlyView) => set({ hourlyView }),
   setDailyActivityGranularity: (dailyActivityGranularity) => set({ dailyActivityGranularity }),
   setWeeklyActivityGranularity: (weeklyActivityGranularity) => set({ weeklyActivityGranularity }),

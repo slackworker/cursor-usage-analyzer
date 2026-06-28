@@ -30,6 +30,7 @@ export function useReport() {
   const modelView = useReportStore((s) => s.modelView)
   const structureView = useReportStore((s) => s.structureView)
   const dailyView = useReportStore((s) => s.dailyView)
+  const dailyChartLayout = useReportStore((s) => s.dailyChartLayout)
   const hourlyView = useReportStore((s) => s.hourlyView)
   const dailyActivityGranularity = useReportStore((s) => s.dailyActivityGranularity)
   const weeklyActivityGranularity = useReportStore((s) => s.weeklyActivityGranularity)
@@ -41,6 +42,7 @@ export function useReport() {
   const setModelView = useReportStore((s) => s.setModelView)
   const setStructureView = useReportStore((s) => s.setStructureView)
   const setDailyView = useReportStore((s) => s.setDailyView)
+  const setDailyChartLayout = useReportStore((s) => s.setDailyChartLayout)
   const setHourlyView = useReportStore((s) => s.setHourlyView)
   const setDailyActivityGranularity = useReportStore((s) => s.setDailyActivityGranularity)
   const setWeeklyActivityGranularity = useReportStore((s) => s.setWeeklyActivityGranularity)
@@ -110,6 +112,7 @@ export function useReport() {
     modelView,
     structureView,
     dailyView,
+    dailyChartLayout,
     hourlyView,
     dailyActivityGranularity,
     weeklyActivityGranularity,
@@ -124,6 +127,7 @@ export function useReport() {
     setModelView,
     setStructureView,
     setDailyView,
+    setDailyChartLayout,
     setHourlyView,
     setDailyActivityGranularity,
     setWeeklyActivityGranularity,
