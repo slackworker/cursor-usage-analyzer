@@ -21,13 +21,10 @@ export function YearHeatmap({ data }: YearHeatmapProps) {
       },
     },
     visualMap: {
+      show: false,
       min: 0,
       max,
-      orient: 'horizontal',
-      left: 'center',
-      bottom: 0,
       inRange: { color: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'] },
-      textStyle: { color: '#8b949e' },
     },
     calendar: {
       top: 40,

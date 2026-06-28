@@ -93,7 +93,7 @@ export function WeeklyHeatmap({ matrix }: WeeklyHeatmapProps) {
         return `周${DAY_LABELS[dow]} ${formatHourLabel(hour)} — ${val} 次`
       },
     },
-    grid: { height: '70%', top: 24, left: 48, right: 16 },
+    grid: { height: '82%', top: 24, left: 48, right: 16, bottom: 28 },
     xAxis: {
       type: 'category',
       data: HOUR_AXIS_ORDER.map(formatHourLabel),
@@ -107,14 +107,10 @@ export function WeeklyHeatmap({ matrix }: WeeklyHeatmapProps) {
       axisLabel: { color: '#8b949e' },
     },
     visualMap: {
+      show: false,
       min: 0,
       max: max || 1,
-      calculable: false,
-      orient: 'horizontal',
-      left: 'center',
-      bottom: 0,
       inRange: { color: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'] },
-      textStyle: { color: '#8b949e' },
     },
     series: [
       {
