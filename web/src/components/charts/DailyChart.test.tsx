@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DailyChart } from './DailyChart'
 
 const daily: { date: string; byModel: Record<string, number> }[] = [
-  { date: '06-01', byModel: { auto: 1, gpt: 2 } },
-  { date: '06-02', byModel: { auto: 3 } },
+  { date: '06-01', byModel: { auto: 1, gpt: 10 } },
+  { date: '06-02', byModel: { auto: 1 } },
 ]
 const cumulative = [
   { date: '06-01', cumulative: 3 },
@@ -16,6 +16,7 @@ const onViewChange = vi.fn()
 let lastEChartProps: {
   option: {
     series?: { name?: string }[]
+    legend?: { data?: string[] }
     yAxis?: { name?: string; axisLabel?: { formatter?: (v: number) => string } }[]
     tooltip?: { formatter?: unknown }
   }
@@ -26,6 +27,7 @@ vi.mock('./EChart', () => ({
   EChart: (props: {
     option: {
       series?: { name?: string }[]
+      legend?: { data?: string[] }
       yAxis?: { name?: string; axisLabel?: { formatter?: (v: number) => string } }[]
       tooltip?: { formatter?: unknown }
     }
@@ -53,10 +55,10 @@ describe('DailyChart', () => {
     )
   }
 
-  it('passes replaceMerge for series and yAxis updates', () => {
+  it('passes replaceMerge for series, yAxis, and legend updates', () => {
     renderChart()
 
-    expect(lastEChartProps?.replaceMerge).toEqual(['series', 'yAxis'])
+    expect(lastEChartProps?.replaceMerge).toEqual(['series', 'yAxis', 'legend'])
   })
 
   it('always includes cumulative line series', () => {
@@ -85,5 +87,13 @@ describe('DailyChart', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Token' }))
     expect(onViewChange).toHaveBeenCalledWith('token')
+  })
+
+  it('sorts legend by total usage while keeping series stack order alphabetical', () => {
+    renderChart('token')
+
+    const barSeries = lastEChartProps?.option.series?.filter((s) => s.name !== '累积') ?? []
+    expect(barSeries.map((s) => s.name)).toEqual(['auto', 'gpt'])
+    expect(lastEChartProps?.option.legend?.data).toEqual(['gpt', 'auto', '累积'])
   })
 })

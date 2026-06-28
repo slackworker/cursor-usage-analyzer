@@ -19,6 +19,17 @@ export function DailyChart({ daily, cumulative, view, onViewChange }: DailyChart
   const models = [...new Set(daily.flatMap((d) => Object.keys(d.byModel)))].sort()
   const isCost = view === 'cost'
 
+  const modelTotals = new Map(
+    models.map((model) => [
+      model,
+      daily.reduce((sum, d) => sum + (d.byModel[model] ?? 0), 0),
+    ]),
+  )
+  const legendData = [
+    ...[...models].sort((a, b) => (modelTotals.get(b) ?? 0) - (modelTotals.get(a) ?? 0)),
+    '累积',
+  ]
+
   const series: EChartsOption['series'] = models.map((model, i) => ({
     name: model,
     type: 'bar',
@@ -48,7 +59,7 @@ export function DailyChart({ daily, cumulative, view, onViewChange }: DailyChart
       borderColor: '#30363d',
       formatter: isCost ? axisTooltipUsdFormatter : axisTooltipTokenFormatter,
     },
-    legend: bottomLegend(),
+    legend: { ...bottomLegend(), data: legendData },
     grid: gridWithLegend(legendCount),
     xAxis: {
       type: 'category',
@@ -93,7 +104,7 @@ export function DailyChart({ daily, cumulative, view, onViewChange }: DailyChart
       <EChart
         option={option}
         height={260 + legendExtraHeight(legendCount)}
-        replaceMerge={['series', 'yAxis']}
+        replaceMerge={['series', 'yAxis', 'legend']}
       />
     </div>
   )
