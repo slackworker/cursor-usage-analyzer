@@ -14,7 +14,6 @@ import {
   rollupWeeklyHourly,
   rollupYearHeatmap,
   spanDays,
-  topModel,
   unitPriceByModel,
 } from '../lib/aggregation'
 import { useReportStore } from '../store/reportStore'
@@ -60,7 +59,6 @@ export function useReport() {
     const projection = projectUsagePercent(filtered, poolLimits, 'official')
     const days = spanDays(filtered)
     const peak = peakDailyCost(filtered, mode)
-    const top = topModel(filtered, mode)
     const totalTokens = filtered.reduce((s, e) => (e.skipReason ? s : s + e.tokens.total), 0)
 
     return {
@@ -78,7 +76,6 @@ export function useReport() {
       projection,
       days,
       peak,
-      top,
       totalTokens,
     }
   }, [filtered, mode, modelView, structureView, hourlyView, hourlyGranularity, poolLimits])

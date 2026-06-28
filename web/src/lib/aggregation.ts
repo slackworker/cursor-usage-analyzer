@@ -464,7 +464,10 @@ export function spanDays(events: UsageEvent[]): number {
   return differenceInCalendarDays(parseISO(dates.at(-1)!), parseISO(dates[0])) + 1
 }
 
-export function peakDailyCost(events: UsageEvent[], mode: BillingMode): { date: string; value: number } | null {
+export function peakDailyCost(
+  events: UsageEvent[],
+  mode: BillingMode,
+): { date: string; value: number; topModel: string | null } | null {
   const daily = rollupDaily(events, 'cost', 'all', mode)
   if (!daily.length) return null
   let best = daily[0]
@@ -473,16 +476,19 @@ export function peakDailyCost(events: UsageEvent[], mode: BillingMode): { date: 
     const bestV = Object.values(best.byModel).reduce((a, b) => a + b, 0)
     if (v > bestV) best = row
   }
+  const value = Object.values(best.byModel).reduce((a, b) => a + b, 0)
+  let topModel: string | null = null
+  let topCost = -Infinity
+  for (const [model, cost] of Object.entries(best.byModel)) {
+    if (cost > topCost) {
+      topCost = cost
+      topModel = model
+    }
+  }
   return {
     date: best.date,
-    value: Object.values(best.byModel).reduce((a, b) => a + b, 0),
+    value,
+    topModel,
   }
 }
-
-export function topModel(events: UsageEvent[], mode: BillingMode): string | null {
-  const byModel = rollupByModel(events, 'cost', mode)
-  const sorted = Object.entries(byModel).sort((a, b) => b[1].cost - a[1].cost)
-  return sorted[0]?.[0] ?? null
-}
-
 export { FREE_STATUS_ONLY_SKIP }

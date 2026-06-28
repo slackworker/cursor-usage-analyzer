@@ -75,7 +75,7 @@ export function ReportPage() {
             days={agg.days}
             peakDate={agg.peak?.date ?? null}
             peakValue={agg.peak?.value ?? 0}
-            topModel={agg.top}
+            topModel={agg.peak?.topModel ?? null}
           />
           <ChartPanel title="#4 计费口径环图">
             <BillingDonut totals={agg.billing} mode={filters.billingMode} />
