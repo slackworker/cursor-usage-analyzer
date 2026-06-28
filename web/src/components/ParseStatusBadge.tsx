@@ -1,9 +1,10 @@
+import { useEffect, useRef, useState } from 'react'
 import { FREE_STATUS_ONLY_SKIP } from '../lib/pricing'
 
 const EXPECTED_SKIP_LABELS: Record<string, string> = {
-  'Errored, No Charge': '出错未计费',
-  'Aborted, Not Charged': '中止未计费',
-  [FREE_STATUS_ONLY_SKIP]: 'Free 状态行',
+  'Errored, No Charge': '出错',
+  'Aborted, Not Charged': '中止',
+  [FREE_STATUS_ONLY_SKIP]: 'Free',
 }
 
 interface ParseStatusBadgeProps {
@@ -19,37 +20,72 @@ function formatCounts(counts: Record<string, number>): string {
 }
 
 export function ParseStatusBadge({ unknownModels, skippedRows }: ParseStatusBadgeProps) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
   const unknownEntries = unknownModels ? Object.entries(unknownModels) : []
   const skippedEntries = skippedRows ? Object.entries(skippedRows) : []
   const hasUnknown = unknownEntries.length > 0
+  const hasSkipped = skippedEntries.length > 0
+  const isExpandable = hasUnknown || hasSkipped
 
-  if (!hasUnknown) {
+  useEffect(() => {
+    if (!open) return
+
+    function handlePointerDown(event: PointerEvent) {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => document.removeEventListener('pointerdown', handlePointerDown)
+  }, [open])
+
+  if (!isExpandable) {
     return (
-      <span className="report-badge" onClick={(e) => e.stopPropagation()}>
+      <span className="report-badge report-badge--static" onClick={(e) => e.stopPropagation()}>
         已解析
       </span>
     )
   }
 
   return (
-    <details className="parse-details" onClick={(e) => e.stopPropagation()}>
-      <summary className="report-badge report-badge--warn">数据质量提示</summary>
-      <div className="parse-details__panel" role="status">
-        <p className="parse-details__item">
-          <span className="parse-details__label">未知模型</span>
-          {unknownEntries.map(([model, count]) => (
-            <span key={model} className="parse-details__tag">
-              {model} ×{count}
-            </span>
-          ))}
-        </p>
-        {skippedEntries.length > 0 && (
-          <p className="parse-details__item parse-details__item--muted">
-            <span className="parse-details__label">未计入行</span>
-            <span>{formatCounts(Object.fromEntries(skippedEntries))}</span>
-          </p>
-        )}
-      </div>
-    </details>
+    <div
+      ref={rootRef}
+      className={`parse-details${open ? ' parse-details--open' : ''}`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        className={`report-badge parse-details__trigger${hasUnknown ? ' report-badge--warn' : ''}`}
+        aria-expanded={open}
+        aria-haspopup="true"
+        onClick={() => setOpen((value) => !value)}
+      >
+        {hasUnknown ? '含未知模型' : '已解析'}
+      </button>
+      {open ? (
+        <div className="parse-details__panel" role="status">
+          {hasUnknown ? (
+            <p className="parse-details__item">
+              <span className="parse-details__label">未知模型</span>
+              <span className="parse-details__content">
+                {unknownEntries.map(([model, count]) => (
+                  <span key={model} className="parse-details__tag">
+                    {model} ×{count}
+                  </span>
+                ))}
+              </span>
+            </p>
+          ) : null}
+          {hasSkipped ? (
+            <p className="parse-details__item parse-details__item--muted">
+              <span className="parse-details__label">无需计入</span>
+              <span className="parse-details__content">{formatCounts(Object.fromEntries(skippedEntries))}</span>
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   )
 }

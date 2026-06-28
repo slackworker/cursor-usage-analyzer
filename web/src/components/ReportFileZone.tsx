@@ -39,7 +39,7 @@ export function ReportFileZone({
   const dropAriaLabel = isDragging
     ? dragHintText
     : fileName
-      ? `${fileName}，点击或拖拽更换文件`
+      ? `${fileName}，点击更换文件`
       : emptyHintText
 
   return (
@@ -81,33 +81,30 @@ export function ReportFileZone({
         {fileName && !isDragging ? (
           <div
             className="report-file-zone__drop-center report-file-zone__drop-center--loaded"
-            role="button"
-            tabIndex={0}
             data-export-hide
-            aria-label={dropAriaLabel}
-            onClick={() => fileInputRef.current?.click()}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault()
-                fileInputRef.current?.click()
-              }
-            }}
           >
-            <DropZoneIcon />
             <span className="report-file-zone__file-info">
-              <span className="report-file-zone__filename">{fileName}</span>
-              <span className="report-file-zone__info-meta">
-                <span>
-                  {meta?.dateFrom && meta?.dateTo
-                    ? `${meta.dateFrom} ~ ${meta.dateTo}`
-                    : '日期范围 —'}
+              <button
+                type="button"
+                className="report-file-zone__replace-trigger"
+                aria-label={dropAriaLabel}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <DropZoneIcon />
+                <span className="report-file-zone__filename">{fileName}</span>
+                <span className="report-file-zone__info-meta">
+                  <span>
+                    {meta?.dateFrom && meta?.dateTo
+                      ? `${meta.dateFrom} ~ ${meta.dateTo}`
+                      : '日期范围 —'}
+                  </span>
+                  <span>{rowCount.toLocaleString()} 行</span>
                 </span>
-                <span>{rowCount.toLocaleString()} 行</span>
-                <ParseStatusBadge
-                  unknownModels={meta?.unknownModels}
-                  skippedRows={meta?.skippedRows}
-                />
-              </span>
+              </button>
+              <ParseStatusBadge
+                unknownModels={meta?.unknownModels}
+                skippedRows={meta?.skippedRows}
+              />
             </span>
           </div>
         ) : (

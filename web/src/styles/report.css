@@ -149,16 +149,6 @@
   background: rgba(88, 166, 255, 0.06);
 }
 
-.report-file-zone__drop-center--loaded {
-  cursor: pointer;
-}
-
-.report-file-zone__drop-center--loaded:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
-}
-
 .report-btn {
   padding: 0.35rem 0.75rem;
   background: transparent;
@@ -205,12 +195,58 @@
   background: none;
   font: inherit;
   color: var(--color-text-muted);
-  cursor: pointer;
   transition: color 0.15s ease, opacity 0.15s ease;
 }
 
-.report-file-zone__drop-center:hover {
-  opacity: 0.82;
+.report-file-zone__drop-center:not(.report-file-zone__drop-center--loaded) {
+  cursor: pointer;
+}
+
+.report-file-zone__drop-center.report-file-zone__drop-center--loaded {
+  cursor: default;
+}
+
+.report-file-zone__drop-center--loaded .report-file-zone__file-info {
+  cursor: default;
+}
+
+.report-file-zone__replace-trigger {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm) 0.625rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: inherit;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease;
+}
+
+.report-file-zone__replace-trigger .report-file-zone__glyph {
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+
+.report-file-zone__replace-trigger:hover {
+  color: var(--color-text);
+}
+
+.report-file-zone__replace-trigger:hover .report-file-zone__glyph {
+  opacity: 0.85;
+}
+
+.report-file-zone__replace-trigger:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.report-file-zone__drop-center:not(.report-file-zone__drop-center--loaded):hover > .report-file-zone__glyph {
+  opacity: 0.72;
 }
 
 .report-file-zone__drop-center:focus-visible {
@@ -251,10 +287,11 @@
   color: var(--color-text-muted);
 }
 
-.report-file-zone__drop-center .report-file-zone__filename {
+.report-file-zone__drop-center .report-file-zone__replace-trigger .report-file-zone__filename {
   font-weight: 400;
   color: inherit;
   opacity: 1;
+  transition: color 0.15s ease;
 }
 
 .report-file-zone__filename {
@@ -292,6 +329,10 @@
   background: rgba(88, 166, 255, 0.15);
   color: var(--color-accent);
   border: 1px solid rgba(88, 166, 255, 0.3);
+}
+
+.report-badge--static {
+  cursor: default;
 }
 
 .report-badge--warn {
@@ -478,12 +519,32 @@
   position: relative;
   display: inline-flex;
 }
-.parse-details > summary {
-  list-style: none;
+
+.parse-details__trigger {
+  margin: 0;
+  font: inherit;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
-.parse-details > summary::-webkit-details-marker { display: none; }
-.parse-details[open] > summary { border-color: var(--color-warning); }
+
+.parse-details__trigger.report-badge--warn:hover {
+  background: rgba(210, 153, 34, 0.22);
+  border-color: rgba(210, 153, 34, 0.45);
+}
+
+.parse-details--open .parse-details__trigger.report-badge--warn {
+  border-color: var(--color-warning);
+}
+
+.parse-details__trigger.report-badge:not(.report-badge--warn):hover {
+  background: rgba(88, 166, 255, 0.22);
+  border-color: rgba(88, 166, 255, 0.45);
+}
+
+.parse-details--open .parse-details__trigger.report-badge:not(.report-badge--warn) {
+  border-color: var(--color-accent);
+}
+
 .parse-details__panel {
   position: absolute;
   top: calc(100% + 0.35rem);
@@ -499,19 +560,28 @@
   font-size: 0.8125rem;
   line-height: 1.5;
 }
+
 .parse-details__item {
   margin: 0;
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.25rem 0.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
 }
+
 .parse-details__item + .parse-details__item { margin-top: 0.5rem; }
 .parse-details__item--muted { color: var(--color-text-muted); }
+
 .parse-details__label {
   font-weight: 600;
-  flex-shrink: 0;
 }
+
+.parse-details__content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.35rem;
+}
+
 .parse-details__tag {
   display: inline-block;
   padding: 0.05rem 0.35rem;
