@@ -24,7 +24,6 @@ export function ReportPage() {
     poolLimits,
     showCumulative,
     modelView,
-    modelChartType,
     hourlyView,
     projectionOpen,
     allModels,
@@ -35,7 +34,6 @@ export function ReportPage() {
     setPoolLimits,
     setShowCumulative,
     setModelView,
-    setModelChartType,
     setHourlyView,
     setProjectionOpen,
   } = useReport()
@@ -103,9 +101,7 @@ export function ReportPage() {
             <ModelChart
               byModel={agg.byModel}
               view={modelView}
-              chartType={modelChartType}
               onViewChange={setModelView}
-              onChartTypeChange={setModelChartType}
             />
           </ChartPanel>
           <ChartPanel title="#8 Token 结构" tall>

@@ -27,7 +27,6 @@ export function useReport() {
   const poolLimits = useReportStore((s) => s.poolLimits)
   const showCumulative = useReportStore((s) => s.showCumulative)
   const modelView = useReportStore((s) => s.modelView)
-  const modelChartType = useReportStore((s) => s.modelChartType)
   const hourlyView = useReportStore((s) => s.hourlyView)
   const projectionOpen = useReportStore((s) => s.projectionOpen)
   const setCsvFile = useReportStore((s) => s.setCsvFile)
@@ -36,7 +35,6 @@ export function useReport() {
   const setPoolLimits = useReportStore((s) => s.setPoolLimits)
   const setShowCumulative = useReportStore((s) => s.setShowCumulative)
   const setModelView = useReportStore((s) => s.setModelView)
-  const setModelChartType = useReportStore((s) => s.setModelChartType)
   const setHourlyView = useReportStore((s) => s.setHourlyView)
   const setProjectionOpen = useReportStore((s) => s.setProjectionOpen)
 
@@ -102,7 +100,6 @@ export function useReport() {
     poolLimits,
     showCumulative,
     modelView,
-    modelChartType,
     hourlyView,
     projectionOpen,
     allModels,
@@ -114,7 +111,6 @@ export function useReport() {
     setPoolLimits,
     setShowCumulative,
     setModelView,
-    setModelChartType,
     setHourlyView,
     setProjectionOpen,
   }

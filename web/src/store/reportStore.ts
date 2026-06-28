@@ -17,7 +17,6 @@ export interface ReportStore {
   poolLimits: { autoComposer: number; api: number }
   showCumulative: boolean
   modelView: 'cost' | 'token'
-  modelChartType: 'pie' | 'bar'
   hourlyView: 'sessions' | 'tokens'
   projectionOpen: boolean
   setCsvFile: (file: File) => Promise<void>
@@ -26,7 +25,6 @@ export interface ReportStore {
   setPoolLimits: (patch: Partial<{ autoComposer: number; api: number }>) => void
   setShowCumulative: (v: boolean) => void
   setModelView: (v: 'cost' | 'token') => void
-  setModelChartType: (v: 'pie' | 'bar') => void
   setHourlyView: (v: 'sessions' | 'tokens') => void
   setProjectionOpen: (v: boolean) => void
 }
@@ -47,7 +45,6 @@ export const useReportStore = create<ReportStore>((set) => ({
   poolLimits: { ...DEFAULT_POOL_LIMITS },
   showCumulative: false,
   modelView: 'cost',
-  modelChartType: 'pie',
   hourlyView: 'sessions',
   projectionOpen: false,
 
@@ -73,7 +70,6 @@ export const useReportStore = create<ReportStore>((set) => ({
       poolLimits: { ...DEFAULT_POOL_LIMITS },
       showCumulative: false,
       modelView: 'cost',
-      modelChartType: 'pie',
       hourlyView: 'sessions',
       projectionOpen: false,
     }),
@@ -92,7 +88,6 @@ export const useReportStore = create<ReportStore>((set) => ({
   setPoolLimits: (patch) => set((s) => ({ poolLimits: { ...s.poolLimits, ...patch } })),
   setShowCumulative: (showCumulative) => set({ showCumulative }),
   setModelView: (modelView) => set({ modelView }),
-  setModelChartType: (modelChartType) => set({ modelChartType }),
   setHourlyView: (hourlyView) => set({ hourlyView }),
   setProjectionOpen: (projectionOpen) => set({ projectionOpen }),
 }))
