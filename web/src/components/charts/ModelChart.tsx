@@ -1,7 +1,11 @@
 import type { EChartsOption } from 'echarts'
 import { formatTokens } from '../../hooks/useReport'
-import { pieUsdLabelFormatter, pieUsdTooltipFormatter } from '../../lib/chartTheme'
-import { EChart, CHART_COLORS, bottomLegend, baseTooltip, pieChartHeight } from './EChart'
+import {
+  pieLabelMinShowAngle,
+  pieUsdLabelFormatter,
+  pieUsdTooltipFormatter,
+} from '../../lib/chartTheme'
+import { EChart, CHART_COLORS, baseTooltip } from './EChart'
 
 interface ModelChartProps {
   byModel: Record<string, { cost: number; tokens: number }>
@@ -31,12 +35,12 @@ export function ModelChart({ byModel, view, onViewChange }: ModelChartProps) {
               return `${item.name}: ${formatTokens(item.value)} (${item.percent}%)`
             },
     },
-    legend: bottomLegend(),
     series: [
       {
         type: 'pie',
         radius: '65%',
-        center: ['50%', '45%'],
+        center: ['50%', '50%'],
+        minShowLabelAngle: pieLabelMinShowAngle(),
         data: sorted.map((d) => ({ name: d.model, value: d.value })),
         label: {
           color: '#e6edf3',
@@ -69,7 +73,7 @@ export function ModelChart({ byModel, view, onViewChange }: ModelChartProps) {
           Token
         </button>
       </div>
-      <EChart option={option} height={pieChartHeight(sorted.length)} />
+      <EChart option={option} height={240} />
     </div>
   )
 }

@@ -6,6 +6,7 @@ import {
   legendRowCount,
   NARROW_CHART_WIDTH,
   pieChartHeight,
+  pieLabelMinShowAngle,
   pieUsdLabelFormatter,
   pieUsdTooltipFormatter,
 } from './chartTheme'
@@ -34,6 +35,10 @@ describe('chartTheme USD formatters', () => {
 
   it('pieUsdLabelFormatter shows name and USD on two lines', () => {
     expect(pieUsdLabelFormatter({ name: 'API', value: 9.1 })).toBe('API\n$9.10')
+  })
+
+  it('pieLabelMinShowAngle hides labels at or below threshold percent', () => {
+    expect(pieLabelMinShowAngle()).toBeGreaterThan(10.8)
   })
 })
 

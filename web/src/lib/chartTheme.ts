@@ -127,6 +127,13 @@ export function gridWithLegend(itemCount: number) {
   return { ...baseGrid(), bottom }
 }
 
+/** 饼图扇区标签：仅展示占比严格大于此值的扇区（对应 central angle） */
+export const PIE_LABEL_MIN_PERCENT = 3
+
+export function pieLabelMinShowAngle(minPercent = PIE_LABEL_MIN_PERCENT): number {
+  return (minPercent / 100) * 360 + 0.01
+}
+
 /** 带底部图例的饼图/环形图高度 */
 export function pieChartHeight(
   itemCount: number,
