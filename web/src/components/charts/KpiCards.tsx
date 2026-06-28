@@ -7,10 +7,9 @@ interface KpiCardsProps {
   days: number
   peakDate: string | null
   peakValue: number
-  topModel: string | null
 }
 
-export function KpiCards({ billing, totalTokens, days, peakDate, peakValue, topModel }: KpiCardsProps) {
+export function KpiCards({ billing, totalTokens, days, peakDate, peakValue }: KpiCardsProps) {
   const dailyAvg = days > 0 ? billing.total / days : 0
 
   const items = [
@@ -20,7 +19,6 @@ export function KpiCards({ billing, totalTokens, days, peakDate, peakValue, topM
     {
       label: '峰值日',
       value: peakDate ? `${peakDate.slice(5)} · ${formatUsd(peakValue)}` : '—',
-      sub: topModel ? `Top: ${topModel}` : undefined,
     },
   ]
 
@@ -30,7 +28,6 @@ export function KpiCards({ billing, totalTokens, days, peakDate, peakValue, topM
         <div key={item.label} className="kpi-card">
           <p className="kpi-card__label">{item.label}</p>
           <p className="kpi-card__value">{item.value}</p>
-          {item.sub && <p className="kpi-card__sub">{item.sub}</p>}
         </div>
       ))}
     </div>
