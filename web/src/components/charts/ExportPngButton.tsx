@@ -24,7 +24,7 @@ export function ExportPngButton() {
         useCORS: true,
         logging: false,
         onclone: (doc) => {
-          doc.querySelectorAll<HTMLElement>('.report-header__action').forEach((el) => {
+          doc.querySelectorAll<HTMLElement>('[data-export-hide]').forEach((el) => {
             el.style.display = 'none'
           })
         },
@@ -42,7 +42,8 @@ export function ExportPngButton() {
   return (
     <button
       type="button"
-      className="report-header__action"
+      className="report-btn report-btn--secondary"
+      data-export-hide
       onClick={handleExport}
       disabled={exporting}
     >

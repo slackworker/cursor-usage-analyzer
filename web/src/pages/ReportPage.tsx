@@ -1,6 +1,5 @@
-import { useRef } from 'react'
 import { FilterBar } from '../components/FilterBar'
-import { ParseStatusBadge } from '../components/ParseStatusBadge'
+import { ReportFileZone } from '../components/ReportFileZone'
 import { BillingDonut } from '../components/charts/BillingDonut'
 import { CacheHitChart } from '../components/charts/CacheHitChart'
 import { ChartPanel } from '../components/charts/ChartPanel'
@@ -14,7 +13,6 @@ import { PoolProjection } from '../components/charts/PoolProjection'
 import { TokenStructureChart } from '../components/charts/TokenStructureChart'
 import { UnitPriceChart } from '../components/charts/UnitPriceChart'
 import { YearHeatmap } from '../components/charts/YearHeatmap'
-import { useCsvFileDrop } from '../hooks/useCsvFileDrop'
 import { useReport } from '../hooks/useReport'
 import '../styles/report.css'
 
@@ -32,7 +30,6 @@ export function ReportPage() {
     dailyActivityGranularity,
     weeklyActivityGranularity,
     projectionOpen,
-    allModels,
     heatmapVisible,
     agg,
     setCsvFile,
@@ -47,53 +44,21 @@ export function ReportPage() {
     setProjectionOpen,
   } = useReport()
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const { isDragging, error: dropError, dropTargetProps } = useCsvFileDrop(setCsvFile)
-
   return (
     <div className="report-page">
       <div className="report-container">
-        <header
-          className={`report-header${isDragging ? ' report-header--drag-active' : ''}`}
-          {...dropTargetProps}
-        >
-          <h1 className="report-header__title">Cursor 用量报告</h1>
-          <div className="report-header__meta">
-            <span>{fileName ?? '未选择文件'}</span>
-            <span>·</span>
-            <span>
-              {meta?.dateFrom && meta?.dateTo
-                ? `${meta.dateFrom} ~ ${meta.dateTo}`
-                : '日期范围 —'}
-            </span>
-            <span>·</span>
-            <span>{rowCount.toLocaleString()} 行</span>
-            <ParseStatusBadge unknownModels={meta?.unknownModels} skippedRows={meta?.skippedRows} />
-          </div>
+        <header className="report-topbar" role="region" aria-label="报告顶栏">
+          <h1 className="report-topbar__title">Cursor Usage 分析报告</h1>
+          <FilterBar filters={filters} onChange={setFilters} />
           <ExportPngButton />
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,text/csv"
-            className="report-header__file-input"
-            onChange={(event) => {
-              const file = event.target.files?.[0]
-              if (file) void setCsvFile(file)
-              event.target.value = ''
-            }}
-            aria-hidden
-          />
-          <button
-            type="button"
-            className="report-header__action"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            更换文件
-          </button>
-          {dropError ? <p className="report-header__drop-error">{dropError}</p> : null}
         </header>
 
-        <FilterBar filters={filters} allModels={allModels} onChange={setFilters} />
+        <ReportFileZone
+          fileName={fileName}
+          meta={meta}
+          rowCount={rowCount}
+          onFileSelect={setCsvFile}
+        />
 
         <div className="report-grid report-grid--triple">
           <KpiCards
