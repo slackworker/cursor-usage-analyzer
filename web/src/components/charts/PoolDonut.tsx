@@ -1,5 +1,6 @@
 import type { EChartsOption } from 'echarts'
 import { POOL_LABELS } from '../../lib/types'
+import { pieUsdTooltipFormatter } from '../../lib/chartTheme'
 import { EChart, bottomLegend, baseTooltip } from './EChart'
 
 interface PoolDonutProps {
@@ -20,7 +21,7 @@ export function PoolDonut({ byPool, limits }: PoolDonutProps) {
   const apiPct = limits.api ? (api / limits.api) * 100 : 0
 
   const option: EChartsOption = {
-    tooltip: { ...baseTooltip(), formatter: '{b}: ${c}' },
+    tooltip: { ...baseTooltip(), formatter: pieUsdTooltipFormatter },
     legend: bottomLegend(),
     graphic: [
       {

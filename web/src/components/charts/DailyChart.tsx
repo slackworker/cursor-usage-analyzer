@@ -1,4 +1,5 @@
 import type { EChartsOption } from 'echarts'
+import { axisTooltipUsdFormatter, usdAxisLabel } from '../../lib/chartTheme'
 import { EChart, CHART_COLORS, bottomLegend, gridWithLegend, legendExtraHeight } from './EChart'
 
 interface DailyChartProps {
@@ -36,7 +37,12 @@ export function DailyChart({ daily, cumulative, showCumulative, onToggleCumulati
   const legendCount = models.length + (showCumulative ? 1 : 0)
 
   const option: EChartsOption = {
-    tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d' },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#161b22',
+      borderColor: '#30363d',
+      formatter: axisTooltipUsdFormatter,
+    },
     legend: bottomLegend(),
     grid: gridWithLegend(legendCount),
     xAxis: {
@@ -48,7 +54,7 @@ export function DailyChart({ daily, cumulative, showCumulative, onToggleCumulati
       {
         type: 'value',
         name: '费用',
-        axisLabel: { color: '#8b949e' },
+        axisLabel: { color: '#8b949e', formatter: usdAxisLabel },
         splitLine: { lineStyle: { color: '#21262d' } },
       },
       ...(showCumulative
@@ -56,7 +62,7 @@ export function DailyChart({ daily, cumulative, showCumulative, onToggleCumulati
             {
               type: 'value' as const,
               name: '累积',
-              axisLabel: { color: '#8b949e' },
+              axisLabel: { color: '#8b949e', formatter: usdAxisLabel },
               splitLine: { show: false },
             },
           ]

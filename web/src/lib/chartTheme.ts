@@ -25,6 +25,59 @@ export function baseTooltip() {
   }
 }
 
+export function formatChartUsd(value: number): string {
+  return `$${value.toFixed(2)}`
+}
+
+type TooltipParam = {
+  axisValue?: string
+  marker?: string
+  seriesName?: string
+  value?: number | string
+  name?: string
+  percent?: number
+}
+
+function firstTooltipParam(params: unknown): TooltipParam | undefined {
+  return (Array.isArray(params) ? params[0] : params) as TooltipParam | undefined
+}
+
+/** ECharts axis tooltip：费用列统一保留两位小数 */
+export function axisTooltipUsdFormatter(params: unknown): string {
+  const items = (Array.isArray(params) ? params : [params]) as TooltipParam[]
+  if (!items.length) return ''
+
+  const lines: string[] = []
+  if (items[0].axisValue) lines.push(String(items[0].axisValue))
+
+  for (const item of items) {
+    const value = item.value
+    const text = typeof value === 'number' ? formatChartUsd(value) : String(value ?? '')
+    lines.push(`${item.marker ?? ''}${item.seriesName}: ${text}`)
+  }
+
+  return lines.join('<br/>')
+}
+
+/** ECharts 饼图 tooltip：费用保留两位小数 */
+export function pieUsdTooltipFormatter(params: unknown): string {
+  const item = firstTooltipParam(params)
+  if (!item || typeof item.value !== 'number') return ''
+  const pct = item.percent != null ? ` (${item.percent}%)` : ''
+  return `${item.name}: ${formatChartUsd(item.value)}${pct}`
+}
+
+/** ECharts 饼图 label：费用保留两位小数 */
+export function pieUsdLabelFormatter(params: unknown): string {
+  const item = params as TooltipParam
+  if (!item?.name || typeof item.value !== 'number') return ''
+  return `${item.name}\n${formatChartUsd(item.value)}`
+}
+
+export function usdAxisLabel(value: number): string {
+  return value.toFixed(2)
+}
+
 export function baseGrid() {
   return { left: 48, right: 16, top: 32, bottom: 32, containLabel: true }
 }

@@ -1,5 +1,6 @@
 import type { EChartsOption } from 'echarts'
 import type { BillingMode, BillingTotals } from '../../lib/types'
+import { pieUsdLabelFormatter, pieUsdTooltipFormatter } from '../../lib/chartTheme'
 import { EChart, bottomLegend, baseTooltip, CHART_COLORS } from './EChart'
 
 interface BillingDonutProps {
@@ -21,7 +22,7 @@ export function BillingDonut({ totals, mode }: BillingDonutProps) {
         ].filter((d) => d.value > 0)
 
   const option: EChartsOption = {
-    tooltip: { ...baseTooltip(), formatter: '{b}: ${c} ({d}%)' },
+    tooltip: { ...baseTooltip(), formatter: pieUsdTooltipFormatter },
     legend: bottomLegend(),
     series: [
       {
@@ -29,7 +30,7 @@ export function BillingDonut({ totals, mode }: BillingDonutProps) {
         radius: ['45%', '70%'],
         center: ['50%', '45%'],
         data,
-        label: { color: '#e6edf3', formatter: '{b}\n${c}' },
+        label: { color: '#e6edf3', formatter: pieUsdLabelFormatter },
         color: CHART_COLORS,
       },
     ],

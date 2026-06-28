@@ -1,5 +1,11 @@
 import type { EChartsOption } from 'echarts'
-import { horizontalBarGrid, horizontalBarHeight, horizontalBarYAxisLabel } from '../../lib/chartTheme'
+import {
+  formatChartUsd,
+  horizontalBarGrid,
+  horizontalBarHeight,
+  horizontalBarYAxisLabel,
+  usdAxisLabel,
+} from '../../lib/chartTheme'
 import { EChart, baseTooltip } from './EChart'
 
 interface UnitPriceChartProps {
@@ -18,13 +24,13 @@ export function UnitPriceChart({ prices }: UnitPriceChartProps) {
       trigger: 'axis',
       formatter: (params: unknown) => {
         const p = (params as { name: string; value: number }[])[0]
-        return p ? `${p.name}: $${p.value.toFixed(2)}/M tokens` : ''
+        return p ? `${p.name}: ${formatChartUsd(p.value)}/M tokens` : ''
       },
     },
     grid: horizontalBarGrid(),
     xAxis: {
       type: 'value',
-      axisLabel: { color: '#8b949e' },
+      axisLabel: { color: '#8b949e', formatter: usdAxisLabel },
       splitLine: { lineStyle: { color: '#21262d' } },
     },
     yAxis: {

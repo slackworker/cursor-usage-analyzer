@@ -1,4 +1,6 @@
 import type { EChartsOption } from 'echarts'
+import { formatTokens } from '../../hooks/useReport'
+import { pieUsdLabelFormatter, pieUsdTooltipFormatter } from '../../lib/chartTheme'
 import { EChart, CHART_COLORS, bottomLegend, baseTooltip, pieChartHeight } from './EChart'
 
 interface ModelChartProps {
@@ -14,7 +16,21 @@ export function ModelChart({ byModel, view, onViewChange }: ModelChartProps) {
     .sort((a, b) => b.value - a.value)
 
   const option: EChartsOption = {
-    tooltip: baseTooltip(),
+    tooltip: {
+      ...baseTooltip(),
+      formatter:
+        view === 'cost'
+          ? pieUsdTooltipFormatter
+          : (params) => {
+              const item = (Array.isArray(params) ? params[0] : params) as {
+                name?: string
+                value?: number
+                percent?: number
+              }
+              if (!item || typeof item.value !== 'number') return ''
+              return `${item.name}: ${formatTokens(item.value)} (${item.percent}%)`
+            },
+    },
     legend: bottomLegend(),
     series: [
       {
@@ -22,7 +38,14 @@ export function ModelChart({ byModel, view, onViewChange }: ModelChartProps) {
         radius: '65%',
         center: ['50%', '45%'],
         data: sorted.map((d) => ({ name: d.model, value: d.value })),
-        label: { color: '#e6edf3', fontSize: 10 },
+        label: {
+          color: '#e6edf3',
+          fontSize: 10,
+          formatter:
+            view === 'cost'
+              ? pieUsdLabelFormatter
+              : ({ name, percent }) => `${name}\n${percent}%`,
+        },
         color: CHART_COLORS,
       },
     ],

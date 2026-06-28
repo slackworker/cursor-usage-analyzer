@@ -1,4 +1,5 @@
 import type { EChartsOption } from 'echarts'
+import { formatChartUsd } from '../../lib/chartTheme'
 import { EChart, baseTooltip } from './EChart'
 
 interface YearHeatmapProps {
@@ -17,7 +18,7 @@ export function YearHeatmap({ data }: YearHeatmapProps) {
       ...baseTooltip(),
       formatter: (p: unknown) => {
         const params = p as { value: [string, number] }
-        return `${params.value[0]}: $${params.value[1].toFixed(2)}`
+        return `${params.value[0]}: ${formatChartUsd(params.value[1])}`
       },
     },
     visualMap: {
