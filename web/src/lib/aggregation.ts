@@ -398,6 +398,25 @@ export function rollupYearHeatmap(
     .map((date) => ({ date, value: byDay[date] }))
 }
 
+export function heatmapYears(data: { date: string }[]): string[] {
+  const years = new Set<string>()
+  for (const { date } of data) {
+    if (date.length >= 4) years.add(date.slice(0, 4))
+  }
+  return [...years].sort()
+}
+
+export function defaultHeatmapYear(years: string[]): string | null {
+  return years.at(-1) ?? null
+}
+
+export function filterHeatmapByYear(
+  data: { date: string; value: number }[],
+  year: string,
+): { date: string; value: number }[] {
+  return data.filter((d) => d.date.startsWith(`${year}-`))
+}
+
 export function projectUsagePercent(
   events: UsageEvent[],
   limits: { autoComposer: number; api: number },

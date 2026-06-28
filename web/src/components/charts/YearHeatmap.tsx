@@ -1,5 +1,6 @@
 import type { EChartsOption } from 'echarts'
-import { formatChartUsd } from '../../lib/chartTheme'
+import { useEffect, useMemo, useState } from 'react'
+import { defaultHeatmapYear, filterHeatmapByYear, heatmapYears } from '../../lib/aggregation'
 import { EChart, baseTooltip } from './EChart'
 
 interface YearHeatmapProps {
@@ -7,18 +8,37 @@ interface YearHeatmapProps {
 }
 
 export function YearHeatmap({ data }: YearHeatmapProps) {
+  const years = useMemo(() => heatmapYears(data), [data])
+  const [selectedYear, setSelectedYear] = useState(() => defaultHeatmapYear(years) ?? '')
+
+  useEffect(() => {
+    if (!years.length) return
+    if (!years.includes(selectedYear)) {
+      setSelectedYear(defaultHeatmapYear(years)!)
+    }
+  }, [years, selectedYear])
+
+  const yearData = useMemo(
+    () => (selectedYear ? filterHeatmapByYear(data, selectedYear) : []),
+    [data, selectedYear],
+  )
+
   if (!data.length) {
     return <p className="chart-empty">无数据</p>
   }
 
-  const max = Math.max(...data.map((d) => d.value), 1)
+  if (!yearData.length) {
+    return <p className="chart-empty">无数据</p>
+  }
+
+  const max = Math.max(...yearData.map((d) => d.value), 1)
 
   const option: EChartsOption = {
     tooltip: {
       ...baseTooltip(),
       formatter: (p: unknown) => {
         const params = p as { value: [string, number] }
-        return `${params.value[0]}: ${formatChartUsd(params.value[1])}`
+        return `${params.value[0]}: ${params.value[1]} 次`
       },
     },
     visualMap: {
@@ -32,7 +52,7 @@ export function YearHeatmap({ data }: YearHeatmapProps) {
       left: 48,
       right: 32,
       cellSize: ['auto', 14],
-      range: [data[0].date.slice(0, 4)],
+      range: [selectedYear],
       itemStyle: { color: '#161b22', borderWidth: 2, borderColor: '#0d1117' },
       dayLabel: { color: '#8b949e', fontSize: 10 },
       monthLabel: { color: '#8b949e' },
@@ -42,10 +62,28 @@ export function YearHeatmap({ data }: YearHeatmapProps) {
       {
         type: 'heatmap',
         coordinateSystem: 'calendar',
-        data: data.map((d) => [d.date, d.value]),
+        data: yearData.map((d) => [d.date, d.value]),
       },
     ],
   }
 
-  return <EChart option={option} height={180} />
+  return (
+    <div className="chart-with-controls">
+      {years.length > 1 && (
+        <div className="chart-controls">
+          {years.map((year) => (
+            <button
+              key={year}
+              type="button"
+              className={selectedYear === year ? 'chart-controls__btn--active' : 'chart-controls__btn'}
+              onClick={() => setSelectedYear(year)}
+            >
+              {year}
+            </button>
+          ))}
+        </div>
+      )}
+      <EChart option={option} height={180} />
+    </div>
+  )
 }

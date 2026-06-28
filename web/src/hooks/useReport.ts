@@ -59,7 +59,7 @@ export function useReport() {
     const unitPrice = unitPriceByModel(filtered, mode)
     const hourly = rollupHourly(filtered, hourlyView, dailyActivityGranularity)
     const weekly = rollupWeeklyHourly(filtered, weeklyActivityGranularity)
-    const heatmap = rollupYearHeatmap(filtered, 'cost', mode)
+    const heatmap = rollupYearHeatmap(filtered, 'sessions')
     const projection = projectUsagePercent(filtered, poolLimits, 'official')
     const days = spanDays(filtered)
     const peak = peakDailyCost(filtered, mode)

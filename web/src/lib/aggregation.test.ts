@@ -2,7 +2,12 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { rollupDaily } from './aggregation'
+import {
+  defaultHeatmapYear,
+  filterHeatmapByYear,
+  heatmapYears,
+  rollupDaily,
+} from './aggregation'
 import { parseCsvText } from './parser'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../../..')
@@ -44,6 +49,34 @@ describe('rollupDaily', () => {
       '2026-06-23',
       '2026-06-24',
       '2026-06-25',
+    ])
+  })
+})
+
+describe('year heatmap helpers', () => {
+  const crossYear = [
+    { date: '2025-11-01', value: 1 },
+    { date: '2025-12-31', value: 2 },
+    { date: '2026-01-01', value: 3 },
+    { date: '2026-03-15', value: 4 },
+  ]
+
+  it('extracts sorted unique years', () => {
+    expect(heatmapYears(crossYear)).toEqual(['2025', '2026'])
+  })
+
+  it('defaults to the latest year', () => {
+    expect(defaultHeatmapYear(['2025', '2026'])).toBe('2026')
+  })
+
+  it('filters data by selected year', () => {
+    expect(filterHeatmapByYear(crossYear, '2025')).toEqual([
+      { date: '2025-11-01', value: 1 },
+      { date: '2025-12-31', value: 2 },
+    ])
+    expect(filterHeatmapByYear(crossYear, '2026')).toEqual([
+      { date: '2026-01-01', value: 3 },
+      { date: '2026-03-15', value: 4 },
     ])
   })
 })
