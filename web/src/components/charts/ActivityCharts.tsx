@@ -68,7 +68,7 @@ export function HourlyChart({
           className={view === 'sessions' ? 'chart-controls__btn--active' : 'chart-controls__btn'}
           onClick={() => onViewChange('sessions')}
         >
-          会话(行)
+          会话
         </button>
         <button
           type="button"
