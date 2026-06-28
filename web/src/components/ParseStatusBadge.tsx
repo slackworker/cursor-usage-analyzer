@@ -24,11 +24,15 @@ export function ParseStatusBadge({ unknownModels, skippedRows }: ParseStatusBadg
   const hasUnknown = unknownEntries.length > 0
 
   if (!hasUnknown) {
-    return <span className="report-badge">已解析</span>
+    return (
+      <span className="report-badge" onClick={(e) => e.stopPropagation()}>
+        已解析
+      </span>
+    )
   }
 
   return (
-    <details className="parse-details">
+    <details className="parse-details" onClick={(e) => e.stopPropagation()}>
       <summary className="report-badge report-badge--warn">数据质量提示</summary>
       <div className="parse-details__panel" role="status">
         <p className="parse-details__item">

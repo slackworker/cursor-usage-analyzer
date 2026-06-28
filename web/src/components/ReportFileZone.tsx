@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import type { FilterState, ReportMeta } from '../lib/types'
 import { useCsvFileDrop } from '../hooks/useCsvFileDrop'
 import { FilterBar } from './FilterBar'
+import { ParseStatusBadge } from './ParseStatusBadge'
 import { ExportPngButton } from './charts/ExportPngButton'
 
 interface ReportFileZoneProps {
@@ -77,17 +78,22 @@ export function ReportFileZone({
       </div>
 
       <div className="report-header-card__drop report-file-zone__drop">
-        <button
-          type="button"
-          className="report-file-zone__drop-center"
-          data-export-hide
-          aria-label={dropAriaLabel}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <DropZoneIcon />
-          {isDragging ? (
-            <span className="report-file-zone__hint">{dragHintText}</span>
-          ) : fileName ? (
+        {fileName && !isDragging ? (
+          <div
+            className="report-file-zone__drop-center report-file-zone__drop-center--loaded"
+            role="button"
+            tabIndex={0}
+            data-export-hide
+            aria-label={dropAriaLabel}
+            onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                fileInputRef.current?.click()
+              }
+            }}
+          >
+            <DropZoneIcon />
             <span className="report-file-zone__file-info">
               <span className="report-file-zone__filename">{fileName}</span>
               <span className="report-file-zone__info-meta">
@@ -97,12 +103,29 @@ export function ReportFileZone({
                     : '日期范围 —'}
                 </span>
                 <span>{rowCount.toLocaleString()} 行</span>
+                <ParseStatusBadge
+                  unknownModels={meta?.unknownModels}
+                  skippedRows={meta?.skippedRows}
+                />
               </span>
             </span>
-          ) : (
-            <span className="report-file-zone__hint">{emptyHintText}</span>
-          )}
-        </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="report-file-zone__drop-center"
+            data-export-hide
+            aria-label={dropAriaLabel}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <DropZoneIcon />
+            {isDragging ? (
+              <span className="report-file-zone__hint">{dragHintText}</span>
+            ) : (
+              <span className="report-file-zone__hint">{emptyHintText}</span>
+            )}
+          </button>
+        )}
 
         {dropError ? <p className="report-file-zone__error">{dropError}</p> : null}
       </div>
