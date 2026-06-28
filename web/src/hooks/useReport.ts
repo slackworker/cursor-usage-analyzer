@@ -28,7 +28,8 @@ export function useReport() {
   const modelView = useReportStore((s) => s.modelView)
   const structureView = useReportStore((s) => s.structureView)
   const hourlyView = useReportStore((s) => s.hourlyView)
-  const hourlyGranularity = useReportStore((s) => s.hourlyGranularity)
+  const dailyActivityGranularity = useReportStore((s) => s.dailyActivityGranularity)
+  const weeklyActivityGranularity = useReportStore((s) => s.weeklyActivityGranularity)
   const projectionOpen = useReportStore((s) => s.projectionOpen)
   const setCsvFile = useReportStore((s) => s.setCsvFile)
   const clear = useReportStore((s) => s.clear)
@@ -38,7 +39,8 @@ export function useReport() {
   const setModelView = useReportStore((s) => s.setModelView)
   const setStructureView = useReportStore((s) => s.setStructureView)
   const setHourlyView = useReportStore((s) => s.setHourlyView)
-  const setHourlyGranularity = useReportStore((s) => s.setHourlyGranularity)
+  const setDailyActivityGranularity = useReportStore((s) => s.setDailyActivityGranularity)
+  const setWeeklyActivityGranularity = useReportStore((s) => s.setWeeklyActivityGranularity)
   const setProjectionOpen = useReportStore((s) => s.setProjectionOpen)
 
   const filtered = useMemo(() => filterEvents(events, filters), [events, filters])
@@ -53,8 +55,8 @@ export function useReport() {
     const structure = rollupTokenStructure(filtered, structureView, mode)
     const cacheHit = cacheHitRateByModel(filtered)
     const unitPrice = unitPriceByModel(filtered, mode)
-    const hourly = rollupHourly(filtered, hourlyView, hourlyGranularity)
-    const weekly = rollupWeeklyHourly(filtered)
+    const hourly = rollupHourly(filtered, hourlyView, dailyActivityGranularity)
+    const weekly = rollupWeeklyHourly(filtered, weeklyActivityGranularity)
     const heatmap = rollupYearHeatmap(filtered, 'cost', mode)
     const projection = projectUsagePercent(filtered, poolLimits, 'official')
     const days = spanDays(filtered)
@@ -78,7 +80,7 @@ export function useReport() {
       peak,
       totalTokens,
     }
-  }, [filtered, mode, modelView, structureView, hourlyView, hourlyGranularity, poolLimits])
+  }, [filtered, mode, modelView, structureView, hourlyView, dailyActivityGranularity, weeklyActivityGranularity, poolLimits])
 
   const allModels = useMemo(() => {
     const set = new Set<string>()
@@ -103,7 +105,8 @@ export function useReport() {
     modelView,
     structureView,
     hourlyView,
-    hourlyGranularity,
+    dailyActivityGranularity,
+    weeklyActivityGranularity,
     projectionOpen,
     allModels,
     heatmapVisible,
@@ -116,7 +119,8 @@ export function useReport() {
     setModelView,
     setStructureView,
     setHourlyView,
-    setHourlyGranularity,
+    setDailyActivityGranularity,
+    setWeeklyActivityGranularity,
     setProjectionOpen,
   }
 }

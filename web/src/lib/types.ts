@@ -9,15 +9,35 @@ export type DateRangePreset =
   | 'last_month'
   | 'custom'
 
-export type ActivityGranularity = 30 | 15 | 5
+/** #11 日活跃时段：30m / 15m / 5m */
+export type DailyActivityGranularity = 30 | 15 | 5
 
-export const ACTIVITY_GRANULARITY_OPTIONS: { value: ActivityGranularity; label: string }[] = [
+/** #12 周活跃时段：1h / 30m / 15m */
+export type WeeklyActivityGranularity = 60 | 30 | 15
+
+/** 聚合层通用时间槽粒度（两图并集） */
+export type SlotGranularityMinutes = DailyActivityGranularity | WeeklyActivityGranularity
+
+export const DAILY_ACTIVITY_GRANULARITY_OPTIONS: {
+  value: DailyActivityGranularity
+  label: string
+}[] = [
   { value: 30, label: '30m' },
   { value: 15, label: '15m' },
   { value: 5, label: '5m' },
 ]
 
-export const DEFAULT_ACTIVITY_GRANULARITY: ActivityGranularity = 15
+export const WEEKLY_ACTIVITY_GRANULARITY_OPTIONS: {
+  value: WeeklyActivityGranularity
+  label: string
+}[] = [
+  { value: 60, label: '1h' },
+  { value: 30, label: '30m' },
+  { value: 15, label: '15m' },
+]
+
+export const DEFAULT_DAILY_ACTIVITY_GRANULARITY: DailyActivityGranularity = 15
+export const DEFAULT_WEEKLY_ACTIVITY_GRANULARITY: WeeklyActivityGranularity = 30
 
 export interface TokenCounts {
   icw: number

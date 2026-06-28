@@ -1,6 +1,14 @@
 import { addDays, differenceInCalendarDays, format, parseISO, startOfMonth, subDays, subMonths } from 'date-fns'
-import type { ActivityGranularity, BillingMode, BillingTotals, FilterState, UsageEvent } from './types'
-import { DEFAULT_ACTIVITY_GRANULARITY } from './types'
+import type {
+  BillingMode,
+  BillingTotals,
+  DailyActivityGranularity,
+  FilterState,
+  SlotGranularityMinutes,
+  UsageEvent,
+  WeeklyActivityGranularity,
+} from './types'
+import { DEFAULT_DAILY_ACTIVITY_GRANULARITY, DEFAULT_WEEKLY_ACTIVITY_GRANULARITY } from './types'
 import {
   FREE_STATUS_ONLY_SKIP,
   isBillableKind,
@@ -300,31 +308,31 @@ export function unitPriceByModel(events: UsageEvent[], mode: BillingMode = 'stan
 
 export const ACTIVITY_AXIS_START_HOUR = 3
 
-export function activitySlotsPerDay(granularityMinutes: ActivityGranularity): number {
+export function activitySlotsPerDay(granularityMinutes: SlotGranularityMinutes): number {
   return 1440 / granularityMinutes
 }
 
-export function activityAxisOrder(granularityMinutes: ActivityGranularity): number[] {
+export function activityAxisOrder(granularityMinutes: SlotGranularityMinutes): number[] {
   const slots = activitySlotsPerDay(granularityMinutes)
   const start = (ACTIVITY_AXIS_START_HOUR * 60) / granularityMinutes
   return Array.from({ length: slots }, (_, i) => (start + i) % slots)
 }
 
-export function formatActivitySlotLabel(slot: number, granularityMinutes: ActivityGranularity): string {
+export function formatActivitySlotLabel(slot: number, granularityMinutes: SlotGranularityMinutes): string {
   const minutes = slot * granularityMinutes
   const hour = Math.floor(minutes / 60) % 24
   const minute = minutes % 60
   return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
 }
 
-export function activityLabelStep(granularityMinutes: ActivityGranularity): number {
+export function activityLabelStep(granularityMinutes: SlotGranularityMinutes): number {
   return 60 / granularityMinutes
 }
 
 export function rollupHourly(
   events: UsageEvent[],
   view: 'sessions' | 'tokens' = 'sessions',
-  granularityMinutes: ActivityGranularity = DEFAULT_ACTIVITY_GRANULARITY,
+  granularityMinutes: DailyActivityGranularity = DEFAULT_DAILY_ACTIVITY_GRANULARITY,
 ): { slot: number; value: number }[] {
   const slotsPerDay = activitySlotsPerDay(granularityMinutes)
   const buckets = Array.from({ length: slotsPerDay }, (_, slot) => ({ slot, value: 0 }))
@@ -337,18 +345,18 @@ export function rollupHourly(
   return buckets
 }
 
-/** 周热力图固定 30 分钟粒度（48 槽/天） */
-export const WEEKLY_ACTIVITY_GRANULARITY = 30 satisfies ActivityGranularity
-
-export function rollupWeeklyHourly(events: UsageEvent[]): number[][] {
-  const slotsPerDay = activitySlotsPerDay(WEEKLY_ACTIVITY_GRANULARITY)
+export function rollupWeeklyHourly(
+  events: UsageEvent[],
+  granularityMinutes: WeeklyActivityGranularity = DEFAULT_WEEKLY_ACTIVITY_GRANULARITY,
+): number[][] {
+  const slotsPerDay = activitySlotsPerDay(granularityMinutes)
   const matrix = Array.from({ length: 7 }, () => Array(slotsPerDay).fill(0))
   for (const event of events) {
     if (event.skipReason || !event.localDate) continue
     try {
       const dow = parseISO(event.localDate).getDay()
       const isoDow = dow === 0 ? 6 : dow - 1
-      const slot = Math.floor(event.localMinuteOfDay / WEEKLY_ACTIVITY_GRANULARITY)
+      const slot = Math.floor(event.localMinuteOfDay / granularityMinutes)
       if (slot >= 0 && slot < slotsPerDay) matrix[isoDow][slot] += 1
     } catch {
       /* skip invalid dates */

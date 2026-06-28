@@ -3,10 +3,12 @@ import {
   activityAxisOrder,
   activityLabelStep,
   formatActivitySlotLabel,
-  WEEKLY_ACTIVITY_GRANULARITY,
 } from '../../lib/aggregation'
-import type { ActivityGranularity } from '../../lib/types'
-import { ACTIVITY_GRANULARITY_OPTIONS } from '../../lib/types'
+import type { DailyActivityGranularity, WeeklyActivityGranularity } from '../../lib/types'
+import {
+  DAILY_ACTIVITY_GRANULARITY_OPTIONS,
+  WEEKLY_ACTIVITY_GRANULARITY_OPTIONS,
+} from '../../lib/types'
 import { EChart, baseGrid } from './EChart'
 
 const DAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
@@ -14,9 +16,9 @@ const DAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
 interface HourlyChartProps {
   hourly: { slot: number; value: number }[]
   view: 'sessions' | 'tokens'
-  granularity: ActivityGranularity
+  granularity: DailyActivityGranularity
   onViewChange: (v: 'sessions' | 'tokens') => void
-  onGranularityChange: (v: ActivityGranularity) => void
+  onGranularityChange: (v: DailyActivityGranularity) => void
 }
 
 export function HourlyChart({
@@ -76,7 +78,7 @@ export function HourlyChart({
           Token
         </button>
         <span className="chart-controls__divider" aria-hidden="true" />
-        {ACTIVITY_GRANULARITY_OPTIONS.map(({ value, label }) => (
+        {DAILY_ACTIVITY_GRANULARITY_OPTIONS.map(({ value, label }) => (
           <button
             key={value}
             type="button"
@@ -94,14 +96,14 @@ export function HourlyChart({
 
 interface WeeklyHeatmapProps {
   matrix: number[][]
+  granularity: WeeklyActivityGranularity
+  onGranularityChange: (v: WeeklyActivityGranularity) => void
 }
 
-export function WeeklyHeatmap({ matrix }: WeeklyHeatmapProps) {
-  const axisOrder = activityAxisOrder(WEEKLY_ACTIVITY_GRANULARITY)
-  const labelStep = activityLabelStep(WEEKLY_ACTIVITY_GRANULARITY)
-  const slotLabels = axisOrder.map((slot) =>
-    formatActivitySlotLabel(slot, WEEKLY_ACTIVITY_GRANULARITY),
-  )
+export function WeeklyHeatmap({ matrix, granularity, onGranularityChange }: WeeklyHeatmapProps) {
+  const axisOrder = activityAxisOrder(granularity)
+  const labelStep = activityLabelStep(granularity)
+  const slotLabels = axisOrder.map((slot) => formatActivitySlotLabel(slot, granularity))
   const data: [number, number, number][] = []
   let max = 0
   for (let dow = 0; dow < 7; dow++) {
@@ -122,7 +124,7 @@ export function WeeklyHeatmap({ matrix }: WeeklyHeatmapProps) {
         const params = p as { value: [number, number, number] }
         const [xi, dow, val] = params.value
         const slot = axisOrder[xi] ?? xi
-        const label = formatActivitySlotLabel(slot, WEEKLY_ACTIVITY_GRANULARITY)
+        const label = formatActivitySlotLabel(slot, granularity)
         return `周${DAY_LABELS[dow]} ${label} — ${val} 次`
       },
     },
@@ -133,7 +135,7 @@ export function WeeklyHeatmap({ matrix }: WeeklyHeatmapProps) {
       splitArea: { show: true },
       axisLabel: {
         color: '#8b949e',
-        fontSize: 8,
+        fontSize: granularity <= 15 ? 8 : 9,
         interval: 0,
         formatter: (value: string, index: number) => (index % labelStep === 0 ? value : ''),
       },
@@ -160,5 +162,21 @@ export function WeeklyHeatmap({ matrix }: WeeklyHeatmapProps) {
     ],
   }
 
-  return <EChart option={option} height={200} />
+  return (
+    <div className="chart-with-controls">
+      <div className="chart-controls">
+        {WEEKLY_ACTIVITY_GRANULARITY_OPTIONS.map(({ value, label }) => (
+          <button
+            key={value}
+            type="button"
+            className={granularity === value ? 'chart-controls__btn--active' : 'chart-controls__btn'}
+            onClick={() => onGranularityChange(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <EChart option={option} height={200} />
+    </div>
+  )
 }

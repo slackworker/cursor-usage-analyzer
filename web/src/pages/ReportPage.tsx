@@ -27,7 +27,8 @@ export function ReportPage() {
     modelView,
     structureView,
     hourlyView,
-    hourlyGranularity,
+    dailyActivityGranularity,
+    weeklyActivityGranularity,
     projectionOpen,
     allModels,
     heatmapVisible,
@@ -39,7 +40,8 @@ export function ReportPage() {
     setModelView,
     setStructureView,
     setHourlyView,
-    setHourlyGranularity,
+    setDailyActivityGranularity,
+    setWeeklyActivityGranularity,
     setProjectionOpen,
   } = useReport()
 
@@ -126,13 +128,17 @@ export function ReportPage() {
             <HourlyChart
               hourly={agg.hourly}
               view={hourlyView}
-              granularity={hourlyGranularity}
+              granularity={dailyActivityGranularity}
               onViewChange={setHourlyView}
-              onGranularityChange={setHourlyGranularity}
+              onGranularityChange={setDailyActivityGranularity}
             />
           </ChartPanel>
           <ChartPanel title="#12 周活跃时段">
-            <WeeklyHeatmap matrix={agg.weekly} />
+            <WeeklyHeatmap
+              matrix={agg.weekly}
+              granularity={weeklyActivityGranularity}
+              onGranularityChange={setWeeklyActivityGranularity}
+            />
           </ChartPanel>
           <ChartPanel title="#13 年热力图">
             {heatmapVisible ? (
