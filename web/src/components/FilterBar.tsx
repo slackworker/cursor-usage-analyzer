@@ -15,8 +15,8 @@ const BILLING_MODES: {
   label: string
   title: string
 }[] = [
-  { value: 'standard', label: '标准', title: '标准 (Inc+Free+OD)' },
-  { value: 'official', label: '官方', title: '官方 (Inc+OD)' },
+  { value: 'standard', label: '标准口径', title: 'Included + Free + On-demand' },
+  { value: 'official', label: '官方口径', title: 'Included + On-demand' },
 ]
 
 interface FilterBarProps {

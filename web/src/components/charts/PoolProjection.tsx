@@ -79,7 +79,7 @@ export function PoolProjection({
           </select>
         </label>
         <label className="pool-projection__field">
-          <span className="pool-projection__field-label">AC 额度 $</span>
+          <span className="pool-projection__field-label">Auto+Composer 额度 ($)</span>
           <input
             type="number"
             className="filter-bar__input"
@@ -90,7 +90,7 @@ export function PoolProjection({
           />
         </label>
         <label className="pool-projection__field">
-          <span className="pool-projection__field-label">API 额度 $</span>
+          <span className="pool-projection__field-label">API 额度 ($)</span>
           <input
             type="number"
             className="filter-bar__input"

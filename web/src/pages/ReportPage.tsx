@@ -67,7 +67,7 @@ export function ReportPage() {
           <ChartPanel title="费用构成">
             <BillingDonut totals={agg.billing} mode={filters.billingMode} />
           </ChartPanel>
-          <ChartPanel title="模型池分布">
+          <ChartPanel title="按池分布">
             <PoolDonut byPool={agg.byPool} />
           </ChartPanel>
         </div>
@@ -127,7 +127,7 @@ export function ReportPage() {
           <ChartPanel title="缓存命中率">
             <CacheHitChart rates={agg.cacheHit} modelTokens={agg.modelTokens} />
           </ChartPanel>
-          <ChartPanel title="单位 Token 费用">
+          <ChartPanel title="Token 单价">
             <UnitPriceChart prices={agg.unitPrice} modelTokens={agg.modelTokens} />
           </ChartPanel>
           <ChartPanel title="池使用率">

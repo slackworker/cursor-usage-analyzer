@@ -166,7 +166,7 @@ export function DailyChart({
           className={layout === 'stack' ? 'chart-controls__btn--active' : 'chart-controls__btn'}
           onClick={() => onLayoutChange('stack')}
         >
-          叠层
+          堆叠
         </button>
       </div>
       <EChart

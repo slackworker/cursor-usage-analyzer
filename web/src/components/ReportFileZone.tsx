@@ -63,7 +63,7 @@ export function ReportFileZone({
 
       <div className="report-header-card__upper">
         <div className="report-header-card__row report-header-card__row--titlebar">
-          <h1 className="report-header-card__title">Cursor Usage 分析报告</h1>
+          <h1 className="report-header-card__title">Cursor 用量分析</h1>
           <div className="report-header-card__actions">
             <FilterBar filters={filters} onChange={onFiltersChange} />
             <ExportPngButton />

@@ -73,7 +73,7 @@ export function ParseStatusBadge({ unknownModels, skippedRows }: ParseStatusBadg
           ) : null}
           {hasSkipped ? (
             <p className="parse-details__item">
-              <span className="parse-details__label">无需计入</span>
+              <span className="parse-details__label">已跳过行</span>
               <span className="parse-details__content">
                 {[...skippedEntries]
                   .sort(([a], [b]) => a.localeCompare(b))

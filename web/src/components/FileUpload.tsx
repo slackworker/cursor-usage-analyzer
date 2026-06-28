@@ -100,7 +100,7 @@ export function FileUpload({
           aria-hidden
         />
         <UploadFlowIcon isDragging={isDragging} />
-        <p className="file-upload__prompt">拖放 CSV 到此处，或点击选择文件</p>
+        <p className="file-upload__prompt">拖拽 CSV 到此处，或点击选择文件</p>
         <p className="file-upload__hint">文件仅在浏览器本地解析，不会上传到服务器</p>
       </div>
       {error ? <p className="file-upload__error">{error}</p> : null}

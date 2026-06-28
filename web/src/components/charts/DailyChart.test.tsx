@@ -129,7 +129,7 @@ describe('DailyChart', () => {
   it('calls onLayoutChange when toggling layout', () => {
     renderChart('cost', 'bar')
 
-    fireEvent.click(screen.getByRole('button', { name: '叠层' }))
+    fireEvent.click(screen.getByRole('button', { name: '堆叠' }))
     expect(onLayoutChange).toHaveBeenCalledWith('stack')
   })
 
