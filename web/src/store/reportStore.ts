@@ -11,7 +11,6 @@ export interface ReportStore {
   meta: ReportMeta | null
   filters: FilterState
   poolLimits: { autoComposer: number; api: number }
-  showCumulative: boolean
   modelView: 'cost' | 'token'
   structureView: 'cost' | 'token'
   hourlyView: 'sessions' | 'tokens'
@@ -22,7 +21,6 @@ export interface ReportStore {
   clear: () => void
   setFilters: (patch: Partial<FilterState>) => void
   setPoolLimits: (patch: Partial<{ autoComposer: number; api: number }>) => void
-  setShowCumulative: (v: boolean) => void
   setModelView: (v: 'cost' | 'token') => void
   setStructureView: (v: 'cost' | 'token') => void
   setHourlyView: (v: 'sessions' | 'tokens') => void
@@ -44,7 +42,6 @@ export const useReportStore = create<ReportStore>((set) => ({
   meta: null,
   filters: defaultFilters,
   poolLimits: { ...DEFAULT_POOL_LIMITS },
-  showCumulative: false,
   modelView: 'cost',
   structureView: 'token',
   hourlyView: 'sessions',
@@ -71,7 +68,6 @@ export const useReportStore = create<ReportStore>((set) => ({
       meta: null,
       filters: { ...defaultFilters },
       poolLimits: { ...DEFAULT_POOL_LIMITS },
-      showCumulative: false,
       modelView: 'cost',
       structureView: 'token',
       hourlyView: 'sessions',
@@ -83,7 +79,6 @@ export const useReportStore = create<ReportStore>((set) => ({
   setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch } })),
 
   setPoolLimits: (patch) => set((s) => ({ poolLimits: { ...s.poolLimits, ...patch } })),
-  setShowCumulative: (showCumulative) => set({ showCumulative }),
   setModelView: (modelView) => set({ modelView }),
   setStructureView: (structureView) => set({ structureView }),
   setHourlyView: (hourlyView) => set({ hourlyView }),

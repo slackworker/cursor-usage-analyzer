@@ -5,11 +5,9 @@ import { EChart, CHART_COLORS, bottomLegend, gridWithLegend, legendExtraHeight }
 interface DailyChartProps {
   daily: { date: string; byModel: Record<string, number> }[]
   cumulative: { date: string; cumulative: number }[]
-  showCumulative: boolean
-  onToggleCumulative: (v: boolean) => void
 }
 
-export function DailyChart({ daily, cumulative, showCumulative, onToggleCumulative }: DailyChartProps) {
+export function DailyChart({ daily, cumulative }: DailyChartProps) {
   const dates = daily.map((d) => d.date)
   const models = [...new Set(daily.flatMap((d) => Object.keys(d.byModel)))].sort()
 
@@ -21,20 +19,18 @@ export function DailyChart({ daily, cumulative, showCumulative, onToggleCumulati
     itemStyle: { color: CHART_COLORS[i % CHART_COLORS.length] },
   }))
 
-  if (showCumulative) {
-    series.push({
-      name: '累积',
-      type: 'line',
-      yAxisIndex: 1,
-      data: cumulative.map((d) => d.cumulative),
-      itemStyle: { color: '#ffa657' },
-      lineStyle: { width: 2 },
-      smooth: true,
-      showSymbol: false,
-    })
-  }
+  series.push({
+    name: '累积',
+    type: 'line',
+    yAxisIndex: 1,
+    data: cumulative.map((d) => d.cumulative),
+    itemStyle: { color: '#ffa657' },
+    lineStyle: { width: 2 },
+    smooth: true,
+    showSymbol: false,
+  })
 
-  const legendCount = models.length + (showCumulative ? 1 : 0)
+  const legendCount = models.length + 1
 
   const option: EChartsOption = {
     tooltip: {
@@ -57,35 +53,21 @@ export function DailyChart({ daily, cumulative, showCumulative, onToggleCumulati
         axisLabel: { color: '#8b949e', formatter: usdAxisLabel },
         splitLine: { lineStyle: { color: '#21262d' } },
       },
-      ...(showCumulative
-        ? [
-            {
-              type: 'value' as const,
-              name: '累积',
-              axisLabel: { color: '#8b949e', formatter: usdAxisLabel },
-              splitLine: { show: false },
-            },
-          ]
-        : []),
+      {
+        type: 'value',
+        name: '累积',
+        axisLabel: { color: '#8b949e', formatter: usdAxisLabel },
+        splitLine: { show: false },
+      },
     ],
     series,
   }
 
   return (
-    <div className="chart-with-controls">
-      <label className="chart-controls__check">
-        <input
-          type="checkbox"
-          checked={showCumulative}
-          onChange={(e) => onToggleCumulative(e.target.checked)}
-        />
-        累积折线叠层
-      </label>
-      <EChart
-        option={option}
-        height={260 + legendExtraHeight(legendCount)}
-        replaceMerge={['series', 'yAxis']}
-      />
-    </div>
+    <EChart
+      option={option}
+      height={260 + legendExtraHeight(legendCount)}
+      replaceMerge={['series', 'yAxis']}
+    />
   )
 }

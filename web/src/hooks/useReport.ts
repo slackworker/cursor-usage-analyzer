@@ -24,7 +24,6 @@ export function useReport() {
   const meta = useReportStore((s) => s.meta)
   const filters = useReportStore((s) => s.filters)
   const poolLimits = useReportStore((s) => s.poolLimits)
-  const showCumulative = useReportStore((s) => s.showCumulative)
   const modelView = useReportStore((s) => s.modelView)
   const structureView = useReportStore((s) => s.structureView)
   const hourlyView = useReportStore((s) => s.hourlyView)
@@ -35,7 +34,6 @@ export function useReport() {
   const clear = useReportStore((s) => s.clear)
   const setFilters = useReportStore((s) => s.setFilters)
   const setPoolLimits = useReportStore((s) => s.setPoolLimits)
-  const setShowCumulative = useReportStore((s) => s.setShowCumulative)
   const setModelView = useReportStore((s) => s.setModelView)
   const setStructureView = useReportStore((s) => s.setStructureView)
   const setHourlyView = useReportStore((s) => s.setHourlyView)
@@ -101,7 +99,6 @@ export function useReport() {
     filtered,
     filters,
     poolLimits,
-    showCumulative,
     modelView,
     structureView,
     hourlyView,
@@ -115,7 +112,6 @@ export function useReport() {
     clear,
     setFilters,
     setPoolLimits,
-    setShowCumulative,
     setModelView,
     setStructureView,
     setHourlyView,
