@@ -33,7 +33,7 @@ export function YearHeatmap({ data }: YearHeatmapProps) {
       right: 32,
       cellSize: ['auto', 14],
       range: [data[0].date.slice(0, 4)],
-      itemStyle: { borderWidth: 2, borderColor: '#0d1117' },
+      itemStyle: { color: '#161b22', borderWidth: 2, borderColor: '#0d1117' },
       dayLabel: { color: '#8b949e', fontSize: 10 },
       monthLabel: { color: '#8b949e' },
       yearLabel: { color: '#e6edf3', position: 'right', margin: 8, fontSize: 13 },
