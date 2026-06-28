@@ -12,6 +12,7 @@ import {
   legendExtraHeight,
   NARROW_CHART_WIDTH,
   pieChartHeight,
+  pieSeriesLayout,
 } from '../../lib/chartTheme'
 
 interface EChartProps {
@@ -52,4 +53,5 @@ export {
   legendExtraHeight,
   NARROW_CHART_WIDTH,
   pieChartHeight,
+  pieSeriesLayout,
 }

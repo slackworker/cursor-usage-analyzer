@@ -158,7 +158,7 @@ export function gridWithLegend(itemCount: number) {
 }
 
 /** 饼图扇区标签：仅展示占比严格大于此值的扇区（对应 central angle） */
-export const PIE_LABEL_MIN_PERCENT = 3
+export const PIE_LABEL_MIN_PERCENT = 1
 
 export function pieLabelMinShowAngle(minPercent = PIE_LABEL_MIN_PERCENT): number {
   return (minPercent / 100) * 360 + 0.01
@@ -171,6 +171,23 @@ export function pieChartHeight(
   chartWidth = 900,
 ): number {
   return baseHeight + legendExtraHeight(itemCount, chartWidth)
+}
+
+/** 实心饼图 center / radius：为底部图例留出空间 */
+export function pieSeriesLayout(
+  itemCount: number,
+  height: number,
+  chartWidth = 900,
+) {
+  const rows = legendRowCount(itemCount, chartWidth)
+  const legendPx = rows * LEGEND_ROW_HEIGHT + DONUT_LEGEND_BOTTOM
+  const avail = Math.max(56, height - legendPx - DONUT_TOP_PADDING)
+  const centerY = ((DONUT_TOP_PADDING + avail / 2) / height) * 100
+  const radiusPct = Math.min(65, Math.round((avail / height) * 100 * 0.85))
+  return {
+    center: ['50%', `${centerY.toFixed(1)}%`] as [string, string],
+    radius: `${radiusPct}%`,
+  }
 }
 
 const DONUT_TOP_PADDING = 24

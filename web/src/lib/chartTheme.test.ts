@@ -66,7 +66,8 @@ describe('chartTheme USD formatters', () => {
   })
 
   it('pieLabelMinShowAngle hides labels at or below threshold percent', () => {
-    expect(pieLabelMinShowAngle()).toBeGreaterThan(10.8)
+    expect(pieLabelMinShowAngle()).toBeGreaterThan(3.6)
+    expect(pieLabelMinShowAngle()).toBeLessThan(3.7)
   })
 })
 

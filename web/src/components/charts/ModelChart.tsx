@@ -5,7 +5,7 @@ import {
   pieUsdLabelFormatter,
   pieUsdTooltipFormatter,
 } from '../../lib/chartTheme'
-import { EChart, CHART_COLORS, baseTooltip } from './EChart'
+import { EChart, CHART_COLORS, baseTooltip, bottomLegend, pieChartHeight, pieSeriesLayout } from './EChart'
 
 interface ModelChartProps {
   byModel: Record<string, { cost: number; tokens: number }>
@@ -18,6 +18,10 @@ export function ModelChart({ byModel, view, onViewChange }: ModelChartProps) {
     .map(([model, v]) => ({ model, value: view === 'cost' ? v.cost : v.tokens }))
     .filter((d) => d.value > 0)
     .sort((a, b) => b.value - a.value)
+
+  const pieData = sorted.map((d) => ({ name: d.model, value: d.value }))
+  const height = pieChartHeight(pieData.length, 240)
+  const layout = pieSeriesLayout(pieData.length, height)
 
   const option: EChartsOption = {
     tooltip: {
@@ -35,13 +39,13 @@ export function ModelChart({ byModel, view, onViewChange }: ModelChartProps) {
               return `${item.name}: ${formatTokens(item.value)} (${item.percent}%)`
             },
     },
+    legend: { ...bottomLegend(), data: pieData.map((d) => d.name) },
     series: [
       {
         type: 'pie',
-        radius: '65%',
-        center: ['50%', '50%'],
+        ...layout,
         minShowLabelAngle: pieLabelMinShowAngle(),
-        data: sorted.map((d) => ({ name: d.model, value: d.value })),
+        data: pieData,
         label: {
           color: '#e6edf3',
           fontSize: 10,
@@ -73,7 +77,7 @@ export function ModelChart({ byModel, view, onViewChange }: ModelChartProps) {
           Token
         </button>
       </div>
-      <EChart option={option} height={240} />
+      <EChart option={option} height={height} />
     </div>
   )
 }
