@@ -2,7 +2,7 @@ import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DailyChart } from './DailyChart'
 
-const daily = [
+const daily: { date: string; byModel: Record<string, number> }[] = [
   { date: '06-01', byModel: { auto: 1, gpt: 2 } },
   { date: '06-02', byModel: { auto: 3 } },
 ]
