@@ -27,6 +27,17 @@ describe('chartTheme USD formatters', () => {
     expect(html).toContain('累积: $12.30')
   })
 
+  it('axisTooltipUsdFormatter omits zero-value series', () => {
+    const html = axisTooltipUsdFormatter([
+      { axisValue: '06-01', marker: '● ', seriesName: 'auto', value: 1.2 },
+      { marker: '● ', seriesName: 'gpt', value: 0 },
+      { marker: '● ', seriesName: 'claude', value: 0.5 },
+    ])
+    expect(html).toContain('auto: $1.20')
+    expect(html).toContain('claude: $0.50')
+    expect(html).not.toContain('gpt')
+  })
+
   it('pieUsdTooltipFormatter includes percent when present', () => {
     expect(pieUsdTooltipFormatter({ name: 'Included', value: 3.456, percent: 42.1 })).toBe(
       'Included: $3.46 (42.1%)',

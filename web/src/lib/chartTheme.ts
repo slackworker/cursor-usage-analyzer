@@ -52,6 +52,7 @@ export function axisTooltipUsdFormatter(params: unknown): string {
 
   for (const item of items) {
     const value = item.value
+    if (typeof value === 'number' && value === 0) continue
     const text = typeof value === 'number' ? formatChartUsd(value) : String(value ?? '')
     lines.push(`${item.marker ?? ''}${item.seriesName}: ${text}`)
   }
