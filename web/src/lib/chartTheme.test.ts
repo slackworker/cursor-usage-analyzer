@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  axisTooltipTokenFormatter,
   axisTooltipUsdFormatter,
   donutSeriesLayout,
+  formatChartTokens,
   formatChartUsd,
   legendRowCount,
   NARROW_CHART_WIDTH,
@@ -46,6 +48,21 @@ describe('chartTheme USD formatters', () => {
 
   it('pieUsdLabelFormatter shows name and USD on two lines', () => {
     expect(pieUsdLabelFormatter({ name: 'API', value: 9.1 })).toBe('API\n$9.10')
+  })
+
+  it('formatChartTokens uses compact units', () => {
+    expect(formatChartTokens(1500)).toBe('1.5K')
+    expect(formatChartTokens(2_500_000)).toBe('2.50M')
+  })
+
+  it('axisTooltipTokenFormatter formats numeric series values', () => {
+    const html = axisTooltipTokenFormatter([
+      { axisValue: '06-01', marker: '● ', seriesName: 'auto', value: 1500 },
+      { marker: '● ', seriesName: '累积', value: 4500 },
+    ])
+    expect(html).toContain('06-01')
+    expect(html).toContain('auto: 1.5K')
+    expect(html).toContain('累积: 4.5K')
   })
 
   it('pieLabelMinShowAngle hides labels at or below threshold percent', () => {

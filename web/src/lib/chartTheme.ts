@@ -79,6 +79,35 @@ export function usdAxisLabel(value: number): string {
   return value.toFixed(2)
 }
 
+export function formatChartTokens(value: number): string {
+  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`
+  if (value >= 1e6) return `${(value / 1e6).toFixed(2)}M`
+  if (value >= 1e3) return `${(value / 1e3).toFixed(1)}K`
+  return value.toLocaleString()
+}
+
+/** ECharts axis tooltip：Token 列使用紧凑格式 */
+export function axisTooltipTokenFormatter(params: unknown): string {
+  const items = (Array.isArray(params) ? params : [params]) as TooltipParam[]
+  if (!items.length) return ''
+
+  const lines: string[] = []
+  if (items[0].axisValue) lines.push(String(items[0].axisValue))
+
+  for (const item of items) {
+    const value = item.value
+    if (typeof value === 'number' && value === 0) continue
+    const text = typeof value === 'number' ? formatChartTokens(value) : String(value ?? '')
+    lines.push(`${item.marker ?? ''}${item.seriesName}: ${text}`)
+  }
+
+  return lines.join('<br/>')
+}
+
+export function tokenAxisLabel(value: number): string {
+  return formatChartTokens(value)
+}
+
 export function baseGrid() {
   return { left: 48, right: 16, top: 32, bottom: 32, containLabel: true }
 }

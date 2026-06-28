@@ -1,4 +1,4 @@
-import { cleanup, render } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DailyChart } from './DailyChart'
 
@@ -11,11 +11,26 @@ const cumulative = [
   { date: '06-02', cumulative: 6 },
 ]
 
-let lastEChartProps: { option: { series?: { name?: string }[]; yAxis?: unknown[] }; replaceMerge?: string | string[] } | null =
-  null
+const onViewChange = vi.fn()
+
+let lastEChartProps: {
+  option: {
+    series?: { name?: string }[]
+    yAxis?: { name?: string; axisLabel?: { formatter?: (v: number) => string } }[]
+    tooltip?: { formatter?: unknown }
+  }
+  replaceMerge?: string | string[]
+} | null = null
 
 vi.mock('./EChart', () => ({
-  EChart: (props: { option: { series?: { name?: string }[]; yAxis?: unknown[] }; replaceMerge?: string | string[] }) => {
+  EChart: (props: {
+    option: {
+      series?: { name?: string }[]
+      yAxis?: { name?: string; axisLabel?: { formatter?: (v: number) => string } }[]
+      tooltip?: { formatter?: unknown }
+    }
+    replaceMerge?: string | string[]
+  }) => {
     lastEChartProps = props
     return <div data-testid="echart-mock" />
   },
@@ -29,18 +44,46 @@ describe('DailyChart', () => {
   afterEach(() => {
     cleanup()
     lastEChartProps = null
+    onViewChange.mockClear()
   })
 
+  function renderChart(view: 'cost' | 'token' = 'cost') {
+    return render(
+      <DailyChart daily={daily} cumulative={cumulative} view={view} onViewChange={onViewChange} />,
+    )
+  }
+
   it('passes replaceMerge for series and yAxis updates', () => {
-    render(<DailyChart daily={daily} cumulative={cumulative} />)
+    renderChart()
 
     expect(lastEChartProps?.replaceMerge).toEqual(['series', 'yAxis'])
   })
 
   it('always includes cumulative line series', () => {
-    render(<DailyChart daily={daily} cumulative={cumulative} />)
+    renderChart()
 
     expect(lastEChartProps?.option.series?.some((s) => s.name === '累积')).toBe(true)
     expect(lastEChartProps?.option.yAxis).toHaveLength(2)
+  })
+
+  it('uses cost axis labels by default', () => {
+    renderChart('cost')
+
+    expect(lastEChartProps?.option.yAxis?.[0]?.name).toBe('费用')
+    expect(lastEChartProps?.option.yAxis?.[0]?.axisLabel?.formatter?.(1.2)).toBe('1.20')
+  })
+
+  it('uses token axis labels in token view', () => {
+    renderChart('token')
+
+    expect(lastEChartProps?.option.yAxis?.[0]?.name).toBe('Token')
+    expect(lastEChartProps?.option.yAxis?.[0]?.axisLabel?.formatter?.(1500)).toBe('1.5K')
+  })
+
+  it('calls onViewChange when toggling view', () => {
+    renderChart('cost')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Token' }))
+    expect(onViewChange).toHaveBeenCalledWith('token')
   })
 })

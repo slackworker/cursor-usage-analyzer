@@ -1,15 +1,23 @@
 import type { EChartsOption } from 'echarts'
-import { axisTooltipUsdFormatter, usdAxisLabel } from '../../lib/chartTheme'
+import {
+  axisTooltipTokenFormatter,
+  axisTooltipUsdFormatter,
+  tokenAxisLabel,
+  usdAxisLabel,
+} from '../../lib/chartTheme'
 import { EChart, CHART_COLORS, bottomLegend, gridWithLegend, legendExtraHeight } from './EChart'
 
 interface DailyChartProps {
   daily: { date: string; byModel: Record<string, number> }[]
   cumulative: { date: string; cumulative: number }[]
+  view: 'cost' | 'token'
+  onViewChange: (v: 'cost' | 'token') => void
 }
 
-export function DailyChart({ daily, cumulative }: DailyChartProps) {
+export function DailyChart({ daily, cumulative, view, onViewChange }: DailyChartProps) {
   const dates = daily.map((d) => d.date)
   const models = [...new Set(daily.flatMap((d) => Object.keys(d.byModel)))].sort()
+  const isCost = view === 'cost'
 
   const series: EChartsOption['series'] = models.map((model, i) => ({
     name: model,
@@ -31,13 +39,14 @@ export function DailyChart({ daily, cumulative }: DailyChartProps) {
   })
 
   const legendCount = models.length + 1
+  const axisLabelFormatter = isCost ? usdAxisLabel : tokenAxisLabel
 
   const option: EChartsOption = {
     tooltip: {
       trigger: 'axis',
       backgroundColor: '#161b22',
       borderColor: '#30363d',
-      formatter: axisTooltipUsdFormatter,
+      formatter: isCost ? axisTooltipUsdFormatter : axisTooltipTokenFormatter,
     },
     legend: bottomLegend(),
     grid: gridWithLegend(legendCount),
@@ -49,14 +58,14 @@ export function DailyChart({ daily, cumulative }: DailyChartProps) {
     yAxis: [
       {
         type: 'value',
-        name: '费用',
-        axisLabel: { color: '#8b949e', formatter: usdAxisLabel },
+        name: isCost ? '费用' : 'Token',
+        axisLabel: { color: '#8b949e', formatter: axisLabelFormatter },
         splitLine: { lineStyle: { color: '#21262d' } },
       },
       {
         type: 'value',
         name: '累积',
-        axisLabel: { color: '#8b949e', formatter: usdAxisLabel },
+        axisLabel: { color: '#8b949e', formatter: axisLabelFormatter },
         splitLine: { show: false },
       },
     ],
@@ -64,10 +73,28 @@ export function DailyChart({ daily, cumulative }: DailyChartProps) {
   }
 
   return (
-    <EChart
-      option={option}
-      height={260 + legendExtraHeight(legendCount)}
-      replaceMerge={['series', 'yAxis']}
-    />
+    <div className="chart-with-controls">
+      <div className="chart-controls">
+        <button
+          type="button"
+          className={view === 'cost' ? 'chart-controls__btn--active' : 'chart-controls__btn'}
+          onClick={() => onViewChange('cost')}
+        >
+          费用
+        </button>
+        <button
+          type="button"
+          className={view === 'token' ? 'chart-controls__btn--active' : 'chart-controls__btn'}
+          onClick={() => onViewChange('token')}
+        >
+          Token
+        </button>
+      </div>
+      <EChart
+        option={option}
+        height={260 + legendExtraHeight(legendCount)}
+        replaceMerge={['series', 'yAxis']}
+      />
+    </div>
   )
 }

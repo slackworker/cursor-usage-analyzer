@@ -25,6 +25,7 @@ export function ReportPage() {
     poolLimits,
     modelView,
     structureView,
+    dailyView,
     hourlyView,
     dailyActivityGranularity,
     weeklyActivityGranularity,
@@ -37,6 +38,7 @@ export function ReportPage() {
     setPoolLimits,
     setModelView,
     setStructureView,
+    setDailyView,
     setHourlyView,
     setDailyActivityGranularity,
     setWeeklyActivityGranularity,
@@ -104,7 +106,12 @@ export function ReportPage() {
 
         <div className="report-grid report-grid--daily-side">
           <ChartPanel title="#7 日消费" tall>
-            <DailyChart daily={agg.daily} cumulative={agg.dailyCumulative} />
+            <DailyChart
+              daily={agg.daily}
+              cumulative={agg.dailyCumulative}
+              view={dailyView}
+              onViewChange={setDailyView}
+            />
           </ChartPanel>
           <div className="report-stack">
             <ChartPanel title="#9 缓存命中率">

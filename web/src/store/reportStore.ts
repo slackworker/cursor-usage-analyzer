@@ -13,6 +13,7 @@ export interface ReportStore {
   poolLimits: { autoComposer: number; api: number }
   modelView: 'cost' | 'token'
   structureView: 'cost' | 'token'
+  dailyView: 'cost' | 'token'
   hourlyView: 'sessions' | 'tokens'
   dailyActivityGranularity: DailyActivityGranularity
   weeklyActivityGranularity: WeeklyActivityGranularity
@@ -23,6 +24,7 @@ export interface ReportStore {
   setPoolLimits: (patch: Partial<{ autoComposer: number; api: number }>) => void
   setModelView: (v: 'cost' | 'token') => void
   setStructureView: (v: 'cost' | 'token') => void
+  setDailyView: (v: 'cost' | 'token') => void
   setHourlyView: (v: 'sessions' | 'tokens') => void
   setDailyActivityGranularity: (v: DailyActivityGranularity) => void
   setWeeklyActivityGranularity: (v: WeeklyActivityGranularity) => void
@@ -44,6 +46,7 @@ export const useReportStore = create<ReportStore>((set) => ({
   poolLimits: { ...DEFAULT_POOL_LIMITS },
   modelView: 'cost',
   structureView: 'token',
+  dailyView: 'cost',
   hourlyView: 'sessions',
   dailyActivityGranularity: DEFAULT_DAILY_ACTIVITY_GRANULARITY,
   weeklyActivityGranularity: DEFAULT_WEEKLY_ACTIVITY_GRANULARITY,
@@ -70,6 +73,7 @@ export const useReportStore = create<ReportStore>((set) => ({
       poolLimits: { ...DEFAULT_POOL_LIMITS },
       modelView: 'cost',
       structureView: 'token',
+      dailyView: 'cost',
       hourlyView: 'sessions',
       dailyActivityGranularity: DEFAULT_DAILY_ACTIVITY_GRANULARITY,
       weeklyActivityGranularity: DEFAULT_WEEKLY_ACTIVITY_GRANULARITY,
@@ -81,6 +85,7 @@ export const useReportStore = create<ReportStore>((set) => ({
   setPoolLimits: (patch) => set((s) => ({ poolLimits: { ...s.poolLimits, ...patch } })),
   setModelView: (modelView) => set({ modelView }),
   setStructureView: (structureView) => set({ structureView }),
+  setDailyView: (dailyView) => set({ dailyView }),
   setHourlyView: (hourlyView) => set({ hourlyView }),
   setDailyActivityGranularity: (dailyActivityGranularity) => set({ dailyActivityGranularity }),
   setWeeklyActivityGranularity: (weeklyActivityGranularity) => set({ weeklyActivityGranularity }),

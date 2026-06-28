@@ -26,6 +26,7 @@ export function useReport() {
   const poolLimits = useReportStore((s) => s.poolLimits)
   const modelView = useReportStore((s) => s.modelView)
   const structureView = useReportStore((s) => s.structureView)
+  const dailyView = useReportStore((s) => s.dailyView)
   const hourlyView = useReportStore((s) => s.hourlyView)
   const dailyActivityGranularity = useReportStore((s) => s.dailyActivityGranularity)
   const weeklyActivityGranularity = useReportStore((s) => s.weeklyActivityGranularity)
@@ -36,6 +37,7 @@ export function useReport() {
   const setPoolLimits = useReportStore((s) => s.setPoolLimits)
   const setModelView = useReportStore((s) => s.setModelView)
   const setStructureView = useReportStore((s) => s.setStructureView)
+  const setDailyView = useReportStore((s) => s.setDailyView)
   const setHourlyView = useReportStore((s) => s.setHourlyView)
   const setDailyActivityGranularity = useReportStore((s) => s.setDailyActivityGranularity)
   const setWeeklyActivityGranularity = useReportStore((s) => s.setWeeklyActivityGranularity)
@@ -48,8 +50,8 @@ export function useReport() {
     const billing = rollupBillingTotals(filtered, mode)
     const byModel = rollupByModel(filtered, modelView, mode)
     const byPool = rollupByPool(filtered, mode)
-    const daily = rollupDaily(filtered, 'cost', 'all', mode)
-    const dailyCumulative = rollupDailyCumulative(filtered, 'cost', 'all', mode)
+    const daily = rollupDaily(filtered, dailyView, 'all', mode)
+    const dailyCumulative = rollupDailyCumulative(filtered, dailyView, 'all', mode)
     const structure = rollupTokenStructure(filtered, structureView, mode)
     const cacheHit = cacheHitRateByModel(filtered)
     const unitPrice = unitPriceByModel(filtered, mode)
@@ -78,7 +80,7 @@ export function useReport() {
       peak,
       totalTokens,
     }
-  }, [filtered, mode, modelView, structureView, hourlyView, dailyActivityGranularity, weeklyActivityGranularity, poolLimits])
+  }, [filtered, mode, modelView, structureView, dailyView, hourlyView, dailyActivityGranularity, weeklyActivityGranularity, poolLimits])
 
   const allModels = useMemo(() => {
     const set = new Set<string>()
@@ -101,6 +103,7 @@ export function useReport() {
     poolLimits,
     modelView,
     structureView,
+    dailyView,
     hourlyView,
     dailyActivityGranularity,
     weeklyActivityGranularity,
@@ -114,6 +117,7 @@ export function useReport() {
     setPoolLimits,
     setModelView,
     setStructureView,
+    setDailyView,
     setHourlyView,
     setDailyActivityGranularity,
     setWeeklyActivityGranularity,
