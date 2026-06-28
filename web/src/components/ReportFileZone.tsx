@@ -32,11 +32,14 @@ export function ReportFileZone({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { isDragging, error: dropError, dropTargetProps } = useCsvFileDrop(onFileSelect)
 
-  const hintText = isDragging
-    ? '松开鼠标以更换文件'
+  const emptyHintText = '拖拽 CSV 到此处，或点击选择文件'
+  const dragHintText = fileName ? '松开鼠标以更换文件' : '松开鼠标以加载文件'
+
+  const dropAriaLabel = isDragging
+    ? dragHintText
     : fileName
-      ? '拖拽 CSV 到此处，或点击更换文件'
-      : '拖拽 CSV 到此处，或点击选择文件'
+      ? `${fileName}，点击或拖拽更换文件`
+      : emptyHintText
 
   return (
     <section
@@ -66,8 +69,25 @@ export function ReportFileZone({
           </div>
         </div>
 
-        <div className="report-header-card__row report-header-card__row--file">
-          {fileName ? (
+        {!fileName ? (
+          <div className="report-header-card__row report-header-card__row--file">
+            <span className="report-header-card__file-empty">尚未加载 CSV</span>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="report-header-card__drop report-file-zone__drop">
+        <button
+          type="button"
+          className="report-file-zone__drop-center"
+          data-export-hide
+          aria-label={dropAriaLabel}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <DropZoneIcon />
+          {isDragging ? (
+            <span className="report-file-zone__hint">{dragHintText}</span>
+          ) : fileName ? (
             <span className="report-file-zone__file-info">
               <span className="report-file-zone__filename">{fileName}</span>
               <span className="report-file-zone__info-meta">
@@ -80,21 +100,8 @@ export function ReportFileZone({
               </span>
             </span>
           ) : (
-            <span className="report-header-card__file-empty">尚未加载 CSV</span>
+            <span className="report-file-zone__hint">{emptyHintText}</span>
           )}
-        </div>
-      </div>
-
-      <div className="report-header-card__drop report-file-zone__drop">
-        <button
-          type="button"
-          className="report-file-zone__drop-center"
-          data-export-hide
-          aria-label={hintText}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <DropZoneIcon />
-          <span className="report-file-zone__hint">{hintText}</span>
         </button>
 
         {dropError ? <p className="report-file-zone__error">{dropError}</p> : null}
