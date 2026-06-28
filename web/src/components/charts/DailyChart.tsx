@@ -73,7 +73,11 @@ export function DailyChart({ daily, cumulative, showCumulative, onToggleCumulati
         />
         累积折线叠层
       </label>
-      <EChart option={option} height={260} />
+      <EChart
+        option={option}
+        height={260}
+        replaceMerge={['series', 'yAxis']}
+      />
     </div>
   )
 }
