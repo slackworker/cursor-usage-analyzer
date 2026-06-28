@@ -66,7 +66,7 @@ export function ReportPage() {
             <BillingDonut totals={agg.billing} mode={filters.billingMode} />
           </ChartPanel>
           <ChartPanel title="#6 池环图">
-            <PoolDonut byPool={agg.byPool} limits={poolLimits} />
+            <PoolDonut byPool={agg.byPool} />
           </ChartPanel>
         </div>
 
