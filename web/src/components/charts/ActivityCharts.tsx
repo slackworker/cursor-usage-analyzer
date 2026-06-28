@@ -3,20 +3,13 @@ import {
   activityAxisOrder,
   activityLabelStep,
   formatActivitySlotLabel,
+  WEEKLY_ACTIVITY_GRANULARITY,
 } from '../../lib/aggregation'
 import type { ActivityGranularity } from '../../lib/types'
 import { ACTIVITY_GRANULARITY_OPTIONS } from '../../lib/types'
 import { EChart, baseGrid } from './EChart'
 
 const DAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
-
-/** 小时轴从 03:00 起，将深夜低活跃时段置于两端 */
-const HOUR_AXIS_START = 3
-const HOUR_AXIS_ORDER = Array.from({ length: 24 }, (_, i) => (HOUR_AXIS_START + i) % 24)
-
-function formatHourLabel(hour: number): string {
-  return `${hour.toString().padStart(2, '0')}:00`
-}
 
 interface HourlyChartProps {
   hourly: { slot: number; value: number }[]
@@ -104,12 +97,17 @@ interface WeeklyHeatmapProps {
 }
 
 export function WeeklyHeatmap({ matrix }: WeeklyHeatmapProps) {
+  const axisOrder = activityAxisOrder(WEEKLY_ACTIVITY_GRANULARITY)
+  const labelStep = activityLabelStep(WEEKLY_ACTIVITY_GRANULARITY)
+  const slotLabels = axisOrder.map((slot) =>
+    formatActivitySlotLabel(slot, WEEKLY_ACTIVITY_GRANULARITY),
+  )
   const data: [number, number, number][] = []
   let max = 0
   for (let dow = 0; dow < 7; dow++) {
-    for (let xi = 0; xi < 24; xi++) {
-      const hour = HOUR_AXIS_ORDER[xi]
-      const v = matrix[dow]?.[hour] ?? 0
+    for (let xi = 0; xi < axisOrder.length; xi++) {
+      const slot = axisOrder[xi]
+      const v = matrix[dow]?.[slot] ?? 0
       if (v > max) max = v
       data.push([xi, dow, v])
     }
@@ -123,16 +121,22 @@ export function WeeklyHeatmap({ matrix }: WeeklyHeatmapProps) {
       formatter: (p: unknown) => {
         const params = p as { value: [number, number, number] }
         const [xi, dow, val] = params.value
-        const hour = HOUR_AXIS_ORDER[xi] ?? xi
-        return `周${DAY_LABELS[dow]} ${formatHourLabel(hour)} — ${val} 次`
+        const slot = axisOrder[xi] ?? xi
+        const label = formatActivitySlotLabel(slot, WEEKLY_ACTIVITY_GRANULARITY)
+        return `周${DAY_LABELS[dow]} ${label} — ${val} 次`
       },
     },
     grid: { height: '82%', top: 24, left: 48, right: 16, bottom: 28 },
     xAxis: {
       type: 'category',
-      data: HOUR_AXIS_ORDER.map(formatHourLabel),
+      data: slotLabels,
       splitArea: { show: true },
-      axisLabel: { color: '#8b949e', fontSize: 9, interval: 1 },
+      axisLabel: {
+        color: '#8b949e',
+        fontSize: 8,
+        interval: 0,
+        formatter: (value: string, index: number) => (index % labelStep === 0 ? value : ''),
+      },
     },
     yAxis: {
       type: 'category',

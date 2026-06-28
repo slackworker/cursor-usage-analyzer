@@ -337,14 +337,19 @@ export function rollupHourly(
   return buckets
 }
 
+/** 周热力图固定 30 分钟粒度（48 槽/天） */
+export const WEEKLY_ACTIVITY_GRANULARITY = 30 satisfies ActivityGranularity
+
 export function rollupWeeklyHourly(events: UsageEvent[]): number[][] {
-  const matrix = Array.from({ length: 7 }, () => Array(24).fill(0))
+  const slotsPerDay = activitySlotsPerDay(WEEKLY_ACTIVITY_GRANULARITY)
+  const matrix = Array.from({ length: 7 }, () => Array(slotsPerDay).fill(0))
   for (const event of events) {
     if (event.skipReason || !event.localDate) continue
     try {
       const dow = parseISO(event.localDate).getDay()
       const isoDow = dow === 0 ? 6 : dow - 1
-      matrix[isoDow][event.localHour] += 1
+      const slot = Math.floor(event.localMinuteOfDay / WEEKLY_ACTIVITY_GRANULARITY)
+      if (slot >= 0 && slot < slotsPerDay) matrix[isoDow][slot] += 1
     } catch {
       /* skip invalid dates */
     }
