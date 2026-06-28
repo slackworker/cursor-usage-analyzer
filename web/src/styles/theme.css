@@ -17,4 +17,6 @@
   --space-lg: 1.5rem;
   --space-xl: 2rem;
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-sans-cjk: 'DengXian', 'PingFang SC', 'Microsoft YaHei UI', 'Noto Sans SC', var(--font-sans);
+  --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
 }

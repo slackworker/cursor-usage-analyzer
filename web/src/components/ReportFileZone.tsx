@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { CodeStyleTitle } from './CodeStyleTitle'
 import type { FilterState, ReportMeta } from '../lib/types'
 import { useCsvFileDrop } from '../hooks/useCsvFileDrop'
 import { FilterBar } from './FilterBar'
@@ -63,7 +64,7 @@ export function ReportFileZone({
 
       <div className="report-header-card__upper">
         <div className="report-header-card__row report-header-card__row--titlebar">
-          <h1 className="report-header-card__title">Cursor 用量分析</h1>
+          <CodeStyleTitle className="code-style-title code-style-title--report" cursor="steady" />
           <div className="report-header-card__actions">
             <FilterBar filters={filters} onChange={onFiltersChange} />
             <ExportPngButton />
