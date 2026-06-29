@@ -9,6 +9,19 @@ description = "Estimate Cursor token costs and plan pool usage from CSV exports"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
+authors = [{ name = "slackworker" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Repository = "https://github.com/slackworker/cursor-usage-analyzer"
+Issues = "https://github.com/slackworker/cursor-usage-analyzer/issues"
 
 [project.scripts]
 cursor-usage = "cursor_usage.cli:main"
