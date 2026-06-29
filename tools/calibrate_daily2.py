@@ -1,5 +1,13 @@
+import argparse
 import csv
 from collections import Counter, defaultdict
+from pathlib import Path
+
+DEFAULT_CSV = (
+    Path(__file__).resolve().parent.parent
+    / "examples"
+    / "May 27 - Jun 27 US$195.22 100% + 100% .csv"
+)
 
 OFFICIAL = {
     "2026-06-22": {"auto": 6.64, "composer-2.5-fast": 2.15, "gpt-5.3-codex": 6.79},
@@ -31,8 +39,22 @@ def row_cost(row, pricing):
     )
 
 
-def load_rows():
-    with open(r"path/to/usage-events.csv", newline="", encoding="utf-8") as f:
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Compare revised pricing scenarios against official dashboard benchmarks."
+    )
+    parser.add_argument(
+        "csv",
+        nargs="?",
+        type=Path,
+        default=DEFAULT_CSV,
+        help="Cursor usage export CSV (default: bundled example)",
+    )
+    return parser.parse_args()
+
+
+def load_rows(csv_path: Path):
+    with open(csv_path, newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
 
@@ -50,7 +72,7 @@ def daily_cost(rows, model, day, pricing, kind_filter=None):
 
 
 def main():
-    rows = load_rows()
+    rows = load_rows(parse_args().csv)
 
     print("=== REVISED MODEL ===")
     print("auto: Auto pool doc rates")

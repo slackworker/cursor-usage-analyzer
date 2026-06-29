@@ -1,5 +1,13 @@
+import argparse
 import csv
 from collections import defaultdict
+from pathlib import Path
+
+DEFAULT_CSV = (
+    Path(__file__).resolve().parent.parent
+    / "examples"
+    / "May 27 - Jun 27 US$195.22 100% + 100% .csv"
+)
 
 OFFICIAL = {
     "2026-06-22": {"auto": 6.64, "composer-2.5-fast": 2.15, "gpt-5.3-codex": 6.79},
@@ -58,12 +66,23 @@ def row_cost(row, pricing, model=None):
     )
 
 
-def main():
-    rows = list(
-        csv.DictReader(
-            open(r"path/to/usage-events.csv", newline="", encoding="utf-8")
-        )
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Compare daily calculated costs against official dashboard benchmarks."
     )
+    parser.add_argument(
+        "csv",
+        nargs="?",
+        type=Path,
+        default=DEFAULT_CSV,
+        help="Cursor usage export CSV (default: bundled example)",
+    )
+    return parser.parse_args()
+
+
+def main():
+    csv_path = parse_args().csv
+    rows = list(csv.DictReader(open(csv_path, newline="", encoding="utf-8")))
 
     print("=== DAILY (Included only, Composer 2.5 Fast: $3 / $0.5 / $15) ===\n")
     totals = defaultdict(lambda: {"official": 0.0, "calc": 0.0})

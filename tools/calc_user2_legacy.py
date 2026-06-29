@@ -1,7 +1,13 @@
+import argparse
 import csv
 from collections import defaultdict
+from pathlib import Path
 
-CSV_PATH = r"path/to/usage-events.csv"
+DEFAULT_CSV = (
+    Path(__file__).resolve().parent.parent
+    / "examples"
+    / "May 27 - Jun 27 US$195.22 100% + 100% .csv"
+)
 
 PRICING = {
     "auto": {"input": 1.25, "cache_write": 1.25, "cache_read": 0.25, "output": 6.00},
@@ -61,8 +67,21 @@ def row_cost(row):
     )
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Legacy per-model cost estimate from a usage CSV.")
+    parser.add_argument(
+        "csv",
+        nargs="?",
+        type=Path,
+        default=DEFAULT_CSV,
+        help="Cursor usage export CSV (default: bundled example)",
+    )
+    return parser.parse_args()
+
+
 def main():
-    rows = list(csv.DictReader(open(CSV_PATH, newline="", encoding="utf-8")))
+    csv_path = parse_args().csv
+    rows = list(csv.DictReader(open(csv_path, newline="", encoding="utf-8")))
 
     by_model = defaultdict(lambda: {"cost": 0.0, "rows": 0, "tokens": 0})
     skipped = defaultdict(int)
@@ -83,7 +102,7 @@ def main():
     total_cost = sum(v["cost"] for v in by_model.values())
     total_tokens = sum(v["tokens"] for v in by_model.values())
 
-    print("=== usage-events.csv 费用推算 ===\n")
+    print(f"=== {csv_path.name} 费用推算 ===\n")
     print(f"数据范围: {min(dates)} ~ {max(dates)}")
     print(f"总行数: {len(rows)}，计费行 (Included): {sum(v['rows'] for v in by_model.values())}")
     if skipped:
