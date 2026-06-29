@@ -36,6 +36,71 @@ export function baseAxisTooltip() {
   }
 }
 
+const STACK_TOOLTIP_DEFAULT_FONT = 14
+const STACK_TOOLTIP_MIN_FONT = 9
+/** tooltip 可用高度占图表高度的比例（confine 下实际可接近全高） */
+const STACK_TOOLTIP_MAX_HEIGHT_RATIO = 0.85
+/** 估算高度与渲染存在偏差（边框、行距），选字号时留余量 */
+const STACK_TOOLTIP_FIT_SLACK = 10
+/** 仅当最小字号下仍明显超出时才启用滚动，避免 1–2px 误差触发滚动条 */
+const STACK_TOOLTIP_SCROLL_OVERFLOW_RATIO = 1.15
+
+function stackTooltipPadding(fontSize: number): [number, number] {
+  if (fontSize >= 14) return [8, 12]
+  if (fontSize >= 12) return [6, 10]
+  if (fontSize >= 10) return [4, 8]
+  return [4, 6]
+}
+
+function stackTooltipLineHeight(fontSize: number): number {
+  return Math.round(fontSize * 1.43)
+}
+
+function estimateStackTooltipHeight(lineCount: number, fontSize: number): number {
+  const [padV] = stackTooltipPadding(fontSize)
+  return padV * 2 + lineCount * stackTooltipLineHeight(fontSize)
+}
+
+/**
+ * 堆叠图 axis tooltip 样式：按模型数与图表高度自适应字号，
+ * 优先避免纵向溢出导致滚动条；极端情况仍保留滚动兜底。
+ */
+export function stackAxisTooltipStyle(modelCount: number, chartHeight: number) {
+  const lineCount = modelCount + 1
+  const maxHeight = Math.floor(chartHeight * STACK_TOOLTIP_MAX_HEIGHT_RATIO)
+  const fitTarget = maxHeight - STACK_TOOLTIP_FIT_SLACK
+
+  let fontSize = STACK_TOOLTIP_DEFAULT_FONT
+  while (fontSize > STACK_TOOLTIP_MIN_FONT) {
+    if (estimateStackTooltipHeight(lineCount, fontSize) <= fitTarget) break
+    fontSize -= 1
+  }
+
+  const padding = stackTooltipPadding(fontSize)
+  const style = {
+    textStyle: {
+      color: '#e6edf3',
+      fontSize,
+      lineHeight: stackTooltipLineHeight(fontSize),
+    },
+    padding,
+  }
+
+  const estimated = estimateStackTooltipHeight(lineCount, fontSize)
+  if (
+    fontSize > STACK_TOOLTIP_MIN_FONT ||
+    estimated <= maxHeight * STACK_TOOLTIP_SCROLL_OVERFLOW_RATIO
+  ) {
+    return style
+  }
+
+  return {
+    ...style,
+    extraCssText: `max-height: ${maxHeight}px; overflow-y: auto;`,
+    enterable: true,
+  }
+}
+
 export function formatChartUsd(value: number): string {
   return `$${value.toFixed(2)}`
 }

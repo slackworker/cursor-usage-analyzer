@@ -13,6 +13,7 @@ import {
   pieLabelMinShowAngle,
   pieUsdLabelFormatter,
   pieUsdTooltipFormatter,
+  stackAxisTooltipStyle,
 } from './chartTheme'
 
 describe('chartTheme USD formatters', () => {
@@ -101,5 +102,41 @@ describe('donut layout', () => {
     expect(centerY).toBeLessThan(50)
     expect(outerR).toBeLessThanOrEqual(62)
     expect(height).toBeGreaterThan(200)
+  })
+})
+
+describe('stackAxisTooltipStyle', () => {
+  it('keeps default font size when few models fit in chart height', () => {
+    const style = stackAxisTooltipStyle(2, 260)
+    expect(style.textStyle.fontSize).toBe(14)
+    expect(style.extraCssText).toBeUndefined()
+    expect(style.enterable).toBeUndefined()
+  })
+
+  it('shrinks font size when many models would overflow vertically', () => {
+    const style = stackAxisTooltipStyle(12, 260)
+    expect(style.textStyle.fontSize).toBeLessThan(14)
+    expect(style.textStyle.fontSize).toBeGreaterThanOrEqual(9)
+    expect(style.extraCssText).toBeUndefined()
+  })
+
+  it('adds scroll fallback when even minimum font overflows', () => {
+    const style = stackAxisTooltipStyle(25, 260)
+    expect(style.textStyle.fontSize).toBe(9)
+    expect(style.extraCssText).toContain('max-height:')
+    expect(style.extraCssText).toContain('overflow-y: auto')
+    expect(style.enterable).toBe(true)
+  })
+
+  it('allows larger font when chart height grows with legend rows', () => {
+    const compact = stackAxisTooltipStyle(12, 260)
+    const tall = stackAxisTooltipStyle(12, 320)
+    expect(tall.textStyle.fontSize).toBeGreaterThanOrEqual(compact.textStyle.fontSize)
+  })
+
+  it('uses 10px without scroll for ~16 models at typical chart height', () => {
+    const style = stackAxisTooltipStyle(16, 304)
+    expect(style.textStyle.fontSize).toBe(10)
+    expect(style.extraCssText).toBeUndefined()
   })
 })

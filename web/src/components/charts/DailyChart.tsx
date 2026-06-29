@@ -3,6 +3,7 @@ import {
   axisTooltipTokenFormatter,
   axisTooltipUsdFormatter,
   baseAxisTooltip,
+  stackAxisTooltipStyle,
   tokenAxisLabel,
   usdAxisLabel,
 } from '../../lib/chartTheme'
@@ -94,47 +95,48 @@ export function DailyChart({
         },
       ]
 
-  const buildOption = (chartWidth: number): EChartsOption => ({
-    tooltip: {
-      ...baseAxisTooltip(),
-      formatter: isCost ? axisTooltipUsdFormatter : axisTooltipTokenFormatter,
-      ...(isStack && {
-        textStyle: { color: '#e6edf3', fontSize: 10, lineHeight: 14 },
-        padding: [4, 8],
-      }),
-    },
-    legend: { ...bottomLegend(), data: legendData },
-    grid: gridWithLegend(legendCount, chartWidth),
-    xAxis: {
-      type: 'category',
-      data: dates,
-      axisLabel: { color: '#8b949e', fontSize: 10, rotate: dates.length > 14 ? 45 : 0 },
-    },
-    yAxis: isStack
-      ? [
-          {
-            type: 'value',
-            name: isCost ? '累积费用' : '累积 Token',
-            axisLabel: { color: '#8b949e', formatter: axisLabelFormatter },
-            splitLine: { lineStyle: { color: '#21262d' } },
-          },
-        ]
-      : [
-          {
-            type: 'value',
-            name: isCost ? '费用' : 'Token',
-            axisLabel: { color: '#8b949e', formatter: axisLabelFormatter },
-            splitLine: { lineStyle: { color: '#21262d' } },
-          },
-          {
-            type: 'value',
-            name: '累积',
-            axisLabel: { color: '#8b949e', formatter: axisLabelFormatter },
-            splitLine: { show: false },
-          },
-        ],
-    series,
-  })
+  const buildOption = (chartWidth: number): EChartsOption => {
+    const chartHeight = 260 + legendExtraHeight(legendCount, chartWidth)
+
+    return {
+      tooltip: {
+        ...baseAxisTooltip(),
+        formatter: isCost ? axisTooltipUsdFormatter : axisTooltipTokenFormatter,
+        ...(isStack && stackAxisTooltipStyle(models.length, chartHeight)),
+      },
+      legend: { ...bottomLegend(), data: legendData },
+      grid: gridWithLegend(legendCount, chartWidth),
+      xAxis: {
+        type: 'category',
+        data: dates,
+        axisLabel: { color: '#8b949e', fontSize: 10, rotate: dates.length > 14 ? 45 : 0 },
+      },
+      yAxis: isStack
+        ? [
+            {
+              type: 'value',
+              name: isCost ? '累积费用' : '累积 Token',
+              axisLabel: { color: '#8b949e', formatter: axisLabelFormatter },
+              splitLine: { lineStyle: { color: '#21262d' } },
+            },
+          ]
+        : [
+            {
+              type: 'value',
+              name: isCost ? '费用' : 'Token',
+              axisLabel: { color: '#8b949e', formatter: axisLabelFormatter },
+              splitLine: { lineStyle: { color: '#21262d' } },
+            },
+            {
+              type: 'value',
+              name: '累积',
+              axisLabel: { color: '#8b949e', formatter: axisLabelFormatter },
+              splitLine: { show: false },
+            },
+          ],
+      series,
+    }
+  }
 
   return (
     <div className="chart-with-controls">

@@ -141,13 +141,13 @@ describe('DailyChart', () => {
     expect(getOption()?.legend?.data).toEqual(['gpt', 'auto', '累积'])
   })
 
-  it('uses compact tooltip styling only in stack layout', () => {
+  it('uses adaptive stack tooltip styling based on model count and chart height', () => {
     renderChart('cost', 'bar')
     expect(getOption()?.tooltip?.textStyle?.fontSize).toBeUndefined()
     expect(getOption()?.tooltip?.extraCssText).toBeUndefined()
 
     renderChart('cost', 'stack')
-    expect(getOption()?.tooltip?.textStyle?.fontSize).toBe(10)
+    expect(getOption()?.tooltip?.textStyle?.fontSize).toBe(14)
     expect(getOption()?.tooltip?.extraCssText).toBeUndefined()
     expect(getOption()?.tooltip?.enterable).toBeUndefined()
   })
