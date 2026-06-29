@@ -1,14 +1,17 @@
 """Calibration fixtures for examples/*.csv.
 
-Replace or extend entries here when updating calibration exports.
+Case data lives in calibration_cases.json (shared with web golden tests).
 Pinned totals are documentation-rate calculations, not fitted to Dashboard.
 """
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
+_DATA_PATH = Path(__file__).resolve().parent / "calibration_cases.json"
 EXAMPLES_DIR = Path(__file__).resolve().parent.parent / "examples"
 
 
@@ -42,7 +45,6 @@ class CalibrationCase:
     standard: ModeExpect | None = None
     calc_above_official: bool = False
     calc_below_official: bool = False
-    # cycle total ≈ companion official total + prefix (same billing window).
     segment_companion: str | None = None
     segment_prefix_cost: float | None = None
 
@@ -56,122 +58,60 @@ class DailySpot:
     tolerance: float = 0.02
 
 
-CALIBRATION_CASES: tuple[CalibrationCase, ...] = (
-    CalibrationCase(
-        name="january",
-        filename="January - US$1.61.csv",
-        official_total=1.61,
-        official_tolerance_pct=0.10,
-        official=ModeExpect(total_cost=1.60, billable_rows=8, free_rows=0),
-        standard=ModeExpect(
-            total_cost=0.0,
-            total_spend=1.60,
-            free_cost=1.60,
-            billable_rows=0,
-            free_rows=8,
-        ),
-    ),
-    CalibrationCase(
-        name="february",
-        filename="February - US$46.57.csv",
-        official_total=46.57,
-        standard=ModeExpect(total_cost=48.04, billable_rows=455, total_delta=0.05),
-        calc_above_official=True,
-    ),
-    CalibrationCase(
-        name="march",
-        filename="March - US$69.94.csv",
-        official_total=69.94,
-        official_tolerance_pct=0.012,
-        official=ModeExpect(
-            total_cost=70.78,
-            billable_rows=649,
-            free_rows=0,
-            errored_skip=13,
-        ),
-        standard=ModeExpect(
-            total_cost=67.74,
-            total_spend=70.78,
-            free_cost=3.04,
-            billable_rows=618,
-            free_rows=31,
-        ),
-    ),
-    CalibrationCase(
-        name="april",
-        filename="April - US$137.09.csv",
-        official_total=137.09,
-        official_tolerance_pct=0.016,
-        official=ModeExpect(total_cost=139.26, billable_rows=1256, free_rows=0),
-    ),
-    CalibrationCase(
-        name="may",
-        filename="May - US$92.01.csv",
-        official_total=92.01,
-        official_tolerance_pct=0.007,
-        official=ModeExpect(
-            total_cost=91.45,
-            billable_rows=670,
-            free_rows=0,
-            status_only_skip=74,
-        ),
-        standard=ModeExpect(
-            total_cost=89.40,
-            total_spend=98.46,
-            free_cost=9.06,
-        ),
-    ),
-    CalibrationCase(
-        name="june",
-        filename="June - US$141.24.csv",
-        official_total=141.24,
-        official_tolerance_pct=0.016,
-        official=ModeExpect(
-            total_cost=143.42,
-            billable_rows=683,
-            free_rows=0,
-            status_only_skip=46,
-        ),
-        standard=ModeExpect(
-            total_cost=143.42,
-            total_spend=159.14,
-            free_cost=15.72,
-        ),
-    ),
-    CalibrationCase(
-        name="cycle",
-        filename="May 27 - Jun 27 US$195.22 100% + 100% .csv",
-        official_total=195.22,
-        official_tolerance_pct=0.025,
-        official=ModeExpect(
-            total_cost=190.68,
-            billable_rows=1059,
-            free_rows=0,
-            status_only_skip=120,
-        ),
-        calc_below_official=True,
-        segment_companion="june",
-        segment_prefix_cost=47.26,
-    ),
-)
+def _mode_expect(raw: dict[str, Any] | None) -> ModeExpect | None:
+    if raw is None:
+        return None
+    return ModeExpect(
+        total_cost=float(raw["total_cost"]),
+        total_spend=raw.get("total_spend"),
+        free_cost=float(raw.get("free_cost", 0.0)),
+        billable_rows=raw.get("billable_rows"),
+        free_rows=raw.get("free_rows"),
+        status_only_skip=raw.get("status_only_skip"),
+        errored_skip=raw.get("errored_skip"),
+        total_delta=float(raw.get("total_delta", 0.05)),
+    )
 
-DAILY_SPOTS: tuple[DailySpot, ...] = (
-    DailySpot("june", "composer-2.5-fast", "2026-06-22", 2.15, 0.15),
-    DailySpot("june", "composer-2.5-fast", "2026-06-23", 1.96, 0.15),
-    DailySpot("june", "composer-2.5-fast", "2026-06-24", 10.32, 0.15),
-    DailySpot("june", "composer-2.5-fast", "2026-06-25", 23.61, 0.15),
-    DailySpot("cycle", "auto", "2026-05-28", 5.10),
-    DailySpot("cycle", "auto", "2026-05-29", 13.69),
-    DailySpot("cycle", "auto", "2026-06-02", 13.23),
-    DailySpot("cycle", "auto", "2026-06-03", 12.68),
-    DailySpot("cycle", "auto", "2026-06-04", 0.11),
-    DailySpot("cycle", "auto", "2026-06-05", 0.31),
-    DailySpot("cycle", "auto", "2026-06-06", 0.30),
-)
 
+def _load_cases() -> tuple[CalibrationCase, ...]:
+    payload = json.loads(_DATA_PATH.read_text(encoding="utf-8"))
+    cases: list[CalibrationCase] = []
+    for raw in payload["cases"]:
+        cases.append(
+            CalibrationCase(
+                name=raw["name"],
+                filename=raw["filename"],
+                official_total=float(raw["official_total"]),
+                official_tolerance_pct=raw.get("official_tolerance_pct"),
+                official=_mode_expect(raw.get("official")),
+                standard=_mode_expect(raw.get("standard")),
+                calc_above_official=bool(raw.get("calc_above_official", False)),
+                calc_below_official=bool(raw.get("calc_below_official", False)),
+                segment_companion=raw.get("segment_companion"),
+                segment_prefix_cost=raw.get("segment_prefix_cost"),
+            )
+        )
+    return tuple(cases)
+
+
+def _load_daily_spots() -> tuple[DailySpot, ...]:
+    payload = json.loads(_DATA_PATH.read_text(encoding="utf-8"))
+    return tuple(
+        DailySpot(
+            spot["case"],
+            spot["model"],
+            spot["day"],
+            float(spot["official"]),
+            float(spot.get("tolerance", 0.02)),
+        )
+        for spot in payload["daily_spots"]
+    )
+
+
+CALIBRATION_CASES = _load_cases()
+DAILY_SPOTS = _load_daily_spots()
 CASE_BY_NAME = {c.name: c for c in CALIBRATION_CASES}
 
-# Convenience aliases for tests that need a single fixture.
 JANUARY = CASE_BY_NAME["january"]
 FEBRUARY = CASE_BY_NAME["february"]
 MARCH = CASE_BY_NAME["march"]

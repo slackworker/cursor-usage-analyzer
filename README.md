@@ -29,7 +29,7 @@ cd web && npm install && npm run dev
 
 ## 本地校准 CSV
 
-从 [Cursor Usage 页面](https://cursor.com/dashboard/USAGE) 导出的 CSV 放在 [`examples/`](examples/) 目录，**不纳入版本库**（可随时增删替换）。说明见 [`examples/README.md`](examples/README.md)；用例定义与预期金额以 [`tests/calibration.py`](tests/calibration.py) 为准。
+从 [Cursor Usage 页面](https://cursor.com/dashboard/USAGE) 导出的 CSV 放在 [`examples/`](examples/) 目录，**不纳入版本库**（可随时增删替换）。说明见 [`examples/README.md`](examples/README.md)；用例定义与预期金额以 [`tests/calibration_cases.json`](tests/calibration_cases.json) 为准。
 
 ## 用法
 
@@ -74,7 +74,7 @@ python -m unittest discover -s tests -v                   # 回归测试（缺�
 | [`cursor_usage/pricing.py`](cursor_usage/pricing.py) | 模型费率（代码即源） |
 | [`cursor_usage/pricing_sources.py`](cursor_usage/pricing_sources.py) | 非官方项置信度 |
 | [`examples/README.md`](examples/README.md) | 本地校准 CSV 说明 |
-| [`tests/calibration.py`](tests/calibration.py) | 校准用例与预期金额 |
+| [`tests/calibration_cases.json`](tests/calibration_cases.json) | 校准用例与预期金额 |
 | [`web/README.md`](web/README.md) | Web 前端开发与使用 |
 
 ## 项目结构
@@ -84,8 +84,7 @@ python -m unittest discover -s tests -v                   # 回归测试（缺�
 ├── web/                # Web 可视化（React + Vite）
 ├── examples/           # 本地校准 CSV（gitignore，见 examples/README.md）
 ├── tests/
-├── docs/spec.md
-└── tools/              # 早期校准脚本（日常请用 cursor-usage）
+└── docs/spec.md
 ```
 
 ## 许可

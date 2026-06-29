@@ -345,8 +345,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--billing-mode",
-        "--free-pricing-mode",
-        dest="billing_mode",
         choices=("official", "standard"),
         default="standard",
         help=(
@@ -354,6 +352,12 @@ def build_parser() -> argparse.ArgumentParser:
             "official（官方口径）= Total=Included+On-demand（Cost 有金额的 Free 并入 "
             "Included，status-only Free 不计入）"
         ),
+    )
+    parser.add_argument(
+        "--free-pricing-mode",
+        choices=("official", "standard"),
+        default=None,
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--json",
@@ -419,7 +423,18 @@ def main(argv: list[str] | None = None) -> int:
     if not args.csv.exists():
         parser.error(f"文件不存在: {args.csv}")
 
-    report = analyze_csv(args.csv, billing_mode=args.billing_mode)
+    if args.free_pricing_mode is not None:
+        if args.billing_mode != "standard":
+            parser.error("不能同时使用 --billing-mode 与 --free-pricing-mode")
+        print(
+            "警告: --free-pricing-mode 已弃用，请改用 --billing-mode",
+            file=sys.stderr,
+        )
+        billing_mode = args.free_pricing_mode
+    else:
+        billing_mode = args.billing_mode
+
+    report = analyze_csv(args.csv, billing_mode=billing_mode)
     try:
         limits, limits_source, baseline_path = _resolve_limits_mode(args)
     except ValueError as exc:

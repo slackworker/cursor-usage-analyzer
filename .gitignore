@@ -7,8 +7,7 @@ build/
 .venv/
 venv/
 .idea/
-.vscode/*
-!.vscode/tasks.json
+.vscode/
 .DS_Store
 Thumbs.db
 *.csv

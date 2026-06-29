@@ -1,5 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+/**
+ * Aggregation behavior tests (date fill, heatmap, projection).
+ * Uses ad-hoc local CSVs — not part of calibration_cases.json golden set.
+ */
 import {
   defaultHeatmapYear,
   filterByModelTokenShare,

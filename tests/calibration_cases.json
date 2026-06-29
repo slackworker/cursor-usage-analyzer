@@ -1,0 +1,124 @@
+{
+  "cases": [
+    {
+      "name": "january",
+      "filename": "January - US$1.61.csv",
+      "official_total": 1.61,
+      "official_tolerance_pct": 0.1,
+      "official": {
+        "total_cost": 1.6,
+        "billable_rows": 8,
+        "free_rows": 0
+      },
+      "standard": {
+        "total_cost": 0.0,
+        "total_spend": 1.6,
+        "free_cost": 1.6,
+        "billable_rows": 0,
+        "free_rows": 8
+      }
+    },
+    {
+      "name": "february",
+      "filename": "February - US$46.57.csv",
+      "official_total": 46.57,
+      "calc_above_official": true,
+      "standard": {
+        "total_cost": 48.04,
+        "billable_rows": 455
+      }
+    },
+    {
+      "name": "march",
+      "filename": "March - US$69.94.csv",
+      "official_total": 69.94,
+      "official_tolerance_pct": 0.012,
+      "official": {
+        "total_cost": 70.78,
+        "billable_rows": 649,
+        "free_rows": 0,
+        "errored_skip": 13
+      },
+      "standard": {
+        "total_cost": 67.74,
+        "total_spend": 70.78,
+        "free_cost": 3.04,
+        "billable_rows": 618,
+        "free_rows": 31
+      }
+    },
+    {
+      "name": "april",
+      "filename": "April - US$137.09.csv",
+      "official_total": 137.09,
+      "official_tolerance_pct": 0.016,
+      "official": {
+        "total_cost": 139.26,
+        "billable_rows": 1256,
+        "free_rows": 0
+      }
+    },
+    {
+      "name": "may",
+      "filename": "May - US$92.01.csv",
+      "official_total": 92.01,
+      "official_tolerance_pct": 0.007,
+      "official": {
+        "total_cost": 91.45,
+        "billable_rows": 670,
+        "free_rows": 0,
+        "status_only_skip": 74
+      },
+      "standard": {
+        "total_cost": 89.4,
+        "total_spend": 98.46,
+        "free_cost": 9.06
+      }
+    },
+    {
+      "name": "june",
+      "filename": "June - US$141.24.csv",
+      "official_total": 141.24,
+      "official_tolerance_pct": 0.016,
+      "official": {
+        "total_cost": 143.42,
+        "billable_rows": 683,
+        "free_rows": 0,
+        "status_only_skip": 46
+      },
+      "standard": {
+        "total_cost": 143.42,
+        "total_spend": 159.14,
+        "free_cost": 15.72
+      }
+    },
+    {
+      "name": "cycle",
+      "filename": "May 27 - Jun 27 US$195.22 100% + 100% .csv",
+      "official_total": 195.22,
+      "official_tolerance_pct": 0.025,
+      "calc_below_official": true,
+      "segment_companion": "june",
+      "segment_prefix_cost": 47.26,
+      "official": {
+        "total_cost": 190.68,
+        "billable_rows": 1059,
+        "free_rows": 0,
+        "status_only_skip": 120
+      }
+    }
+  ],
+  "daily_spots": [
+    { "case": "june", "model": "composer-2.5-fast", "day": "2026-06-22", "official": 2.15, "tolerance": 0.15 },
+    { "case": "june", "model": "composer-2.5-fast", "day": "2026-06-23", "official": 1.96, "tolerance": 0.15 },
+    { "case": "june", "model": "composer-2.5-fast", "day": "2026-06-24", "official": 10.32, "tolerance": 0.15 },
+    { "case": "june", "model": "composer-2.5-fast", "day": "2026-06-25", "official": 23.61, "tolerance": 0.15 },
+    { "case": "cycle", "model": "auto", "day": "2026-05-28", "official": 5.1 },
+    { "case": "cycle", "model": "auto", "day": "2026-05-29", "official": 13.69 },
+    { "case": "cycle", "model": "auto", "day": "2026-06-02", "official": 13.23 },
+    { "case": "cycle", "model": "auto", "day": "2026-06-03", "official": 12.68 },
+    { "case": "cycle", "model": "auto", "day": "2026-06-04", "official": 0.11 },
+    { "case": "cycle", "model": "auto", "day": "2026-06-05", "official": 0.31 },
+    { "case": "cycle", "model": "auto", "day": "2026-06-06", "official": 0.3 }
+  ]
+}

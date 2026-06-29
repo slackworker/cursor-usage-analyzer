@@ -1,56 +1,68 @@
 import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { buildUsageSummary, rollupBillingTotals } from './aggregation'
 import { parseCsvText } from './parser'
 import { hasLocalExample, localExamplePath } from '../test/localExamples'
 
-interface Case {
-  file: string
-  mode: 'official' | 'standard'
-  /** Calculator total (not Dashboard filename total) */
-  total: number
-  delta?: number
-  freeCost?: number
+const calibrationPath = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../../tests/calibration_cases.json',
+)
+const calibrationData = JSON.parse(readFileSync(calibrationPath, 'utf-8')) as {
+  cases: CalibrationCaseJson[]
 }
 
-/** Aligned with tests/calibration.py ModeExpect totals */
-const CASES: Case[] = [
-  { file: 'January - US$1.61.csv', mode: 'official', total: 1.6, delta: 0.05 },
-  { file: 'January - US$1.61.csv', mode: 'standard', total: 1.6, delta: 0.05, freeCost: 1.6 },
-  { file: 'February - US$46.57.csv', mode: 'standard', total: 48.04, delta: 0.05 },
-  { file: 'March - US$69.94.csv', mode: 'official', total: 70.78, delta: 0.05 },
-  { file: 'March - US$69.94.csv', mode: 'standard', total: 70.78, delta: 0.05 },
-  { file: 'April - US$137.09.csv', mode: 'standard', total: 139.26, delta: 0.05 },
-  { file: 'May - US$92.01.csv', mode: 'official', total: 91.45, delta: 0.05 },
-  { file: 'June - US$141.24.csv', mode: 'official', total: 143.42, delta: 0.05 },
-]
+type BillingMode = 'official' | 'standard'
+
+interface ModeExpectJson {
+  total_cost: number
+  total_spend?: number
+  free_cost?: number
+  total_delta?: number
+}
+
+interface CalibrationCaseJson {
+  name: string
+  filename: string
+  official?: ModeExpectJson
+  standard?: ModeExpectJson
+}
+
+function expectedSpend(mode: ModeExpectJson): number {
+  return mode.total_spend ?? mode.total_cost
+}
+
+function modeCases(caseDef: CalibrationCaseJson): Array<{ mode: BillingMode; expect: ModeExpectJson }> {
+  const out: Array<{ mode: BillingMode; expect: ModeExpectJson }> = []
+  if (caseDef.official) out.push({ mode: 'official', expect: caseDef.official })
+  if (caseDef.standard) out.push({ mode: 'standard', expect: caseDef.standard })
+  return out
+}
 
 describe('golden CSV alignment', () => {
-  for (const c of CASES) {
-    it.skipIf(!hasLocalExample(c.file))(`${c.file} (${c.mode})`, () => {
-      const path = localExamplePath(c.file)
-      const content = readFileSync(path, 'utf-8')
-      const { events } = parseCsvText(content, c.file)
-      const totals = rollupBillingTotals(events, c.mode)
-      const summary = buildUsageSummary(events, c.mode)
-      expect(totals.total).toBeCloseTo(c.total, 1)
-      expect(summary.totalCost).toBeCloseTo(c.total, 1)
-      if (c.delta) {
-        expect(Math.abs(totals.total - c.total)).toBeLessThanOrEqual(c.delta + 0.01)
-      }
-      if (c.freeCost != null) {
-        expect(summary.freeCost).toBeCloseTo(c.freeCost, 1)
-      }
-    })
-  }
+  for (const caseDef of calibrationData.cases) {
+    for (const { mode, expect: modeExpect } of modeCases(caseDef)) {
+      const delta = modeExpect.total_delta ?? 0.05
+      const spend = expectedSpend(modeExpect)
 
-  it.skipIf(!hasLocalExample('February - US$46.57.csv'))(
-    'cross-language parity: TS totals match within $0.01 of pinned calculator values',
-    () => {
-      const content = readFileSync(localExamplePath('February - US$46.57.csv'), 'utf-8')
-      const { events } = parseCsvText(content, 'feb')
-      const totals = rollupBillingTotals(events, 'standard')
-      expect(Math.abs(totals.total - 48.04)).toBeLessThan(0.02)
-    },
-  )
+      it.skipIf(!hasLocalExample(caseDef.filename))(
+        `${caseDef.name} / ${caseDef.filename} (${mode})`,
+        () => {
+          const content = readFileSync(localExamplePath(caseDef.filename), 'utf-8')
+          const { events } = parseCsvText(content, caseDef.filename)
+          const totals = rollupBillingTotals(events, mode)
+          const summary = buildUsageSummary(events, mode)
+
+          expect(totals.total).toBeCloseTo(spend, 1)
+          expect(summary.totalCost).toBeCloseTo(spend, 1)
+          expect(Math.abs(totals.total - spend)).toBeLessThanOrEqual(delta + 0.01)
+          if (modeExpect.free_cost != null && modeExpect.free_cost > 0) {
+            expect(summary.freeCost).toBeCloseTo(modeExpect.free_cost, 1)
+          }
+        },
+      )
+    }
+  }
 })
