@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cursor-usage-calculator"
+name = "cursor-usage-analyzer"
 version = "0.1.0"
 description = "Estimate Cursor token costs and plan pool usage from CSV exports"
 readme = "README.md"

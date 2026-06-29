@@ -1,4 +1,4 @@
-# Cursor Usage Calculator — 规格说明
+# Cursor Usage Analyzer — 规格说明
 
 **最后更新**：2026-06-27
 

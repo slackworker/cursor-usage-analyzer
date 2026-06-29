@@ -1,4 +1,4 @@
-# Cursor Usage Calculator
+# Cursor Usage Analyzer
 
 根据 Cursor 导出的用量 CSV，推算 token 费用与套餐池使用率。
 
