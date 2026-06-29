@@ -1,12 +1,11 @@
 import { CodeStyleTitle } from './components/CodeStyleTitle'
 import { FileUpload } from './components/FileUpload'
+import { SiteFooter } from './components/SiteFooter'
 import { useReport } from './hooks/useReport'
+import { CURSOR_USAGE_URL } from './lib/constants'
 import { ReportPage } from './pages/ReportPage'
 import './styles/theme.css'
 import './styles/report.css'
-
-const CURSOR_USAGE_URL = 'https://cursor.com/dashboard/USAGE'
-const GITHUB_REPO_URL = 'https://github.com/slackworker/cursor-usage-analyzer'
 
 function ExportCsvBadge() {
   return (
@@ -43,7 +42,7 @@ function App() {
           <p className="upload-landing__guide">
             在{' '}
             <a
-              className="upload-landing__link"
+              className="site-footer__link"
               href={CURSOR_USAGE_URL}
               target="_blank"
               rel="noopener noreferrer"
@@ -54,17 +53,7 @@ function App() {
           </p>
           <FileUpload onFileSelect={setCsvFile} />
         </section>
-        <footer className="upload-landing__footer">
-          文件仅在浏览器本地解析 ·{' '}
-          <a
-            className="upload-landing__link"
-            href={GITHUB_REPO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub 开源
-          </a>
-        </footer>
+        <SiteFooter variant="landing" />
       </div>
     )
   }

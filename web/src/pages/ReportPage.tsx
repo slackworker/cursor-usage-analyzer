@@ -1,4 +1,5 @@
 import { ReportFileZone } from '../components/ReportFileZone'
+import { SiteFooter } from '../components/SiteFooter'
 import { BillingDonut } from '../components/charts/BillingDonut'
 import { CacheHitChart } from '../components/charts/CacheHitChart'
 import { ChartPanel } from '../components/charts/ChartPanel'
@@ -140,6 +141,8 @@ export function ReportPage() {
             />
           </ChartPanel>
         </div>
+
+        <SiteFooter variant="report" />
       </div>
     </div>
   )
