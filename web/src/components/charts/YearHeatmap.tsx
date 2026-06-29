@@ -1,6 +1,7 @@
 import type { EChartsOption } from 'echarts'
 import { useEffect, useMemo, useState } from 'react'
 import { defaultHeatmapYear, filterHeatmapByYear, heatmapYears } from '../../lib/aggregation'
+import { activitySlotTooltip } from '../../lib/chartTheme'
 import { EChart, baseTooltip } from './EChart'
 
 interface YearHeatmapProps {
@@ -38,7 +39,7 @@ export function YearHeatmap({ data }: YearHeatmapProps) {
       ...baseTooltip(),
       formatter: (p: unknown) => {
         const params = p as { value: [string, number] }
-        return `${params.value[0]}: ${params.value[1]} 次`
+        return activitySlotTooltip(params.value[0], params.value[1], 'sessions')
       },
     },
     visualMap: {

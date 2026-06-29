@@ -119,6 +119,16 @@ export function tokenAxisLabel(value: number): string {
   return formatChartTokens(value)
 }
 
+/** 活动时段图表 tooltip：「时段 — 数值」，会话视图带「次」 */
+export function activitySlotTooltip(
+  label: string,
+  value: number,
+  metric: 'sessions' | 'tokens',
+): string {
+  const text = metric === 'sessions' ? `${value.toLocaleString()} 次` : formatChartTokens(value)
+  return `${label} — ${text}`
+}
+
 export function baseGrid() {
   return { left: 48, right: 16, top: 32, bottom: 32, containLabel: true }
 }

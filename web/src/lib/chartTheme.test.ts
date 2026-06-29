@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  activitySlotTooltip,
   axisTooltipTokenFormatter,
   axisTooltipUsdFormatter,
   donutSeriesLayout,
@@ -64,6 +65,11 @@ describe('chartTheme USD formatters', () => {
     expect(html).toContain('06-01')
     expect(html).toContain('auto: 1.5K')
     expect(html).toContain('累积: 4.5K')
+  })
+
+  it('activitySlotTooltip uses em dash and 次 for sessions', () => {
+    expect(activitySlotTooltip('14:00', 12, 'sessions')).toBe('14:00 — 12 次')
+    expect(activitySlotTooltip('周一 14:00', 1200, 'tokens')).toBe('周一 14:00 — 1.2K')
   })
 
   it('pieLabelMinShowAngle hides labels at or below threshold percent', () => {

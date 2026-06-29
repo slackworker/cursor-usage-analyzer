@@ -9,6 +9,7 @@ import {
   DAILY_ACTIVITY_GRANULARITY_OPTIONS,
   WEEKLY_ACTIVITY_GRANULARITY_OPTIONS,
 } from '../../lib/types'
+import { activitySlotTooltip } from '../../lib/chartTheme'
 import { EChart, baseGrid, baseAxisTooltip } from './EChart'
 
 const DAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
@@ -34,7 +35,17 @@ export function HourlyChart({
   const labels = ordered.map((h) => formatActivitySlotLabel(h.slot, granularity))
 
   const option: EChartsOption = {
-    tooltip: { ...baseAxisTooltip() },
+    tooltip: {
+      ...baseAxisTooltip(),
+      formatter: (params: unknown) => {
+        const item = (Array.isArray(params) ? params[0] : params) as {
+          axisValue?: string
+          value?: number
+        }
+        if (!item || typeof item.value !== 'number') return ''
+        return activitySlotTooltip(String(item.axisValue ?? ''), item.value, view)
+      },
+    },
     grid: baseGrid(),
     xAxis: {
       type: 'category',
@@ -125,7 +136,7 @@ export function WeeklyHeatmap({ matrix, granularity, onGranularityChange }: Week
         const [xi, dow, val] = params.value
         const slot = axisOrder[xi] ?? xi
         const label = formatActivitySlotLabel(slot, granularity)
-        return `周${DAY_LABELS[dow]} ${label} — ${val} 次`
+        return activitySlotTooltip(`周${DAY_LABELS[dow]} ${label}`, val, 'sessions')
       },
     },
     grid: { height: '82%', top: 24, left: 48, right: 16, bottom: 28 },
