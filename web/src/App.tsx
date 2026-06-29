@@ -6,6 +6,7 @@ import './styles/theme.css'
 import './styles/report.css'
 
 const CURSOR_USAGE_URL = 'https://cursor.com/dashboard/USAGE'
+const GITHUB_REPO_URL = 'https://github.com/slackworker/cursor-usage-analyzer'
 
 function ExportCsvBadge() {
   return (
@@ -37,8 +38,8 @@ function App() {
       <div className="upload-landing">
         <div className="upload-landing__inner">
           <CodeStyleTitle className="code-style-title code-style-title--landing" cursor="blink" />
-          <p className="upload-landing__tagline">
-            本地分析 Cursor 用量，数据不离开你的设备 · 在{' '}
+          <p className="upload-landing__guide">
+            在{' '}
             <a
               className="upload-landing__link"
               href={CURSOR_USAGE_URL}
@@ -47,9 +48,20 @@ function App() {
             >
               Cursor Usage
             </a>
-            {' '}页点击 <ExportCsvBadge />
+            {' '}页点击 <ExportCsvBadge /> 导出用量 CSV
           </p>
           <FileUpload onFileSelect={setCsvFile} />
+          <p className="upload-landing__footer">
+            文件仅在浏览器本地解析 ·{' '}
+            <a
+              className="upload-landing__link"
+              href={GITHUB_REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub 开源
+            </a>
+          </p>
         </div>
       </div>
     )

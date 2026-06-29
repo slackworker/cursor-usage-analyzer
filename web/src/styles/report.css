@@ -839,11 +839,18 @@
   text-align: center;
 }
 
-.upload-landing__tagline {
+.upload-landing__guide {
   margin: 0 0 var(--space-lg);
   color: var(--color-text-muted);
   font-size: 0.875rem;
   line-height: 1.6;
+}
+
+.upload-landing__footer {
+  margin: var(--space-md) 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
 }
 
 .upload-landing__link {
