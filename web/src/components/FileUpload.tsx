@@ -88,7 +88,7 @@ export function FileUpload({
         }}
         role="button"
         tabIndex={disabled ? -1 : 0}
-        aria-label="上传 Cursor 用量 CSV 文件"
+        aria-label="选择 Cursor 用量 CSV 文件"
       >
         <input
           ref={inputRef}
@@ -100,8 +100,7 @@ export function FileUpload({
           aria-hidden
         />
         <UploadFlowIcon isDragging={isDragging} />
-        <p className="file-upload__prompt">拖拽 CSV 到此处，或点击选择文件</p>
-        <p className="file-upload__hint">文件仅在浏览器本地解析，不会上传到服务器</p>
+        <p className="file-upload__prompt">拖拽或选择 CSV 文件</p>
       </div>
       {error ? <p className="file-upload__error">{error}</p> : null}
     </div>
