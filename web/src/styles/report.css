@@ -127,15 +127,21 @@
 }
 
 .code-style-title__path-label {
-  font-family: var(--font-sans-cjk);
+  font-family: var(--font-mono);
   color: #61afef;
+}
+
+.code-style-title__command {
+  margin-left: 1ch;
+  font-family: var(--font-sans-cjk);
+  color: var(--color-text);
 }
 
 .code-style-title__cursor {
   display: inline-block;
   width: 0.55em;
   height: 1.1em;
-  margin-left: 1ch;
+  margin-left: 0.25ch;
   align-self: center;
   background: var(--color-text);
 }
