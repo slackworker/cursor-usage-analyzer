@@ -1,32 +1,29 @@
-# Web 可视化
+# Web — 产品实现
 
 浏览器端上传 Cursor 用量 CSV，生成交互式报告。解析在本地完成，不上传文件。
 
-在线演示：https://slackworker.github.io/cursor-usage-analyzer/（`main` 推送后由 GitHub Actions 自动部署）
+在线演示：https://slackworker.github.io/cursor-usage-analyzer/
 
-## 快速开始
+## 开发
 
 ```bash
 cd web
 npm install
 npm run dev      # http://localhost:5173
-npm run build    # 产物在 dist/
+npm run build    # dist/
 npm run test
 ```
 
 ## 功能
 
-- 费用 KPI、standard / official 口径切换
-- 费用构成、按池分布、模型分布、Token 结构
-- 按日 / 时活动、年度热力图、池使用率投影
-- 图表 PNG 导出
+与 [`README.md`](../README.md#报告内容) 一致：费用 KPI、口径切换、构成与分布图、活动与热力图、池投影、PNG 导出。
 
-计费与池逻辑对齐 [`docs/spec.md`](../docs/spec.md)；实现见 `src/lib/`（`parser`、`aggregation`、`pricing`）。
+计费规则见 [`docs/spec.md`](../docs/spec.md)；逻辑在 `src/lib/`（`parser`、`aggregation`、`pricing`）。
 
 ## 目录
 
 ```
-web/src/
+src/
 ├── pages/          # 报告页
 ├── components/     # UI 与图表
 ├── store/          # 状态
