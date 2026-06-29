@@ -117,18 +117,18 @@ export function ReportPage() {
         )}
 
         <div className="report-grid report-grid--quad">
+          <ChartPanel title="缓存命中率">
+            <CacheHitChart rates={agg.cacheHit} modelTokens={agg.modelTokens} />
+          </ChartPanel>
+          <ChartPanel title="Token 单价">
+            <UnitPriceChart prices={agg.unitPrice} modelTokens={agg.modelTokens} />
+          </ChartPanel>
           <ChartPanel title="Token 构成">
             <TokenStructureChart
               data={agg.structure}
               view={structureView}
               onViewChange={setStructureView}
             />
-          </ChartPanel>
-          <ChartPanel title="缓存命中率">
-            <CacheHitChart rates={agg.cacheHit} modelTokens={agg.modelTokens} />
-          </ChartPanel>
-          <ChartPanel title="Token 单价">
-            <UnitPriceChart prices={agg.unitPrice} modelTokens={agg.modelTokens} />
           </ChartPanel>
           <ChartPanel title="池使用率">
             <PoolProjection
