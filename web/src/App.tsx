@@ -36,8 +36,10 @@ function App() {
   if (!hasData) {
     return (
       <div className="upload-landing">
-        <div className="upload-landing__inner">
+        <header className="upload-landing__hero">
           <CodeStyleTitle className="code-style-title code-style-title--landing" cursor="blink" />
+        </header>
+        <section className="upload-landing__action" aria-label="上传 CSV">
           <p className="upload-landing__guide">
             在{' '}
             <a
@@ -51,18 +53,18 @@ function App() {
             {' '}页点击 <ExportCsvBadge /> 导出用量 CSV
           </p>
           <FileUpload onFileSelect={setCsvFile} />
-          <p className="upload-landing__footer">
-            文件仅在浏览器本地解析 ·{' '}
-            <a
-              className="upload-landing__link"
-              href={GITHUB_REPO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              GitHub 开源
-            </a>
-          </p>
-        </div>
+        </section>
+        <footer className="upload-landing__footer">
+          文件仅在浏览器本地解析 ·{' '}
+          <a
+            className="upload-landing__link"
+            href={GITHUB_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub 开源
+          </a>
+        </footer>
       </div>
     )
   }
