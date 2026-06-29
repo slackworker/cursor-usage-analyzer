@@ -1,6 +1,6 @@
 # Cursor Usage Analyzer — 规格说明
 
-**最后更新**：2026-06-27
+**最后更新**：2026-06-29
 
 **术语**：**官方 Usage 页面** 指 Cursor 账户中的 [Dashboard → Usage](https://cursor.com/dashboard/USAGE)——用于查看 Total spend、池使用率，并导出 usage events CSV。下文简称 **官方 Usage 页面**（勿与本工具 CLI 混淆）。
 
@@ -8,11 +8,15 @@
 
 ## 1. 工具目标
 
+分析官方 Usage 页面导出的 usage events CSV，向用户呈现有价值的使用洞察。**费用推算**（standard / official，§4）与**池使用率**（§5）是其中一项能力，不是工具的唯一目的；Web 报告等功能概览见 [`README.md`](../README.md)。
+
 | 能力 | 说明 |
 |------|------|
-| 计费模型 | 官方文档费率 + 样例 CSV 校准；不为拟合官方 Usage 页面而改价 |
-| 费用推算 | 用户 CSV → 按模型/池汇总；支持 **standard**（标准口径）与 **official**（官方口径）两种 Total |
-| 池使用率 | Auto+Composer / API 两池使用百分比；正向（给定额度）或反推（给定官方 Usage 页面使用率） |
+| 计费模型 | 官方文档费率 + 样例 CSV 校准；不为拟合官方 Usage 页面而改价（§2） |
+| 费用推算 | 按模型/池汇总 Total；支持 **standard** 与 **official** 两种口径（§4） |
+| 池使用率 | Auto+Composer / API 两池；按 Included **费用**计，不按 Token（§5） |
+
+报告叙事默认以费用视图为主（对齐官方 Total spend、池 KPI）；Token 视图作补充。
 
 实现：`cursor_usage/pricing.py`（费率）、`calculator.py`（解析与合计）、`cli.py`（入口）。
 
