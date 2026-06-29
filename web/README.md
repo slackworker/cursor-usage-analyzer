@@ -2,6 +2,8 @@
 
 浏览器端上传 Cursor 用量 CSV，生成交互式报告。解析在本地完成，不上传文件。
 
+在线演示：https://slackworker.github.io/cursor-usage-analyzer/（`main` 推送后由 GitHub Actions 自动部署）
+
 ## 快速开始
 
 ```bash

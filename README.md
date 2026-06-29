@@ -27,6 +27,8 @@ cd web && npm install && npm run dev
 
 默认打开 http://localhost:5173，上传 CSV 即可。开发与构建说明见 [`web/README.md`](web/README.md)。
 
+在线演示（GitHub Pages）：https://slackworker.github.io/cursor-usage-analyzer/
+
 ## 本地校准 CSV
 
 从 [Cursor Usage 页面](https://cursor.com/dashboard/USAGE) 导出的 CSV 放在 [`examples/`](examples/) 目录，**不纳入版本库**（可随时增删替换）。说明见 [`examples/README.md`](examples/README.md)；用例定义与预期金额以 [`tests/calibration_cases.json`](tests/calibration_cases.json) 为准。
