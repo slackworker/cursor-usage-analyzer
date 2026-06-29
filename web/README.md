@@ -1,32 +1,32 @@
-# React + TypeScript + Vite
+# Web 可视化
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+浏览器端上传 Cursor 用量 CSV，生成交互式报告。解析在本地完成，不上传文件。
 
-Currently, two official plugins are available:
+## 快速开始
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+cd web
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # 产物在 dist/
+npm run test
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## 功能
+
+- 费用 KPI、standard / official 口径切换
+- 费用构成、按池分布、模型分布、Token 结构
+- 按日 / 时活动、年度热力图、池使用率投影
+- 图表 PNG 导出
+
+计费与池逻辑对齐 [`docs/spec.md`](../docs/spec.md)；实现见 `src/lib/`（`parser`、`aggregation`、`pricing`）。
+
+## 目录
+
+```
+web/src/
+├── pages/          # 报告页
+├── components/     # UI 与图表
+├── store/          # 状态
+└── lib/            # 解析与聚合
+```

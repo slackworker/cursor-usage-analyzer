@@ -7,15 +7,25 @@
 1. **计费模型** — 以 [Cursor 官方定价](https://cursor.com/docs/models-and-pricing) 为基础，用本地校准 CSV 验证（详见 [`docs/spec.md`](docs/spec.md)）。
 2. **费用推算** — 用户提供 CSV，输出 **standard**（标准口径）与 **official**（官方口径）两种合计。
 3. **池使用率** — 按 Auto+Composer / API 两池推算使用百分比；可指定额度（正向）或从 Dashboard 使用率反推额度（反推）。
+4. **Web 可视化** — 浏览器上传 CSV，本地生成交互式报告（见 [`web/README.md`](web/README.md)）。
 
 ## 安装
 
 ```bash
-cd ~/projects/cursor-usage-calculator
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
 ```
+
+也可运行 `scripts/init.sh` 完成 Python 环境初始化。
+
+## Web 可视化
+
+```bash
+cd web && npm install && npm run dev
+```
+
+默认打开 http://localhost:5173，上传 CSV 即可。开发与构建说明见 [`web/README.md`](web/README.md)。
 
 ## 本地校准 CSV
 
@@ -65,12 +75,13 @@ python -m unittest discover -s tests -v                   # 回归测试（缺�
 | [`cursor_usage/pricing_sources.py`](cursor_usage/pricing_sources.py) | 非官方项置信度 |
 | [`examples/README.md`](examples/README.md) | 本地校准 CSV 说明 |
 | [`tests/calibration.py`](tests/calibration.py) | 校准用例与预期金额 |
+| [`web/README.md`](web/README.md) | Web 前端开发与使用 |
 
 ## 项目结构
 
 ```
-cursor-usage-calculator/
-├── cursor_usage/       # pricing, calculator, cli, reconcile
+├── cursor_usage/       # CLI：pricing, calculator, cli, reconcile
+├── web/                # Web 可视化（React + Vite）
 ├── examples/           # 本地校准 CSV（gitignore，见 examples/README.md）
 ├── tests/
 ├── docs/spec.md
@@ -79,4 +90,4 @@ cursor-usage-calculator/
 
 ## 许可
 
-MIT
+[MIT](LICENSE)
