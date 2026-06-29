@@ -23,7 +23,7 @@
 ### 2.1 推断原则
 
 1. **费率** — [Cursor Models & Pricing](https://cursor.com/docs/models-and-pricing) 为准；勿混用 Auto+Composer 表与 API Model pricing 表。
-2. **验证** — 官方文档 > CSV 逐行对账（`--reconcile`）> 月度总量对照；样例见 [`examples/`](../examples/)。
+2. **验证** — 官方文档 > CSV 逐行对账（`--reconcile`）> 月度总量对照；本地校准 CSV 见 [`examples/README.md`](../examples/README.md)，用例定义见 [`tests/calibration.py`](../tests/calibration.py)。
 3. **不改价拟合** — 限时折扣、活动价、历史口径变更可能导致官方 Usage 页面与推算偏差；记录差异，不为此调整 `PRICING`。
 
 ### 2.2 Token 公式
@@ -164,7 +164,7 @@ cursor-usage target.csv --baseline baseline.csv --auto-composer-usage 1.0 --api-
 
 ## 6. 样例验证
 
-`examples/` 文件名中的金额为官方 Usage 页面 **Total spend**。回归测试：`tests/test_golden.py`。
+本地校准 CSV 放在 `examples/`（**不纳入版本库**，见 [`examples/README.md`](../examples/README.md)）。用例名称、文件名、官方/推算金额以 [`tests/calibration.py`](../tests/calibration.py) 的 `CALIBRATION_CASES` 为准；回归测试 `tests/test_golden.py` 在缺少对应文件时自动 skip。
 
 | 样例 | 模式 | 对账字段 | 官方 | 推算 | 差额 | 备注 |
 |------|------|----------|------|------|------|------|
@@ -173,27 +173,27 @@ cursor-usage target.csv --baseline baseline.csv --auto-composer-usage 1.0 --api-
 | March | official | `total_spend` | $69.94 | $70.79 | +$0.85 | 混合格式 A/B |
 | April | standard | `total_cost` | $137.09 | $139.26 | +$2.17 | |
 | May | official | `total_spend` | $92.01 | $91.45 | -$0.56 | 验证 status-only Free 不计入 official |
-| June | official | `total_spend` | $137.62 | $139.81 | +$2.19 | |
-| 账单周期 5/27–6/26 | official | `total_cost` | $191.60 | $187.08 | -$4.52 | 约 2.4%；原因未明 |
+| June | official | `total_spend` | $141.24 | $143.42 | +$2.18 | |
+| 账单周期 5/27–6/27 | official | `total_cost` | $195.22 | $190.68 | -$4.54 | 约 2.3%；原因未明 |
 
-**样例文件**：
+**校准用例与本地文件名**（金额随你重新导出 Dashboard 后会变，以 `calibration.py` 为准）：
 
-| 文件 | 官方 Total |
-|------|-----------|
-| [`January - US$1.61.csv`](../examples/January%20-%20US$1.61.csv) | $1.61 |
-| [`February - US$46.57.csv`](../examples/February%20-%20US$46.57.csv) | $46.57 |
-| [`March - US$69.94.csv`](../examples/March%20-%20US$69.94.csv) | $69.94 |
-| [`April - US$137.09.csv`](../examples/April%20-%20US$137.09.csv) | $137.09 |
-| [`May - US$92.01.csv`](../examples/May%20-%20US$92.01.csv) | $92.01 |
-| [`June - US$137.62.csv`](../examples/June%20-%20US$137.62.csv) | $137.62 |
-| [`May 27 - Jun 27 …`](../examples/May%2027%20-%20Jun%2027%20US$191.60%20100%25%20%2B%20100%25.csv) | $191.60 |
+| 用例 | 本地文件（`examples/`） | 官方 Total |
+|------|-------------------------|-----------|
+| january | `January - US$1.61.csv` | $1.61 |
+| february | `February - US$46.57.csv` | $46.57 |
+| march | `March - US$69.94.csv` | $69.94 |
+| april | `April - US$137.09.csv` | $137.09 |
+| may | `May - US$92.01.csv` | $92.01 |
+| june | `June - US$141.24.csv` | $141.24 |
+| cycle | `May 27 - Jun 27 US$195.22 100% + 100% .csv` | $195.22 |
 
 ### 已知偏差（不为拟合而改价）
 
 - **February / Codex Max Mode**：9 行 `gpt-5.3-codex` + `Max Mode=Yes`；官方 Total 介于标准价与文档 ×2 之间，疑为 2 月尚未切换 Fast 2×。
 - **agent_review**：官方日合计稳定低于 token 全价（约 53%–61%）；维持 `AGENT_REVIEW_DISCOUNT_RATIO=1.0`。
 - **composer-2-fast / composer-2.5-fast**：slug 映射经日级验证，见 `pricing_sources.py`。
-- **账单周期**：5/30–6/1 日级与官方 Usage 页面按模型日合计不一致，且周期 Total 仍差 $4.52；不能仅用日切/时区解释。
+- **账单周期**：5/30–6/1 日级与官方 Usage 页面按模型日合计不一致，且周期 Total 仍差约 $4.54；不能仅用日切/时区解释。
 - **活动价**：如 2026-05 GPT-5.5 按日半价；不硬编码进 `PRICING`。
 
 ---

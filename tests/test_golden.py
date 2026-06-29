@@ -26,6 +26,7 @@ from tests.calibration import (
     MAY,
     ModeExpect,
     example_path,
+    has_example,
 )
 
 
@@ -118,6 +119,8 @@ class TestPricingRules(unittest.TestCase):
 
     def test_may_2_gpt55_standard_rate_without_cliff(self) -> None:
         """Max Mode=No stays at standard rate even when input > 272k."""
+        if not has_example(MAY.filename):
+            self.skipTest(f"local calibration CSV missing: {MAY.filename}")
         total = 0.0
         with example_path(MAY.filename).open(newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
@@ -143,7 +146,8 @@ class TestCalibration(unittest.TestCase):
         for case in CALIBRATION_CASES:
             path = example_path(case.filename)
             with self.subTest(case=case.name):
-                self.assertTrue(path.is_file(), f"missing calibration file: {path}")
+                if not path.is_file():
+                    self.skipTest(f"local calibration CSV missing: {case.filename}")
 
                 if case.official:
                     report = analyze_csv(path, billing_mode="official")
@@ -176,12 +180,19 @@ class TestCalibration(unittest.TestCase):
     def test_daily_spots(self) -> None:
         for spot in DAILY_SPOTS:
             case = CASE_BY_NAME[spot.case]
-            calc = _daily_model_cost(example_path(case.filename), spot.model, spot.day)
+            path = example_path(case.filename)
             with self.subTest(case=spot.case, model=spot.model, day=spot.day):
+                if not path.is_file():
+                    self.skipTest(f"local calibration CSV missing: {case.filename}")
+                calc = _daily_model_cost(path, spot.model, spot.day)
                 self.assertAlmostEqual(calc, spot.official, delta=spot.tolerance)
 
 
 class TestJanuaryReconcile(unittest.TestCase):
+    def setUp(self) -> None:
+        if not has_example(JANUARY.filename):
+            self.skipTest(f"local calibration CSV missing: {JANUARY.filename}")
+
     def test_standard_mode_free_rows(self) -> None:
         path = example_path(JANUARY.filename)
         report = analyze_csv(path)

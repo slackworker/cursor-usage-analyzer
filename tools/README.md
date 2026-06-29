@@ -6,7 +6,7 @@
 
 ## 用法
 
-三个脚本均接受可选的 CSV 路径参数；未指定时使用 `examples/` 中的示例导出：
+三个脚本均接受可选的 CSV 路径参数；未指定时使用 `examples/` 中的本地校准导出（见 [`examples/README.md`](../examples/README.md)）：
 
 ```bash
 python tools/calibrate_fast.py

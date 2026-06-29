@@ -16,6 +16,10 @@ def example_path(filename: str) -> Path:
     return EXAMPLES_DIR / filename
 
 
+def has_example(filename: str) -> bool:
+    return example_path(filename).is_file()
+
+
 @dataclass(frozen=True)
 class ModeExpect:
     total_cost: float

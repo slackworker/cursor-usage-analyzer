@@ -12,7 +12,9 @@ venv/
 .DS_Store
 Thumbs.db
 *.csv
-!examples/*.csv
+# Local calibration exports (not versioned); see examples/README.md
+examples/*
+!examples/README.md
 *:Zone.Identifier
 web/node_modules/
 web/dist/

@@ -1,6 +1,4 @@
 import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
   defaultHeatmapYear,
@@ -14,16 +12,18 @@ import {
 } from './aggregation'
 import { parseCsvText } from './parser'
 import { DEFAULT_POOL_LIMITS } from './types'
+import { hasLocalExample, localExamplePath } from '../test/localExamples'
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '../../..')
+const USAGE_EVENTS = 'usage-events-2026-06-27.csv'
+const JAN_JUN = 'Jan 01 - Jun 27 US$488.45.csv'
 
 function dayTotal(row: { byModel: Record<string, number> }): number {
   return Object.values(row.byModel).reduce((a, b) => a + b, 0)
 }
 
 describe('rollupDaily', () => {
-  it('fills zero-usage dates between first and last day', () => {
-    const content = readFileSync(join(root, 'examples/usage-events-2026-06-27.csv'), 'utf-8')
+  it.skipIf(!hasLocalExample(USAGE_EVENTS))('fills zero-usage dates between first and last day', () => {
+    const content = readFileSync(localExamplePath(USAGE_EVENTS), 'utf-8')
     const { events } = parseCsvText(content, 'usage-events.csv')
 
     const daily = rollupDaily(events, 'cost')
@@ -38,8 +38,8 @@ describe('rollupDaily', () => {
     expect(zeroDays.every((d) => Object.keys(d.byModel).length === 0)).toBe(true)
   })
 
-  it('respects explicit date bounds for preset ranges', () => {
-    const content = readFileSync(join(root, 'examples/usage-events-2026-06-27.csv'), 'utf-8')
+  it.skipIf(!hasLocalExample(USAGE_EVENTS))('respects explicit date bounds for preset ranges', () => {
+    const content = readFileSync(localExamplePath(USAGE_EVENTS), 'utf-8')
     const { events } = parseCsvText(content, 'usage-events.csv')
 
     const daily = rollupDaily(events, 'cost', 'all', 'standard', {
@@ -68,8 +68,8 @@ describe('filterByModelTokenShare', () => {
 })
 
 describe('tokenTotalsByModel', () => {
-  it('sums tokens per model from parsed events', () => {
-    const content = readFileSync(join(root, 'examples/usage-events-2026-06-27.csv'), 'utf-8')
+  it.skipIf(!hasLocalExample(USAGE_EVENTS))('sums tokens per model from parsed events', () => {
+    const content = readFileSync(localExamplePath(USAGE_EVENTS), 'utf-8')
     const { events } = parseCsvText(content, 'usage-events.csv')
     const totals = tokenTotalsByModel(events)
     expect(Object.keys(totals).length).toBeGreaterThan(0)
@@ -122,23 +122,26 @@ describe('isWithinBillingCycle', () => {
 })
 
 describe('projectUsagePercent', () => {
-  it('uses direct pool usage when data stays within one billing month', () => {
-    const content = readFileSync(join(root, 'examples/usage-events-2026-06-27.csv'), 'utf-8')
-    const { events } = parseCsvText(content, 'usage-events.csv')
-    const result = projectUsagePercent(events, DEFAULT_POOL_LIMITS, 'official')
+  it.skipIf(!hasLocalExample(USAGE_EVENTS))(
+    'uses direct pool usage when data stays within one billing month',
+    () => {
+      const content = readFileSync(localExamplePath(USAGE_EVENTS), 'utf-8')
+      const { events } = parseCsvText(content, 'usage-events.csv')
+      const result = projectUsagePercent(events, DEFAULT_POOL_LIMITS, 'official')
 
-    expect(result.spanDays).toBeLessThanOrEqual(30)
-    expect(result.usageMode).toBe('direct')
-    expect(isWithinBillingCycle(result.startDate, result.endDate)).toBe(true)
-    expect(result.acUsed).toBeGreaterThan(0)
-    expect(result.autoComposerPct).toBeCloseTo(
-      (result.acUsed / DEFAULT_POOL_LIMITS.autoComposer) * 100,
-      5,
-    )
-  })
+      expect(result.spanDays).toBeLessThanOrEqual(30)
+      expect(result.usageMode).toBe('direct')
+      expect(isWithinBillingCycle(result.startDate, result.endDate)).toBe(true)
+      expect(result.acUsed).toBeGreaterThan(0)
+      expect(result.autoComposerPct).toBeCloseTo(
+        (result.acUsed / DEFAULT_POOL_LIMITS.autoComposer) * 100,
+        5,
+      )
+    },
+  )
 
-  it('normalizes when data crosses a billing month boundary', () => {
-    const content = readFileSync(join(root, 'examples/Jan 01 - Jun 27 US$488.45.csv'), 'utf-8')
+  it.skipIf(!hasLocalExample(JAN_JUN))('normalizes when data crosses a billing month boundary', () => {
+    const content = readFileSync(localExamplePath(JAN_JUN), 'utf-8')
     const { events } = parseCsvText(content, 'Jan-Jun.csv')
     const result = projectUsagePercent(events, DEFAULT_POOL_LIMITS, 'official')
 
