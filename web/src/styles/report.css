@@ -845,3 +845,37 @@
   font-size: 0.9375rem;
   line-height: 1.5;
 }
+
+.upload-landing__link {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.upload-landing__link:hover {
+  color: var(--color-text);
+}
+
+.upload-landing__export-csv {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  vertical-align: middle;
+  margin: 0 0.125rem;
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.upload-landing__export-csv svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  flex-shrink: 0;
+}
