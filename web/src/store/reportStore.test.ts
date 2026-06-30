@@ -25,6 +25,8 @@ describe('reportStore', () => {
     expect(state.fileName).toBe('test.csv')
     expect(state.fileContent).toBe(csv)
     expect(state.events.length).toBe(1)
+    expect(state.events[0].rawModel).toBe('auto')
+    expect(state.events[0].model).toBe('auto')
     expect(state.meta?.rowCount).toBe(1)
   })
 })

@@ -104,6 +104,7 @@ export function ReportFileZone({
               </button>
               <ParseStatusBadge
                 unknownModels={meta?.unknownModels}
+                inferredModels={meta?.inferredModels}
                 skippedRows={meta?.skippedRows}
               />
             </span>

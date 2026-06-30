@@ -6,7 +6,6 @@ import {
   BILLABLE_KIND,
   FREE_KIND,
   ON_DEMAND_KIND,
-  PRICING,
   isBillableKind,
   isFreeKind,
   isOnDemandKind,
@@ -14,6 +13,7 @@ import {
   parseMaxMode,
   parseOfficialRowCost,
   resolveRowCost,
+  resolveModelPricing,
 } from './pricing'
 
 function parseIntSafe(value: string | undefined | null): number {
@@ -42,17 +42,32 @@ function localDateHour(
 export function parseCsvRows(
   rows: Record<string, string>[],
   timezone = 'UTC',
-): { events: UsageEvent[]; skippedRows: Record<string, number>; unknownModels: Record<string, number> } {
+): {
+  events: UsageEvent[]
+  skippedRows: Record<string, number>
+  unknownModels: Record<string, number>
+  inferredModels: Record<string, { count: number; billingModel: string }>
+} {
   const events: UsageEvent[] = []
   const skippedRows: Record<string, number> = {}
   const unknownModels: Record<string, number> = {}
+  const inferredModels: Record<string, { count: number; billingModel: string }> = {}
 
   const bump = (map: Record<string, number>, key: string) => {
     map[key] = (map[key] ?? 0) + 1
   }
 
+  const bumpInferredModel = (model: string, billingModel: string) => {
+    const key = model || '(empty)'
+    const current = inferredModels[key]
+    inferredModels[key] = {
+      count: (current?.count ?? 0) + 1,
+      billingModel,
+    }
+  }
+
   rows.forEach((row, idx) => {
-    const model = row.Model ?? ''
+    const rawModel = row.Model ?? ''
     const kind = normalizeKind(row.Kind ?? '')
     const timestamp = row.Date ?? ''
     const { localDate, localHour, localMinuteOfDay } = localDateHour(timestamp, timezone)
@@ -66,7 +81,9 @@ export function parseCsvRows(
     }
     const maxMode = parseMaxMode(row['Max Mode'])
     const annotated = parseOfficialRowCost(row.Cost)
-    const pool = PRICING[model]?.pool ?? 'unknown'
+    const resolvedModel = resolveModelPricing(rawModel)
+    const model = resolvedModel?.billingModel ?? rawModel
+    const pool = resolvedModel?.pricing.pool ?? 'unknown'
 
     let included = 0
     let free = 0
@@ -74,25 +91,28 @@ export function parseCsvRows(
     let eventKind = kind
     let skipReason: string | null = null
 
-    if (isOnDemandKind(kind) && model in PRICING) {
+    if (isOnDemandKind(kind) && resolvedModel) {
       eventKind = ON_DEMAND_KIND
       onDemand = resolveRowCost(row.Cost, model, tokens.icw, tokens.icwo, tokens.cacheRead, tokens.output, maxMode)
-    } else if (isFreeKind(kind) && model in PRICING) {
+      if (resolvedModel.inferred) bumpInferredModel(rawModel, resolvedModel.billingModel)
+    } else if (isFreeKind(kind) && resolvedModel) {
       eventKind = FREE_KIND
       const officialFree = parseOfficialRowCost(row.Cost)
       free = resolveRowCost(row.Cost, model, tokens.icw, tokens.icwo, tokens.cacheRead, tokens.output, maxMode)
       if (officialFree !== null) included = officialFree
+      if (resolvedModel.inferred) bumpInferredModel(rawModel, resolvedModel.billingModel)
     } else if (!isBillableKind(kind)) {
       eventKind = 'Skipped'
       skipReason = kind || '(empty)'
       bump(skippedRows, skipReason)
-    } else if (!(model in PRICING)) {
+    } else if (!resolvedModel) {
       eventKind = 'Skipped'
       skipReason = 'unknown_model'
-      bump(unknownModels, model || '(empty)')
+      bump(unknownModels, rawModel || '(empty)')
     } else {
       eventKind = BILLABLE_KIND
       included = resolveRowCost(row.Cost, model, tokens.icw, tokens.icwo, tokens.cacheRead, tokens.output, maxMode)
+      if (resolvedModel.inferred) bumpInferredModel(rawModel, resolvedModel.billingModel)
     }
 
     const costs: EventCosts = { included, free, onDemand, annotated }
@@ -103,6 +123,7 @@ export function parseCsvRows(
       localDate,
       localHour,
       localMinuteOfDay,
+      rawModel,
       model,
       pool,
       kind: eventKind,
@@ -115,12 +136,12 @@ export function parseCsvRows(
     })
   })
 
-  return { events, skippedRows, unknownModels }
+  return { events, skippedRows, unknownModels, inferredModels }
 }
 
 export function parseCsvText(content: string, fileName: string, timezone = 'UTC'): { events: UsageEvent[]; meta: ReportMeta } {
   const parsed = Papa.parse<Record<string, string>>(content, { header: true, skipEmptyLines: true })
-  const { events, skippedRows, unknownModels } = parseCsvRows(parsed.data, timezone)
+  const { events, skippedRows, unknownModels, inferredModels } = parseCsvRows(parsed.data, timezone)
   const dates = events.map((e) => e.localDate).filter(Boolean).sort()
 
   return {
@@ -132,6 +153,7 @@ export function parseCsvText(content: string, fileName: string, timezone = 'UTC'
       dateTo: dates[dates.length - 1] ?? null,
       dataMaxDate: dates[dates.length - 1] ?? null,
       unknownModels,
+      inferredModels,
       skippedRows,
       pricingCaveats: [],
       poolLimits: { ...DEFAULT_POOL_LIMITS },

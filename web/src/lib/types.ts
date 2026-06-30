@@ -61,6 +61,9 @@ export interface UsageEvent {
   localHour: number
   /** 0–1439，本地时区当日分钟偏移 */
   localMinuteOfDay: number
+  /** CSV 原始模型名 */
+  rawModel: string
+  /** 标准化后的模型名，聚合与计费默认基于该字段 */
   model: string
   pool: PoolKind | string
   kind: string
@@ -85,6 +88,7 @@ export interface ReportMeta {
   dateTo: string | null
   dataMaxDate: string | null
   unknownModels: Record<string, number>
+  inferredModels: Record<string, { count: number; billingModel: string }>
   skippedRows: Record<string, number>
   pricingCaveats: string[]
   poolLimits: { autoComposer: number; api: number }

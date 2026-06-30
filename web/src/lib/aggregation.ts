@@ -308,7 +308,7 @@ export function cacheHitRateByModel(events: UsageEvent[]): Record<string, number
   const denom: Record<string, number> = {}
 
   for (const event of events) {
-    if (event.skipReason) continue
+    if (event.skipReason || !event.model) continue
     const miss = event.tokens.icw + event.tokens.icwo
     const cr = event.tokens.cacheRead
     denom[event.model] = (denom[event.model] ?? 0) + miss + cr
@@ -327,7 +327,7 @@ export function unitPriceByModel(events: UsageEvent[], mode: BillingMode = 'stan
   const tokens: Record<string, number> = {}
 
   for (const event of events) {
-    if (event.skipReason) continue
+    if (event.skipReason || !event.model) continue
     tokens[event.model] = (tokens[event.model] ?? 0) + event.tokens.total
     if (isFreeKind(event.kind)) {
       costs[event.model] = (costs[event.model] ?? 0) + (mode === 'standard' ? event.costs.free : event.costs.included)

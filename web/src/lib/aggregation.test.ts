@@ -11,6 +11,7 @@ import {
   heatmapYears,
   isWithinBillingCycle,
   projectUsagePercent,
+  rollupByModel,
   rollupDaily,
   tokenTotalsByModel,
 } from './aggregation'
@@ -78,6 +79,19 @@ describe('tokenTotalsByModel', () => {
     const totals = tokenTotalsByModel(events)
     expect(Object.keys(totals).length).toBeGreaterThan(0)
     expect(Object.values(totals).every((n) => n > 0)).toBe(true)
+  })
+
+  it('aggregates normalized model variants into one bucket', () => {
+    const csv = [
+      'Date,Cloud Agent ID,Automation ID,Kind,Model,Max Mode,Input (w/ Cache Write),Input (w/o Cache Write),Cache Read,Output Tokens,Total Tokens,Cost',
+      '2026-03-01T00:00:00.000Z,,,Included,gpt-5.3-codex,No,1000,0,0,100,1100,Included',
+      '2026-03-01T01:00:00.000Z,,,Included,gpt-5.3-codex-high,No,500,0,0,50,550,Included',
+    ].join('\n')
+    const { events } = parseCsvText(csv, 'normalized-models.csv')
+
+    expect(events.map((event) => event.model)).toEqual(['gpt-5.3-codex', 'gpt-5.3-codex'])
+    expect(tokenTotalsByModel(events)).toEqual({ 'gpt-5.3-codex': 1650 })
+    expect(Object.keys(rollupByModel(events, 'token'))).toEqual(['gpt-5.3-codex'])
   })
 })
 

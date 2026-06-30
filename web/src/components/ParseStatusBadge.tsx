@@ -9,17 +9,20 @@ const EXPECTED_SKIP_LABELS: Record<string, string> = {
 
 interface ParseStatusBadgeProps {
   unknownModels?: Record<string, number>
+  inferredModels?: Record<string, { count: number; billingModel: string }>
   skippedRows?: Record<string, number>
 }
 
-export function ParseStatusBadge({ unknownModels, skippedRows }: ParseStatusBadgeProps) {
+export function ParseStatusBadge({ unknownModels, inferredModels, skippedRows }: ParseStatusBadgeProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const unknownEntries = unknownModels ? Object.entries(unknownModels) : []
+  const inferredEntries = inferredModels ? Object.entries(inferredModels) : []
   const skippedEntries = skippedRows ? Object.entries(skippedRows) : []
   const hasUnknown = unknownEntries.length > 0
+  const hasInferred = inferredEntries.length > 0
   const hasSkipped = skippedEntries.length > 0
-  const isExpandable = hasUnknown || hasSkipped
+  const isExpandable = hasUnknown || hasInferred || hasSkipped
 
   useEffect(() => {
     if (!open) return
@@ -55,7 +58,7 @@ export function ParseStatusBadge({ unknownModels, skippedRows }: ParseStatusBadg
         aria-haspopup="true"
         onClick={() => setOpen((value) => !value)}
       >
-        {hasUnknown ? '含未知模型' : '已解析'}
+        {hasUnknown ? '含未知模型' : hasInferred ? '含推测模型' : '已解析'}
       </button>
       {open ? (
         <div className="parse-details__panel" role="status">
@@ -68,6 +71,20 @@ export function ParseStatusBadge({ unknownModels, skippedRows }: ParseStatusBadg
                     {model} ×{count}
                   </span>
                 ))}
+              </span>
+            </p>
+          ) : null}
+          {hasInferred ? (
+            <p className="parse-details__item">
+              <span className="parse-details__label">推测模型</span>
+              <span className="parse-details__content">
+                {[...inferredEntries]
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([model, value]) => (
+                    <span key={model} className="parse-details__tag">
+                      {model} ×{value.count}（按 {value.billingModel} 计费）
+                    </span>
+                  ))}
               </span>
             </p>
           ) : null}

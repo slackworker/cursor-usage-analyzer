@@ -6,6 +6,13 @@ export interface ModelPricing {
   pool: string
 }
 
+export interface ResolvedModelPricing {
+  requestedModel: string
+  billingModel: string
+  pricing: ModelPricing
+  inferred: boolean
+}
+
 export const BILLABLE_KIND = 'Included'
 export const FREE_KIND = 'Free'
 export const FREE_STATUS_ONLY_SKIP = 'Free (status-only)'
@@ -38,12 +45,17 @@ export function isOnDemandKind(kind: string): boolean {
 }
 
 export const LONG_CONTEXT_INPUT_THRESHOLD = 272_000
-export const CODEX_MAX_MODE_FAST_MODELS = new Set(['gpt-5.3-codex', 'gpt-5.3-codex-high'])
-export const GPT_LONG_CONTEXT_MODELS = new Set(['gpt-5.4-medium', 'gpt-5.5-medium'])
+export const CODEX_MAX_MODE_FAST_MODELS = new Set(['gpt-5.3-codex'])
+export const GPT_LONG_CONTEXT_MODELS = new Set(['gpt-5.4', 'gpt-5.5'])
 export const CODEX_MAX_MODE_MULTIPLIER = 2.0
 export const LONG_CONTEXT_INPUT_MULTIPLIER = 2.0
 export const LONG_CONTEXT_OUTPUT_MULTIPLIER = 1.5
 export const AGENT_REVIEW_DISCOUNT_RATIO = 1.0
+
+const MODEL_NORMALIZATION_RULES: Array<{ prefix: string; suffixes: readonly string[] }> = [
+  { prefix: 'gpt-5.', suffixes: ['-xhigh', '-high', '-medium'] },
+  { prefix: 'claude-', suffixes: ['-medium-thinking', '-high-thinking', '-thinking-high', '-thinking', '-medium'] },
+]
 
 export function parseMaxMode(value: string | undefined | null): boolean {
   return (value ?? '').trim().toLowerCase() === 'yes'
@@ -144,14 +156,42 @@ export const PRICING: Record<string, ModelPricing> = {
   'gpt-5.2': { input: 1.75, cacheWrite: 1.75, cacheRead: 0.175, output: 14.0, pool: 'api' },
   'gpt-5.2-codex': { input: 1.75, cacheWrite: 1.75, cacheRead: 0.175, output: 14.0, pool: 'api' },
   'gpt-5.3-codex': { input: 1.75, cacheWrite: 1.75, cacheRead: 0.175, output: 14.0, pool: 'api' },
-  'gpt-5.3-codex-high': { input: 1.75, cacheWrite: 1.75, cacheRead: 0.175, output: 14.0, pool: 'api' },
-  'gpt-5.4-medium': { input: 2.5, cacheWrite: 2.5, cacheRead: 0.25, output: 15.0, pool: 'api' },
-  'gpt-5.5-medium': { input: 5.0, cacheWrite: 5.0, cacheRead: 0.5, output: 30.0, pool: 'api' },
-  'claude-4.5-sonnet-thinking': { input: 3.0, cacheWrite: 3.75, cacheRead: 0.3, output: 15.0, pool: 'api' },
-  'claude-4.6-sonnet-medium-thinking': { input: 3.0, cacheWrite: 3.75, cacheRead: 0.3, output: 15.0, pool: 'api' },
-  'claude-4.6-opus-high-thinking': { input: 5.0, cacheWrite: 6.25, cacheRead: 0.5, output: 25.0, pool: 'api' },
-  'claude-opus-4-7-thinking-high': { input: 5.0, cacheWrite: 6.25, cacheRead: 0.5, output: 25.0, pool: 'api' },
+  'gpt-5.4': { input: 2.5, cacheWrite: 2.5, cacheRead: 0.25, output: 15.0, pool: 'api' },
+  'gpt-5.5': { input: 5.0, cacheWrite: 5.0, cacheRead: 0.5, output: 30.0, pool: 'api' },
+  'claude-4.5-sonnet': { input: 3.0, cacheWrite: 3.75, cacheRead: 0.3, output: 15.0, pool: 'api' },
+  'claude-4.6-sonnet': { input: 3.0, cacheWrite: 3.75, cacheRead: 0.3, output: 15.0, pool: 'api' },
+  'claude-4.6-opus': { input: 5.0, cacheWrite: 6.25, cacheRead: 0.5, output: 25.0, pool: 'api' },
+  'claude-opus-4-7': { input: 5.0, cacheWrite: 6.25, cacheRead: 0.5, output: 25.0, pool: 'api' },
   agent_review: { input: 1.25, cacheWrite: 1.25, cacheRead: 0.25, output: 6.0, pool: 'api' },
+}
+
+export function normalizeModel(model: string): string {
+  if (model in PRICING) return model
+
+  for (const rule of MODEL_NORMALIZATION_RULES) {
+    if (!model.startsWith(rule.prefix)) continue
+    for (const suffix of rule.suffixes) {
+      if (model.endsWith(suffix) && model.length > suffix.length) {
+        return model.slice(0, -suffix.length)
+      }
+    }
+  }
+
+  return model
+}
+
+export function resolveModelPricing(model: string): ResolvedModelPricing | null {
+  const billingModel = normalizeModel(model)
+  const pricing = PRICING[billingModel]
+  if (pricing) {
+    return {
+      requestedModel: model,
+      billingModel,
+      pricing,
+      inferred: billingModel !== model,
+    }
+  }
+  return null
 }
 
 export function rowCostBreakdown(
@@ -173,15 +213,16 @@ export function rowCostBreakdown(
     }
   }
 
-  const pricing = PRICING[model]
-  if (!pricing) return { icw: 0, icwo: 0, cacheRead: 0, output: 0 }
+  const resolved = resolveModelPricing(model)
+  if (!resolved) return { icw: 0, icwo: 0, cacheRead: 0, output: 0 }
+  const { billingModel, pricing } = resolved
 
-  if (maxMode && CODEX_MAX_MODE_FAST_MODELS.has(model)) {
+  if (maxMode && CODEX_MAX_MODE_FAST_MODELS.has(billingModel)) {
     const m = CODEX_MAX_MODE_MULTIPLIER
     return tokenRowCostComponents(pricing, icw, icwo, cr, out, { inputMult: m, outputMult: m })
   }
 
-  if (maxMode && GPT_LONG_CONTEXT_MODELS.has(model) && icw + icwo + cr > LONG_CONTEXT_INPUT_THRESHOLD) {
+  if (maxMode && GPT_LONG_CONTEXT_MODELS.has(billingModel) && icw + icwo + cr > LONG_CONTEXT_INPUT_THRESHOLD) {
     return tokenRowCostComponents(pricing, icw, icwo, cr, out, {
       inputMult: LONG_CONTEXT_INPUT_MULTIPLIER,
       cacheReadMult: LONG_CONTEXT_INPUT_MULTIPLIER,
@@ -204,9 +245,10 @@ export function rowCost(
     const p = PRICING.auto
     return tokenRowCost(p, icw, icwo, cr, out) * AGENT_REVIEW_DISCOUNT_RATIO
   }
-  const pricing = PRICING[model]
-  if (!pricing) return 0
-  const adjusted = maxModeAdjustedCost(model, pricing, icw, icwo, cr, out, maxMode)
+  const resolved = resolveModelPricing(model)
+  if (!resolved) return 0
+  const { billingModel, pricing } = resolved
+  const adjusted = maxModeAdjustedCost(billingModel, pricing, icw, icwo, cr, out, maxMode)
   if (adjusted !== null) return adjusted
   return tokenRowCost(pricing, icw, icwo, cr, out)
 }
