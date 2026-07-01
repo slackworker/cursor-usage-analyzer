@@ -640,8 +640,8 @@
   top: calc(100% + 0.35rem);
   right: 0;
   z-index: 10;
-  min-width: 16rem;
-  max-width: 24rem;
+  min-width: 18rem;
+  max-width: 32rem;
   padding: var(--space-sm) var(--space-md);
   background: var(--color-card);
   border: 1px solid var(--color-border);
@@ -679,6 +679,7 @@
   background: rgba(210, 153, 34, 0.12);
   color: var(--color-warning);
   font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .parse-details__tag--muted {

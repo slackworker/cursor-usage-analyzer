@@ -58,7 +58,7 @@ export function ParseStatusBadge({ unknownModels, inferredModels, skippedRows }:
         aria-haspopup="true"
         onClick={() => setOpen((value) => !value)}
       >
-        {hasUnknown ? '含未知模型' : hasInferred ? '含推测模型' : '已解析'}
+        {hasUnknown ? '含未知模型' : '已解析'}
       </button>
       {open ? (
         <div className="parse-details__panel" role="status">
@@ -81,7 +81,7 @@ export function ParseStatusBadge({ unknownModels, inferredModels, skippedRows }:
                 {[...inferredEntries]
                   .sort(([a], [b]) => a.localeCompare(b))
                   .map(([model, value]) => (
-                    <span key={model} className="parse-details__tag">
+                    <span key={model} className="parse-details__tag parse-details__tag--muted">
                       {model} ×{value.count}（按 {value.billingModel} 计费）
                     </span>
                   ))}
