@@ -2,7 +2,7 @@
 
 Official rates: https://cursor.com/docs/models-and-pricing
 
-Two doc tables: (1) Auto + Composer pool — Auto pricing + Composer pricing
+Two doc tables: (1) First-party models pool — Auto pricing + Composer pricing
 (#composer-pricing); (2) API pool — Model pricing. composer-2.5-fast is in (1).
 
 When the doc shows "-" for cache write, we bill cache write at the input rate
@@ -45,7 +45,7 @@ class PricingSource:
 MODEL_SOURCES: dict[str, PricingSource] = {
     "auto": PricingSource(
         PricingConfidence.OFFICIAL_DOC,
-        "Auto + Composer pool → Auto pricing",
+        "First-party models pool → Auto pricing",
     ),
     "composer-1": PricingSource(
         PricingConfidence.OFFICIAL_DOC,

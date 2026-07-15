@@ -22,6 +22,7 @@ from cursor_usage.calculator import (
     pool_free_cost,
     resolve_pool_limits,
 )
+from cursor_usage.models import POOL_LABELS
 from cursor_usage.pricing import (
     AGENT_REVIEW_DISCOUNT_RATIO,
     BILLABLE_KIND,
@@ -214,12 +215,12 @@ def _print_limits(result, *, limits_source: str) -> None:
         print("  额度来源: 命令行指定")
     elif limits_source == "inferred":
         print("  额度来源: 由 CSV 用量与 Dashboard 使用率反推")
-    print(f"  Auto+Composer 额度: ${limits.auto_composer:.2f}")
-    print(f"  API 额度:           ${limits.api:.2f}")
+    print(f"  {POOL_LABELS['auto_composer']} 额度: ${limits.auto_composer:.2f}")
+    print(f"  {POOL_LABELS['api']} 额度:           ${limits.api:.2f}")
     print(f"  合计额度:           ${limits.total:.2f}")
     print()
-    print(f"  Auto+Composer 已用（不含 {FREE_KIND}）: ${ac_used:.2f}  ({result.auto_composer_pct:.1f}%)")
-    print(f"  API 已用（不含 {FREE_KIND}）:           ${api_used:.2f}  ({result.api_pct:.1f}%)")
+    print(f"  {POOL_LABELS['auto_composer']} 已用（不含 {FREE_KIND}）: ${ac_used:.2f}  ({result.auto_composer_pct:.1f}%)")
+    print(f"  {POOL_LABELS['api']} 已用（不含 {FREE_KIND}）:           ${api_used:.2f}  ({result.api_pct:.1f}%)")
     print(f"  合计已用（不含 {FREE_KIND}）:           ${report.total_cost:.2f}  ({result.total_pct:.1f}%)")
     if report.free_rows:
         ac_pct_free = (ac_with_free / limits.auto_composer * 100) if limits.auto_composer else 0.0
@@ -228,8 +229,8 @@ def _print_limits(result, *, limits_source: str) -> None:
             report.total_cost_with_free / limits.total * 100
         ) if limits.total else 0.0
         print()
-        print(f"  Auto+Composer 已用（含 {FREE_KIND}）:   ${ac_with_free:.2f}  ({ac_pct_free:.1f}%)")
-        print(f"  API 已用（含 {FREE_KIND}）:             ${api_with_free:.2f}  ({api_pct_free:.1f}%)")
+        print(f"  {POOL_LABELS['auto_composer']} 已用（含 {FREE_KIND}）:   ${ac_with_free:.2f}  ({ac_pct_free:.1f}%)")
+        print(f"  {POOL_LABELS['api']} 已用（含 {FREE_KIND}）:             ${api_with_free:.2f}  ({api_pct_free:.1f}%)")
         print(
             f"  合计已用（含 {FREE_KIND}）:             "
             f"${report.total_cost_with_free:.2f}  ({total_pct_free:.1f}%)"
@@ -312,7 +313,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         metavar="RATIO",
         help=(
-            "反推额度：基准 CSV 中 Auto+Composer 池 Dashboard 使用率，如 1.0 表示 100%%。"
+            "反推额度：基准 CSV 中 First-party models pool Dashboard 使用率，如 1.0 表示 100%%。"
             "与 --api-usage 同时提供时进入反推模式"
         ),
     )
@@ -321,7 +322,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         metavar="RATIO",
         help=(
-            "反推额度：基准 CSV 中 API 池 Dashboard 使用率，如 0.99 表示 99%%。"
+            "反推额度：基准 CSV 中 API pool Dashboard 使用率，如 0.99 表示 99%%。"
             "与 --auto-composer-usage 同时提供时进入反推模式"
         ),
     )
@@ -330,7 +331,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         metavar="USD",
         help=(
-            f"正向推算：Auto+Composer 池总额度（美元），默认 "
+            f"正向推算：{POOL_LABELS['auto_composer']} 总额度（美元），默认 "
             f"${DEFAULT_AUTO_COMPOSER_LIMIT:.0f}（{DEFAULT_POOL_PLAN_LABEL} 经验值）"
         ),
     )
@@ -339,7 +340,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         metavar="USD",
         help=(
-            f"正向推算：API 池总额度（美元），默认 "
+            f"正向推算：{POOL_LABELS['api']} 总额度（美元），默认 "
             f"${DEFAULT_API_LIMIT:.0f}（{DEFAULT_POOL_PLAN_LABEL} 经验值）"
         ),
     )
@@ -457,7 +458,8 @@ def main(argv: list[str] | None = None) -> int:
         print()
         print(
             f"反推基准: {baseline_path} "
-            f"(Auto+Composer {args.auto_composer_usage:.0%}, API {args.api_usage:.0%})"
+            f"({POOL_LABELS['auto_composer']} {args.auto_composer_usage:.0%}, "
+            f"{POOL_LABELS['api']} {args.api_usage:.0%})"
         )
     _print_limits(limits_result, limits_source=limits_source)
 

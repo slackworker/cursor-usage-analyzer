@@ -1,5 +1,5 @@
 import { formatUsd } from '../../hooks/useReport'
-import { PLAN_PRESETS, type PlanId } from '../../lib/types'
+import { PLAN_PRESETS, POOL_LABELS, type PlanId } from '../../lib/types'
 
 interface PoolProjectionProps {
   projection: {
@@ -79,7 +79,7 @@ export function PoolProjection({
           </select>
         </label>
         <label className="pool-projection__field">
-          <span className="pool-projection__field-label">Auto+Composer 额度 ($)</span>
+          <span className="pool-projection__field-label">{POOL_LABELS.auto_composer} 额度 ($)</span>
           <input
             type="number"
             className="filter-bar__input"
@@ -90,7 +90,7 @@ export function PoolProjection({
           />
         </label>
         <label className="pool-projection__field">
-          <span className="pool-projection__field-label">API 额度 ($)</span>
+          <span className="pool-projection__field-label">{POOL_LABELS.api} 额度 ($)</span>
           <input
             type="number"
             className="filter-bar__input"
@@ -108,14 +108,14 @@ export function PoolProjection({
         </h4>
         <div className="pool-gauges">
           <PoolGauge
-            label="Auto + Composer"
+            label={POOL_LABELS.auto_composer}
             pct={projection.autoComposerPct}
             used={projection.acUsed}
             limit={limits.autoComposer}
             fillClass="pool-gauge__fill--ac"
           />
           <PoolGauge
-            label="API"
+            label={POOL_LABELS.api}
             pct={projection.apiPct}
             used={projection.apiUsed}
             limit={limits.api}

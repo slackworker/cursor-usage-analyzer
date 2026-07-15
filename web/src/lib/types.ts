@@ -113,8 +113,8 @@ export const PLAN_PRESETS: Record<PlanId, { label: string; autoComposer: number;
 }
 
 export const POOL_LABELS: Record<string, string> = {
-  auto_composer: 'Auto + Composer',
-  api: 'API',
+  auto_composer: 'First-party models pool',
+  api: 'API pool',
 }
 
 export const MODEL_COLORS = [

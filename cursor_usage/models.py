@@ -128,6 +128,11 @@ DEFAULT_AUTO_COMPOSER_LIMIT = 145.0
 DEFAULT_API_LIMIT = 45.0
 DEFAULT_POOL_PLAN_LABEL = "Cursor Pro ($20/mo)"
 
+POOL_LABELS: dict[str, str] = {
+    "auto_composer": "First-party models pool",
+    "api": "API pool",
+}
+
 
 @dataclass
 class PoolLimits:

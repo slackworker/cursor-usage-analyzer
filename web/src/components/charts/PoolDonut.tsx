@@ -12,8 +12,8 @@ export function PoolDonut({ byPool }: PoolDonutProps) {
   const api = (byPool.api?.included ?? 0) + (byPool.api?.free ?? 0) + (byPool.api?.onDemand ?? 0)
 
   const data = [
-    { name: POOL_LABELS.auto_composer ?? 'Auto+Composer', value: ac },
-    { name: POOL_LABELS.api ?? 'API', value: api },
+    { name: POOL_LABELS.auto_composer ?? 'First-party models pool', value: ac },
+    { name: POOL_LABELS.api ?? 'API pool', value: api },
   ].filter((d) => d.value > 0)
 
   const height = pieChartHeight(data.length, 200, NARROW_CHART_WIDTH)

@@ -4,7 +4,7 @@ Primary source: https://cursor.com/docs/models-and-pricing
 Provenance / confidence: cursor_usage.pricing_sources
 
 Official doc has two pricing tables — do not conflate them:
-- Auto + Composer pool → Auto pricing + Composer pricing (#composer-pricing)
+- First-party models pool → Auto pricing + Composer pricing (#composer-pricing)
 - API pool → Model pricing (GPT, Claude, Composer 1/2/2.5 base rows, etc.)
 
 CSV slug composer-2.5-fast maps to Composer 2.5 (Fast) in the Composer pricing
