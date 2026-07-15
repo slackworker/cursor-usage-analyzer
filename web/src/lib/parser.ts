@@ -91,7 +91,17 @@ export function parseCsvRows(
     let eventKind = kind
     let skipReason: string | null = null
 
-    if (isOnDemandKind(kind) && resolvedModel) {
+    if (!resolvedModel && (isBillableKind(kind) || isFreeKind(kind) || isOnDemandKind(kind))) {
+      skipReason = 'unknown_model'
+      bump(unknownModels, rawModel || '(empty)')
+      if (isFreeKind(kind)) {
+        eventKind = FREE_KIND
+      } else if (isOnDemandKind(kind)) {
+        eventKind = ON_DEMAND_KIND
+      } else {
+        eventKind = 'Skipped'
+      }
+    } else if (isOnDemandKind(kind) && resolvedModel) {
       eventKind = ON_DEMAND_KIND
       onDemand = resolveRowCost(row.Cost, model, tokens.icw, tokens.icwo, tokens.cacheRead, tokens.output, maxMode)
       if (resolvedModel.inferred) bumpInferredModel(rawModel, resolvedModel.billingModel)
@@ -105,14 +115,10 @@ export function parseCsvRows(
       eventKind = 'Skipped'
       skipReason = kind || '(empty)'
       bump(skippedRows, skipReason)
-    } else if (!resolvedModel) {
-      eventKind = 'Skipped'
-      skipReason = 'unknown_model'
-      bump(unknownModels, rawModel || '(empty)')
     } else {
       eventKind = BILLABLE_KIND
       included = resolveRowCost(row.Cost, model, tokens.icw, tokens.icwo, tokens.cacheRead, tokens.output, maxMode)
-      if (resolvedModel.inferred) bumpInferredModel(rawModel, resolvedModel.billingModel)
+      if (resolvedModel?.inferred) bumpInferredModel(rawModel, resolvedModel.billingModel)
     }
 
     const costs: EventCosts = { included, free, onDemand, annotated }

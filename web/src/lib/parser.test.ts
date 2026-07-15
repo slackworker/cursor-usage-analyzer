@@ -69,6 +69,58 @@ describe('parseCsvText model resolution', () => {
     expect(meta.unknownModels).toEqual({ 'gpt-5.3-codex-unknown': 1 })
     expect(meta.inferredModels).toEqual({})
   })
+
+  it('reports unknown models in Free rows', () => {
+    const { events, meta } = parseCsvText(buildCsv('totally-unknown-model', 'Free'), 'test.csv')
+
+    expect(events[0].kind).toBe('Free')
+    expect(events[0].skipReason).toBe('unknown_model')
+    expect(meta.unknownModels).toEqual({ 'totally-unknown-model': 1 })
+    expect(meta.skippedRows).toEqual({})
+  })
+
+  it('maps cursor-grok-4.5-high to grok-4.5 pricing', () => {
+    const { events, meta } = parseCsvText(
+      buildCsv('cursor-grok-4.5-high').replace('1000,2000,300,400', '0,12344,107648,2616'),
+      'test.csv',
+    )
+
+    expect(events[0].model).toBe('grok-4.5')
+    expect(events[0].pool).toBe('auto_composer')
+    expect(events[0].skipReason).toBeNull()
+    expect(events[0].costs.included).toBeCloseTo(0.094208, 6)
+    expect(meta.unknownModels).toEqual({})
+    expect(meta.inferredModels).toEqual({
+      'cursor-grok-4.5-high': { count: 1, billingModel: 'grok-4.5' },
+    })
+  })
+
+  it('maps grok-4.5-xhigh to grok-4.5 pricing', () => {
+    const { events, meta } = parseCsvText(buildCsv('grok-4.5-xhigh'), 'test.csv')
+
+    expect(events[0].model).toBe('grok-4.5')
+    expect(events[0].skipReason).toBeNull()
+    expect(meta.unknownModels).toEqual({})
+    expect(meta.inferredModels).toEqual({
+      'grok-4.5-xhigh': { count: 1, billingModel: 'grok-4.5' },
+    })
+  })
+
+  it('maps gpt-5.6-sol-medium to gpt-5.6-sol pricing', () => {
+    const { events, meta } = parseCsvText(
+      buildCsv('gpt-5.6-sol-medium').replace('1000,2000,300,400', '39272,84,5586498,8657'),
+      'test.csv',
+    )
+
+    expect(events[0].model).toBe('gpt-5.6-sol')
+    expect(events[0].pool).toBe('api')
+    expect(events[0].skipReason).toBeNull()
+    expect(events[0].costs.included).toBeCloseTo(3.298829, 5)
+    expect(meta.unknownModels).toEqual({})
+    expect(meta.inferredModels).toEqual({
+      'gpt-5.6-sol-medium': { count: 1, billingModel: 'gpt-5.6-sol' },
+    })
+  })
 })
 
 describe('normalizeModel', () => {
@@ -91,5 +143,11 @@ describe('normalizeModel', () => {
 
   it('does not chain multiple suffix removals', () => {
     expect(normalizeModel('gpt-5.3-codex-high-xhigh')).toBe('gpt-5.3-codex-high')
+  })
+
+  it('maps grok csv slugs to grok-4.5', () => {
+    expect(normalizeModel('cursor-grok-4.5-high')).toBe('grok-4.5')
+    expect(normalizeModel('grok-4.5-xhigh')).toBe('grok-4.5')
+    expect(normalizeModel('gpt-5.6-sol-medium')).toBe('gpt-5.6-sol')
   })
 })

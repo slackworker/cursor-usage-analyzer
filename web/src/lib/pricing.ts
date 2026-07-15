@@ -52,9 +52,15 @@ export const LONG_CONTEXT_INPUT_MULTIPLIER = 2.0
 export const LONG_CONTEXT_OUTPUT_MULTIPLIER = 1.5
 export const AGENT_REVIEW_DISCOUNT_RATIO = 1.0
 
+const MODEL_ALIASES: Record<string, string> = {
+  'cursor-grok-4.5': 'grok-4.5',
+}
+
 const MODEL_NORMALIZATION_RULES: Array<{ prefix: string; suffixes: readonly string[] }> = [
   { prefix: 'gpt-5.', suffixes: ['-xhigh', '-high', '-medium'] },
   { prefix: 'claude-', suffixes: ['-medium-thinking', '-high-thinking', '-thinking-high', '-thinking', '-medium'] },
+  { prefix: 'grok-4.5', suffixes: ['-xhigh', '-high'] },
+  { prefix: 'cursor-grok-4.5', suffixes: ['-high', '-xhigh'] },
 ]
 
 export function parseMaxMode(value: string | undefined | null): boolean {
@@ -162,7 +168,13 @@ export const PRICING: Record<string, ModelPricing> = {
   'claude-4.6-sonnet': { input: 3.0, cacheWrite: 3.75, cacheRead: 0.3, output: 15.0, pool: 'api' },
   'claude-4.6-opus': { input: 5.0, cacheWrite: 6.25, cacheRead: 0.5, output: 25.0, pool: 'api' },
   'claude-opus-4-7': { input: 5.0, cacheWrite: 6.25, cacheRead: 0.5, output: 25.0, pool: 'api' },
+  'gpt-5.6-sol': { input: 5.0, cacheWrite: 6.25, cacheRead: 0.5, output: 30.0, pool: 'api' },
+  'grok-4.5': { input: 2.0, cacheWrite: 2.0, cacheRead: 0.5, output: 6.0, pool: 'auto_composer' },
   agent_review: { input: 1.25, cacheWrite: 1.25, cacheRead: 0.25, output: 6.0, pool: 'api' },
+}
+
+function applyModelAliases(model: string): string {
+  return MODEL_ALIASES[model] ?? model
 }
 
 export function normalizeModel(model: string): string {
@@ -172,12 +184,12 @@ export function normalizeModel(model: string): string {
     if (!model.startsWith(rule.prefix)) continue
     for (const suffix of rule.suffixes) {
       if (model.endsWith(suffix) && model.length > suffix.length) {
-        return model.slice(0, -suffix.length)
+        return applyModelAliases(model.slice(0, -suffix.length))
       }
     }
   }
 
-  return model
+  return applyModelAliases(model)
 }
 
 export function resolveModelPricing(model: string): ResolvedModelPricing | null {
